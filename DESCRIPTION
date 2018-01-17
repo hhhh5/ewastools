@@ -9,6 +9,7 @@ Description: Collection of useful functions for working with DNA methylation mic
 Depends: R (>= 3.3)
 Imports: hash, illuminaio, ExtDist, mblm, data.table
 Suggests: knitr, rmarkdown
+License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
 RoxygenNote: 6.0.1
