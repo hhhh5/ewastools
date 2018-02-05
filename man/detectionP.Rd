@@ -4,6 +4,7 @@
 \alias{detectionP}
 \alias{mask}
 \alias{detP_threshold}
+\alias{detectionP.minfi}
 \title{Detection p-values}
 \usage{
 detectionP(raw, method = "oob")
@@ -11,11 +12,19 @@ detectionP(raw, method = "oob")
 mask(raw, threshold)
 
 detP_threshold(raw, males = NULL, females = NULL)
+
+detectionP.minfi(rgSet, type = "m+u")
 }
 \arguments{
 \item{raw}{Output of calling \code{\link{read_idats}}, must include component \code{detP} for \code{mask} and \code{detP_threshold}.}
 
+\item{method}{Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{negative}).}
+
 \item{threshold}{p-value threshold above which oberservations are set to NA. Thresholds are entered as log10 p, meaning that a p-value of 1e-5 is entered as -5.}
+
+\item{rgSet}{minfi rgSet object}
+
+\item{type}{Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{m+u}).}
 
 \item{male, female}{Indices of male and female subjects}
 }
@@ -25,7 +34,7 @@ For \code{detectionP}, a modified \code{raw} object with a \code{detP} component
 For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
 }
 \description{
-Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes. \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold.
+Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or out-of-band intensities. \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold.
 }
 \author{
 Jonathan A. Heiss

@@ -1,10 +1,13 @@
 #' @title  Detection p-values
-#' @description Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes. \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold.
+#' @description Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or out-of-band intensities. \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold.
 #' @author Jonathan A. Heiss
 #' @param raw Output of calling \code{\link{read_idats}}, must include component \code{detP} for \code{mask} and \code{detP_threshold}.
+#' @param method Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{negative}). 
 #' @param threshold p-value threshold above which oberservations are set to NA. Thresholds are entered as log10 p, meaning that a p-value of 1e-5 is entered as -5.
 #' @param male,female Indices of male and female subjects
-#'
+#' @param rgSet minfi rgSet object
+#' @param type Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{m+u}). 
+#' 
 #' @return For \code{detectionP}, a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
 #' @return For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
 #'
@@ -114,4 +117,56 @@ detP_threshold = function(raw,males=NULL,females=NULL){
     points(-thresholds,males,pch=3)
     legend('topleft',pch=c(3,1),legend=c('Male 90% Quantile','Female 10% Quantile'))
     invisible(NULL)
+}
+
+#' @rdname detectionP
+#' @export
+#'
+detectionP.minfi <- function(rgSet, type = "m+u") {
+    minfi:::.isRGOrStop(rgSet)
+    locusNames <- getManifestInfo(rgSet, "locusNames")
+    detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
+                   dimnames = list(locusNames, colnames(rgSet)))
+
+    r <- minfi::getRed(rgSet)
+    g <- minfi::getGreen(rgSet)
+
+    if(type=="m+u"){
+
+        controlIdx <- minfi::getControlAddress(rgSet, controlType = "NEGATIVE")   
+        
+        rBg <- r[controlIdx,,drop=FALSE]
+        rMu <- matrixStats::colMedians(rBg)
+        rSd <- matrixStats::colMads(rBg)
+
+        gBg <- g[controlIdx,,drop=FALSE]
+        gMu <- matrixStats::colMedians(gBg)
+        gSd <- matrixStats::colMads(gBg)
+    
+    }else if(type=="oob"){
+
+        oob = minfi::getOOB(rgSet)
+        rMu <- 2 * matrixStats::colMedians(oob$Red)
+        rSd <- matrixStats::colMads(oob$Red)
+
+        gMu <- 2 * matrixStats::colMedians(oob$Grn)
+        gSd <- matrixStats::colMads(oob$Grn)
+
+    }
+
+    TypeII <- minfi::getProbeInfo(rgSet, type = "II")
+    TypeI.Red <- minfi::getProbeInfo(rgSet, type = "I-Red")
+    TypeI.Green <- minfi::getProbeInfo(rgSet, type = "I-Green")
+    for (i in 1:ncol(rgSet)) {   
+        ## Type I Red
+        intensity <- r[TypeI.Red$AddressA, i] + r[TypeI.Red$AddressB, i]
+        detP[TypeI.Red$Name, i] <- 1-pnorm(intensity, mean=rMu[i]*2, sd=rSd[i]*sqrt(2))
+        ## Type I Green
+        intensity <- g[TypeI.Green$AddressA, i] + g[TypeI.Green$AddressB, i]
+        detP[TypeI.Green$Name, i] <- 1-pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2))
+        ## Type II
+        intensity <- r[TypeII$AddressA, i] + g[TypeII$AddressA, i]
+        detP[TypeII$Name, i] <- 1-pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2))
+    }
+    detP
 }
