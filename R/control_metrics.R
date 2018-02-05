@@ -27,18 +27,18 @@ control_metrics = function(raw){
 		# Restoration
 		ii  = controls[name=='Restore',index]
 		bkg = controls[name%like%'Extension \\([AT]\\)',index]
-		metrics$Restoration = ctrlG[ii,,drop=FALSE] / (apply(ctrlG[bkg,,drop=FALSE],2,max)+3000)
+		metrics$Restoration = as.numeric(ctrlG[ii,,drop=FALSE] / (apply(ctrlG[bkg,,drop=FALSE],2,max)+3000))
 		attr(metrics$Restoration,'threshold') <- 0
 
 		# Staining
 		ii  = controls[name=='Biotin (High)',index]
 		bkg = controls[name=='Biotin (Bkg)' ,index]
-		metrics$`Staining Green` = ctrlG[ii,,drop=FALSE]/ctrlG[bkg,,drop=FALSE]
+		metrics$`Staining Green` = as.numeric(ctrlG[ii,,drop=FALSE]/ctrlG[bkg,,drop=FALSE])
 		attr(metrics$`Staining Green`,'threshold') <- 5
 
 		ii  = controls[name=='DNP (High)',index]
 		bkg = controls[name=='DNP (Bkg)' ,index]
-		metrics$`Staining Red` = ctrlR[ii,,drop=FALSE]/ctrlR[bkg,,drop=FALSE]
+		metrics$`Staining Red` = as.numeric(ctrlR[ii,,drop=FALSE]/ctrlR[bkg,,drop=FALSE])
 		attr(metrics$`Staining Red`,'threshold') <- 5
 
 		# Extension
@@ -53,17 +53,17 @@ control_metrics = function(raw){
 		hyb_l = controls[name=='Hyb (Low)'   ,index]
 		hyb_m = controls[name=='Hyb (Medium)',index]
 		hyb_h = controls[name=='Hyb (High)'  ,index]
-		metrics$`Hybridization High/Medium` = ctrlG[hyb_h,,drop=FALSE]/ctrlG[hyb_m,,drop=FALSE] 
-		metrics$`Hybridization Medium/Low` = ctrlG[hyb_m,,drop=FALSE]/ctrlG[hyb_l,,drop=FALSE]
+		metrics$`Hybridization High/Medium` = as.numeric(ctrlG[hyb_h,,drop=FALSE]/ctrlG[hyb_m,,drop=FALSE])
+		metrics$`Hybridization Medium/Low`  = as.numeric(ctrlG[hyb_m,,drop=FALSE]/ctrlG[hyb_l,,drop=FALSE])
 		attr(metrics$`Hybridization High/Medium`,'threshold') <- 1
 		attr(metrics$`Hybridization Medium/Low`,'threshold') <- 1
 
 		# Target removal
 		bkg = controls[name%like%'Extension \\([AT]\\)',index]
 		ii = controls[name=='Target Removal 1',index]
-		metrics$`Target Removal 1` =  (apply(ctrlG[bkg,,drop=FALSE],2,max)+3000) / ctrlG[ii,,drop=FALSE]
+		metrics$`Target Removal 1` =  as.numeric((apply(ctrlG[bkg,,drop=FALSE],2,max)+3000) / ctrlG[ii,,drop=FALSE])
 		ii = controls[name=='Target Removal 2',index]
-		metrics$`Target Removal 2` =  (apply(ctrlG[bkg,,drop=FALSE],2,max)+3000) / ctrlG[ii,,drop=FALSE]
+		metrics$`Target Removal 2` =  as.numeric((apply(ctrlG[bkg,,drop=FALSE],2,max)+3000) / ctrlG[ii,,drop=FALSE])
 		attr(metrics$`Target Removal 1`,'threshold') <- 1
 		attr(metrics$`Target Removal 2`,'threshold') <- 1
 
