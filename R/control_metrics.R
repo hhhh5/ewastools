@@ -68,11 +68,11 @@ control_metrics = function(raw){
 		attr(metrics$`Target Removal 2`,'threshold') <- 1
 
 		# Bisulfite conversion I
-		ii  = controls[name%like%'I-C[123]',index]
-		bkg = controls[name%like%'I-U[123]',index]
+		ii  = controls[name%like%'I-C[12]',index]
+		bkg = controls[name%like%'I-U[12]',index]
 		metrics$`Bisulfite Conversion I Green` = apply(ctrlG[ii,,drop=FALSE],2,min) / apply(ctrlG[bkg,,drop=FALSE],2,max)
-		ii  = controls[name%like%'I-C[456]',index]
-		bkg = controls[name%like%'I-U[456]',index] 
+		ii  = controls[name%like%'I-C[45]',index]
+		bkg = controls[name%like%'I-U[45]',index] 
 		metrics$`Bisulfite Conversion I Red` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlR[bkg,,drop=FALSE],2,max) 
 		attr(metrics$`Bisulfite Conversion I Green`,'threshold') <- 1
 		attr(metrics$`Bisulfite Conversion I Red`,'threshold') <- 1
