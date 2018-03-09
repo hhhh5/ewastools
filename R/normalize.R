@@ -52,6 +52,65 @@ correct_dye_bias <- function(raw){
     return(raw)
 }
 
+#' @rdname Preprocessing
+#' 
+correct_dye_bias2 = function (raw) 
+{
+    if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))  stop("Invalid argument")
+
+    i1g = raw$manifest[channel == "Grn", ]
+    i1r = raw$manifest[channel == "Red" & next_base=="T", ]
+    i2 = raw$manifest[channel == "Both", ]
+
+    Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai,]
+    Gi = raw$controls[group == "NORM_G"][order(name)]$index; Gi = raw$ctrlG[Gi,]
+    Ti = raw$controls[group == "NORM_T"][order(name)]$index; Ti = raw$ctrlR[Ti,]
+    Ci = raw$controls[group == "NORM_C"][order(name)]$index; Ci = raw$ctrlG[Ci,]
+    
+    J = ncol(raw$M)
+
+    mm = sapply(1:J,function(j){
+    
+        x = log(Gi[,j])
+        y = log(Ai[,j])
+        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
+        x = x[keep]
+        y = y[keep]
+        m1 = mblm::mblm(y ~ x, repeated = FALSE)
+    
+        x = log(Ci[,j])
+        y = log(Ti[,j])
+        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
+        x = x[keep]
+        y = y[keep]
+        m2 = mblm::mblm(y ~ x, repeated = FALSE)
+    
+        c(coef(m1),coef(m2))
+
+    })
+
+    for(j in 1:J){
+        Ci[,j] = exp(mm[1,j]) * Ci[,j]^mm[2,j]
+        Gi[,j] = exp(mm[3,j]) * Gi[,j]^mm[4,j]
+
+        (log(Ci[,j]) + log(Ti[,j])) %>% divide_by(2) %>% mean(na.rm=T) -> f1
+        log(Ai[,j]) %>% mean(na.rm=T) -> f2
+        (f2/f1) %>% exp -> f
+
+        i = i2$index
+        raw$M[i, j] = exp(mm[3,j]) * raw$M[i, j]^mm[4,j]
+
+        i = i1g$index
+        raw$M[i, j] = f * exp(mm[1,j]) * raw$M[i, j]^mm[2,j]
+        raw$U[i, j] = f * exp(mm[1,j]) * raw$U[i, j]^mm[2,j]
+        
+        i = i1r$index
+        raw$M[i, j] = f * raw$M[i, j]
+        raw$U[i, j] = f * raw$U[i, j]
+    }
+
+    return(raw)
+}
 
 #' @rdname Preprocessing
 #' @export
