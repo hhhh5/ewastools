@@ -82,6 +82,7 @@ read_idats <- function(idat_files,quiet=FALSE){
     S = T = matrix(NA_integer_,nrow=nrow(manifest),ncol=J) # standard deviations
     N = V = matrix(NA_integer_,nrow=nrow(manifest),ncol=J) # number of beads underlying methylated (N) and unmethylated (V) signal intensities
     ctrlG = ctrlR = matrix(NA_real_,nrow=nrow(controls),ncol=J) # signal intensities of control probes
+    ctrlN = matrix(NA_integer_,nrow=nrow(controls),ncol=J)
     oobG = list(M=matrix(NA_real_,nrow=nrow(i1r),ncol=J),U=matrix(NA_real_,nrow=nrow(i1r),ncol=J))
     oobR = list(M=matrix(NA_real_,nrow=nrow(i1g),ncol=J),U=matrix(NA_real_,nrow=nrow(i1g),ncol=J))
 
@@ -118,7 +119,8 @@ read_idats <- function(idat_files,quiet=FALSE){
         S[i2$index ,j] = sds   [ i2$Mi]
         N[i2$index ,j] = nbeads[ i2$Mi]
 
-        ctrlG[,j]    = means[controls$i]
+        ctrlG[,j] = means [controls$i]
+        ctrlN[,j] = nbeads[controls$i]
 
         oobG$M[i1r$OOBi,j] = means[i1r$Mi]
         oobG$U[i1r$OOBi,j] = means[i1r$Ui]
@@ -161,6 +163,9 @@ read_idats <- function(idat_files,quiet=FALSE){
     M[N==0] = NA
     U[V==0] = NA
 
+    ctrlG[ctrlN==0] = NA
+    ctrlR[ctrlN==0] = NA
+
     meta = data.table(
          sample_id = sample_ids
         ,date = as.IDate(dates,"%m/%d/%Y %r")
@@ -173,7 +178,7 @@ read_idats <- function(idat_files,quiet=FALSE){
         ,M=M,S=S,U=U
         ,N=N,T=T,V=V
         ,controls=controls
-        ,ctrlG=ctrlG,ctrlR=ctrlR
+        ,ctrlG=ctrlG,ctrlR=ctrlR,ctrlN=ctrlN
         ,oobG=oobG,oobR=oobR
         ,meta=meta
     )
