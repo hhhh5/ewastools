@@ -58,9 +58,9 @@ call_genotypes <- function(snpmatrix,maxiter=50){
 		gamma = gamma * (1-outliers)
 
 		# MLE
-		s1 = ExtDist::eBeta(snps,gamma[,1],method='MOM')
-		s2 = ExtDist::eBeta(snps,gamma[,2],method='MOM')
-		s3 = ExtDist::eBeta(snps,gamma[,3],method='MOM')
+		s1 = eBeta(snps,gamma[,1])
+		s2 = eBeta(snps,gamma[,2])
+		s3 = eBeta(snps,gamma[,3])
 
 		shapes1 <<- c(s1$shape1,s2$shape1,s3$shape1)
 		shapes2 <<- c(s1$shape2,s2$shape2,s3$shape2)
@@ -149,4 +149,24 @@ snp_outliers = function(gt){
 
  	log_odds = gt$outliers / (1-gt$outliers)
  	log_odds = colMeans(log2(log_odds),na.rm=TRUE)
+}
+
+#' @rdname call_genotypes
+#'
+eBeta = function(x,w){
+	
+	n = sum(w)
+	sample.mean =  mean(w*x)
+    sample.var  = (mean(w*x^2)-sample.mean^2) * n/(n-1)
+    v = sample.mean * (1-sample.mean)
+    
+    if (sample.var < v){
+        shape1 = sample.mean * (v/sample.var - 1)
+        shape2 = (1 - sample.mean) * (v/sample.var - 1)
+    } else {
+        shape2 = sample.mean * (v/sample.var - 1)
+        shape1 = (1 - sample.mean) * (v/sample.var - 1)
+    }
+    
+    list(shape1 = shape1, shape2 = shape2)
 }
