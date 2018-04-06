@@ -4,6 +4,7 @@
 \alias{call_genotypes}
 \alias{mxm_}
 \alias{snp_outliers}
+\alias{eBeta}
 \title{Genotype calling}
 \usage{
 call_genotypes(snpmatrix, maxiter = 50)
@@ -11,6 +12,8 @@ call_genotypes(snpmatrix, maxiter = 50)
 mxm_(mxm)
 
 snp_outliers(gt)
+
+eBeta(x, w)
 }
 \arguments{
 \item{snpmatrix}{Matrix of beta-values for SNP probes. Provide SNPs probes as rows and samples as columns.}

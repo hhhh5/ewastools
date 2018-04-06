@@ -3,11 +3,14 @@
 \name{Preprocessing}
 \alias{Preprocessing}
 \alias{correct_dye_bias}
+\alias{correct_dye_bias2}
 \alias{normalize}
 \alias{dont_normalize}
 \title{Functions for preprocessing}
 \usage{
 correct_dye_bias(raw)
+
+correct_dye_bias2(raw)
 
 normalize(raw, tissue = "")
 

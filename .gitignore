@@ -1,12 +1,14 @@
 data-raw/MethylationEPIC_v-1-0_B3\.csv
+data-raw/MethylationEPIC_v-1-0_B4\.csv
+
 data-raw/reinius
 data-raw/GSE68456
 data-raw/GSE61496
 
-data-raw/HumanMethylation450_15017482_v1-2\.csv
 data-raw/GSE50192\.csv
 data-raw/GSE50192_GPL13534_Matrix_signal_intensities_raw_data\.txt\.gz
-data-raw/MethylationEPIC_v-1-0_B4\.csv
+
+data-raw/HumanMethylation450_15017482_v1-2\.csv
 data-raw/FlowSorted\.CordBlood\.450k\.rda
 
 data-raw/GEOmetadb\.sqlite
