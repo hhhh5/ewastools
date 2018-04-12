@@ -8,7 +8,7 @@ Maintainer: Jonathan Alexander Heiss <hhhh5@posteo.de>
 Description: Collection of useful functions for working with DNA methylation micro-array data.
 Depends: R (>= 3.3)
 Imports: hash, illuminaio, mblm, data.table
-Suggests: knitr, rmarkdown
+Suggests: knitr, rmarkdown, minfi
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
