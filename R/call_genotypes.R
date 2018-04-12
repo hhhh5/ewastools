@@ -155,7 +155,8 @@ snp_outliers = function(gt){
 #'
 eBeta = function(x,w){
 	
-	n = sum(w)
+	n = length(w)
+	w = n*w/sum(w)
 	sample.mean =  mean(w*x)
     sample.var  = (mean(w*x^2)-sample.mean^2) * n/(n-1)
     v = sample.mean * (1-sample.mean)
