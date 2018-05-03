@@ -14,8 +14,8 @@ manifest_epic = fread('data-raw/MethylationEPIC_v-1-0_B3.csv'
 
 manifest_epic = manifest_epic[,list(
      probe_id=IlmnID
-    ,addressU=AddressA_ID
-    ,addressM=AddressB_ID
+    ,addressU=as.integer(AddressA_ID)
+    ,addressM=as.integer(AddressB_ID)
     ,channel=Color_Channel
     ,next_base=Next_Base
     ,chr=CHR
