@@ -21,7 +21,6 @@ control_metrics = function(raw){
 	with(raw,{
 
 		### calculate the control probe metrics
-		### Note: color channels are switched for the 450K platform compared to EPIC and the manual
 		metrics = list()
 
 		# Restoration
