@@ -69,7 +69,7 @@ check_snp_agreement = function(genotypes,weights,donor_ids,sample_ids){
 #' @rdname check_snp_agreement
 #' @export
 #'
-agreement_ = function(genotypes,weights,donor_ids,sample_ids){
+agreement_ = function(genotypes,weights,donor_ids,sample_ids,...){
 
 	stopifnot(anyDuplicated(sample_ids)==0)
 	stopifnot(anyDuplicated(donor_ids)!=0)
@@ -97,7 +97,7 @@ agreement_ = function(genotypes,weights,donor_ids,sample_ids){
 	rm(tmp,d)
 	conflicts = conflicts[!is.na(similarity)]
 
-	boxplot(similarity ~ I(donor1==donor2),data=conflicts,horizontal=TRUE,ylim=c(0,1),xlab='Agreement')
+	boxplot(similarity ~ I(donor1==donor2),data=conflicts,horizontal=TRUE,ylim=c(0,1),xlab='Agreement',...)
 	
 	return(invisible(NULL))
 }
