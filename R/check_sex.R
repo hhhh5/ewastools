@@ -43,5 +43,5 @@ predict_sex = function(X,Y,male,female){
 	prediction = rep(NA,times=length(X))
 	prediction[X>=cutX & Y<=cutY] =  "f"
 	prediction[X<=cutX & Y>=cutY] =  "m"
-	factor(prediction)
+	factor(prediction,levels=c("m","f"),labels=c("m","f"))
 }
