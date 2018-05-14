@@ -47,6 +47,9 @@ correct_dye_bias <- function(raw){
         i = i1g$index
         raw$M[i,j] = exp(coef(m)[1] + log(raw$M[i,j]) * coef(m)[2])
         raw$U[i,j] = exp(coef(m)[1] + log(raw$U[i,j]) * coef(m)[2])
+
+        raw$oobG$U[,j] = exp(coef(m)[1] + log(raw$oobG$U[,j]) * coef(m)[2])
+        raw$oobG$M[,j] = exp(coef(m)[1] + log(raw$oobG$M[,j]) * coef(m)[2])
     }
 
     return(raw)
