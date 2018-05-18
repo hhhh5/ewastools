@@ -12,29 +12,32 @@
 #' @param maxiter Maximal number of iterations of the Expectation-Maximization algorithm learning the mixture model
 #' 
 #' @return  For \code{call_genotypes}, a list containing
-#' \item{par}{parameters of the mixture model}
+#' \item{par}{Parameters of the mixture model}
 #' \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
 #' \item{outliers}{A-posteriori probability of SNP being an outlier}
 #' \item{gamma}{A-posteriori probabilities for each of the three genotypes}
 #' @return For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with the density function of the mixture model overlaid.
 #' @export
 #'
-call_genotypes <- function(snpmatrix,maxiter=50){
+call_genotypes <- function(snpmatrix,learn=TRUE,maxiter=50){
 
 	snps = snpmatrix
 	dim(snps) = NULL
 	NAs = which(is.na(snps))
 	snps = na.omit(snps)
 	n = length(snps)
-	alpha = 1e-2
-	outliers = rep(alpha,n)
-	pi = c(1/3,1/3,1/3)
-	shapes1 = c(10,80,80) 
-	shapes2 = c(80,80,10)
-	p = 1
-	gamma = NA
-	
-	e_step = function(){
+
+	if(learn==FALSE){
+		# Use predefined model parameters
+		# (might work better if training set is small or contains many outliers)
+
+		alpha = 0.06646095
+		pi = c(0.2818387,0.4330363,0.2851250)
+		shapes1 = c(2.206479,80.830012,40.640821)
+		shapes2 = c(38.043029,84.411900,3.315509)
+		p = 1 # Uniform distribution
+		loglik = NULL
+
 		gamma = cbind(
 			 pi[1] * dbeta(snps,shape1=shapes1[1],shape2=shapes2[1])
 			,pi[2] * dbeta(snps,shape1=shapes1[2],shape2=shapes2[2])
@@ -43,59 +46,83 @@ call_genotypes <- function(snpmatrix,maxiter=50){
 
 		gamma = (1-alpha) * gamma
 		tmp = rowSums(gamma)
-		gamma <<- gamma/tmp
- 
-		outliers <<- (alpha*p) / ((alpha*p) + tmp)
+		gamma = gamma/tmp
+	 
+		outliers = (alpha*p) / ((alpha*p) + tmp)
 
-		loglik = (alpha*p) + tmp
-		loglik = sum(log(loglik))
+	}else{ # Learn dataset-specific model parameters
 
-		return(loglik)
-	}
-
-	m_step = function(){
-
-		gamma = gamma * (1-outliers)
-
-		# MLE
-		s1 = eBeta(snps,gamma[,1])
-		s2 = eBeta(snps,gamma[,2])
-		s3 = eBeta(snps,gamma[,3])
-
-		shapes1 <<- c(s1$shape1,s2$shape1,s3$shape1)
-		shapes2 <<- c(s1$shape2,s2$shape2,s3$shape2)
-
-		# MLE of class priors
-		pi = apply(gamma,2,sum)
-		pi <<- pi/sum(pi)
-		alpha <<- sum(outliers)/n
+		alpha = 1e-2
+		outliers = rep(alpha,n)
+		pi = c(1/3,1/3,1/3) # Class probabilities
+		shapes1 = c(10,80,80) 
+		shapes2 = c(80,80,10)
+		p = 1 # Uniform distribution
+		gamma = NA
 		
-		invisible(NULL)
+		e_step = function(){
+			gamma = cbind(
+				 pi[1] * dbeta(snps,shape1=shapes1[1],shape2=shapes2[1])
+				,pi[2] * dbeta(snps,shape1=shapes1[2],shape2=shapes2[2])
+				,pi[3] * dbeta(snps,shape1=shapes1[3],shape2=shapes2[3])
+				)
+
+			gamma = (1-alpha) * gamma
+			tmp = rowSums(gamma)
+			gamma <<- gamma/tmp
+	 
+			outliers <<- (alpha*p) / ((alpha*p) + tmp)
+
+			loglik = (alpha*p) + tmp
+			loglik = sum(log(loglik))
+
+			return(loglik)
+		}
+
+		m_step = function(){
+
+			gamma = gamma * (1-outliers)
+
+			# MLE
+			s1 = eBeta(snps,gamma[,1])
+			s2 = eBeta(snps,gamma[,2])
+			s3 = eBeta(snps,gamma[,3])
+
+			shapes1 <<- c(s1$shape1,s2$shape1,s3$shape1)
+			shapes2 <<- c(s1$shape2,s2$shape2,s3$shape2)
+
+			# MLE of class priors
+			pi = apply(gamma,2,sum)
+			pi <<- pi/sum(pi)
+			alpha <<- sum(outliers)/n
+			
+			invisible(NULL)
+		}
+
+		loglik = rep(NA_real_,maxiter)
+		loglik[1] = e_step()
+
+		i = 2; gain=Inf;
+
+		while(i<maxiter & gain>1e-4){
+			m_step()
+			loglik[i] = e_step()
+			gain = loglik[i]-loglik[i-1]
+			i=i+1
+		}
+
+		loglik=loglik[1:(i-1)]
+
 	}
-
-	loglik = rep(NA_real_,maxiter)
-	loglik[1] = e_step()
-
-	i = 2; gain=Inf;
-
-	while(i<maxiter & gain>1e-4){
-		m_step()
-		loglik[i] = e_step()
-		gain = loglik[i]-loglik[i-1]
-		i=i+1
-	}
-
+	
+	## Re-insert missing values
 	if(length(NAs)!=0){
 		tmp = rep(NA,length(snpmatrix))
 		tmp[-NAs] = outliers
-	}else{
-		tmp = outliers
+		outliers = tmp
 	}
-	dim(tmp) = dim(snpmatrix)
-
-	tmp = rep(NA,length(snpmatrix))
-	if(length(NAs)!=0){ tmp[-NAs] = outliers } else tmp = outliers
-	dim(tmp) = dim(snpmatrix)
+	
+	dim(outliers) = dim(snpmatrix)
 
 	gamma = lapply(1:3,function(k){
 
@@ -110,12 +137,13 @@ call_genotypes <- function(snpmatrix,maxiter=50){
 		tmp
 	})
 
+
 	return(list(
-		snps=snpmatrix
-		,outliers=tmp
+		 snps=snpmatrix
+		,outliers=outliers
 		,gamma=gamma
 		,par=list(pi=pi,shapes1=shapes1,shapes2=shapes2,alpha=alpha)
-		,loglik=loglik[1:(i-1)]
+		,loglik=loglik
 		))
 
 }
