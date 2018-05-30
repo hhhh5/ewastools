@@ -122,7 +122,7 @@ detP_threshold = function(raw,males=NULL,females=NULL){
 #' @rdname detectionP
 #' @export
 #'
-detectionP.minfi <- function(rgSet, type = "m+u") {
+detectionP.minfi <- function(rgSet, type = "negative") {
     minfi:::.isRGOrStop(rgSet)
     locusNames <- getManifestInfo(rgSet, "locusNames")
     detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
@@ -131,7 +131,7 @@ detectionP.minfi <- function(rgSet, type = "m+u") {
     r <- minfi::getRed(rgSet)
     g <- minfi::getGreen(rgSet)
 
-    if(type=="m+u"){
+    if(type=="negative"){
 
         controlIdx <- minfi::getControlAddress(rgSet, controlType = "NEGATIVE")   
         
