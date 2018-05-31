@@ -122,7 +122,7 @@ detP_threshold = function(raw,males=NULL,females=NULL){
 #' @rdname detectionP
 #' @export
 #'
-detectionP.minfi <- function(rgSet, type = "negative") {
+detectionP.minfi <- function(rgSet,method="oob") {
     minfi:::.isRGOrStop(rgSet)
     locusNames <- getManifestInfo(rgSet, "locusNames")
     detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
@@ -131,7 +131,7 @@ detectionP.minfi <- function(rgSet, type = "negative") {
     r <- minfi::getRed(rgSet)
     g <- minfi::getGreen(rgSet)
 
-    if(type=="negative"){
+    if(method=="negative"){
 
         controlIdx <- minfi::getControlAddress(rgSet, controlType = "NEGATIVE")   
         
@@ -143,13 +143,13 @@ detectionP.minfi <- function(rgSet, type = "negative") {
         gMu <- matrixStats::colMedians(gBg)
         gSd <- matrixStats::colMads(gBg)
     
-    }else if(type=="oob"){
+    }else if(method=="oob"){
 
         oob = minfi::getOOB(rgSet)
-        rMu <- 2 * matrixStats::colMedians(oob$Red)
+        rMu <- matrixStats::colMedians(oob$Red)
         rSd <- matrixStats::colMads(oob$Red)
 
-        gMu <- 2 * matrixStats::colMedians(oob$Grn)
+        gMu <- matrixStats::colMedians(oob$Grn)
         gSd <- matrixStats::colMads(oob$Grn)
 
     }
@@ -160,13 +160,15 @@ detectionP.minfi <- function(rgSet, type = "negative") {
     for (i in 1:ncol(rgSet)) {   
         ## Type I Red
         intensity <- r[TypeI.Red$AddressA, i] + r[TypeI.Red$AddressB, i]
-        detP[TypeI.Red$Name, i] <- 1-pnorm(intensity, mean=rMu[i]*2, sd=rSd[i]*sqrt(2))
+        detP[TypeI.Red$Name, i] <- pnorm(intensity, mean=rMu[i]*2, sd=rSd[i]*sqrt(2),log.p=TRUE,lower.tail=FALSE)
         ## Type I Green
         intensity <- g[TypeI.Green$AddressA, i] + g[TypeI.Green$AddressB, i]
-        detP[TypeI.Green$Name, i] <- 1-pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2))
+        detP[TypeI.Green$Name, i] <- pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2),log.p=TRUE,lower.tail=FALSE)
         ## Type II
         intensity <- r[TypeII$AddressA, i] + g[TypeII$AddressA, i]
-        detP[TypeII$Name, i] <- 1-pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2))
+        detP[TypeII$Name, i] <- pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2),log.p=TRUE,lower.tail=FALSE)
     }
-    detP
+    
+    detP/log(10)
+
 }
