@@ -7,7 +7,7 @@
 \alias{eBeta}
 \title{Genotype calling}
 \usage{
-call_genotypes(snpmatrix, maxiter = 50)
+call_genotypes(snpmatrix, learn = TRUE, maxiter = 50)
 
 mxm_(mxm)
 
@@ -24,7 +24,7 @@ eBeta(x, w)
 }
 \value{
 For \code{call_genotypes}, a list containing
-\item{par}{parameters of the mixture model}
+\item{par}{Parameters of the mixture model}
 \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
 \item{outliers}{A-posteriori probability of SNP being an outlier}
 \item{gamma}{A-posteriori probabilities for each of the three genotypes}
