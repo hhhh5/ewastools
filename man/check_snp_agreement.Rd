@@ -7,7 +7,7 @@
 \usage{
 check_snp_agreement(genotypes, weights, donor_ids, sample_ids)
 
-agreement_(genotypes, weights, donor_ids, sample_ids)
+agreement_(genotypes, weights, donor_ids, sample_ids, ...)
 }
 \arguments{
 \item{genotypes}{A list of length 3, each element a matrix with probablilities}
