@@ -5,8 +5,7 @@
 #' @param method Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{negative}). 
 #' @param threshold p-value threshold above which oberservations are set to NA. Thresholds are entered as log10 p, meaning that a p-value of 1e-5 is entered as -5.
 #' @param male,female Indices of male and female subjects
-#' @param rgSet minfi rgSet object
-#' @param type Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{m+u}). 
+#' @param rgSet minfi rgSet object 
 #' 
 #' @return For \code{detectionP}, a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
 #' @return For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
@@ -70,7 +69,7 @@ detectionP <- function(raw,method="oob"){
             
             i = manifest[channel=='Both',index]
                 for(j in 1:ncol(M))
-                    detP[i,j] = pnorm(U[i,j]+M[i,j],mean=0.5*muR[j]+0.5*muG[j],sd=sqrt(0.5*sdR[j]^2+0.5*sdG[j]^2),log.p=TRUE,lower.tail=FALSE)
+                    detP[i,j] = pnorm(U[i,j]+M[i,j],mean=0.5*muR[j]+0.5*muG[j],sd=sqrt(sdR[j]^2+sdG[j]^2)/sqrt(2),log.p=TRUE,lower.tail=FALSE)
             
         }
         
