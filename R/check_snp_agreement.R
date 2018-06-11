@@ -67,7 +67,6 @@ check_snp_agreement = function(genotypes,weights,donor_ids,sample_ids){
 }
 
 #' @rdname check_snp_agreement
-#' @export
 #'
 agreement_ = function(genotypes,weights,donor_ids,sample_ids,...){
 
