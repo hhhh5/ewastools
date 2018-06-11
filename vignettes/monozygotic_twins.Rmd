@@ -98,8 +98,8 @@ rm(swap)
 
 Download the dataset.
 ```{r}
-map2(samples$red, samples$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
-map2(samples$grn, samples$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+map2(samples$red, samples$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+map2(samples$grn, samples$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 samples$red = NULL; samples$grn = NULL
 ```
 
