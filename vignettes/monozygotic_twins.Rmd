@@ -73,26 +73,25 @@ samples[variable=="birth-weight",variable:="birth_weight"]
 samples = dcast(samples, gsm ~ variable)
 
 samples[,sex:=factor(sex,levels=1:2,labels=c("m","f"))]
+samples %<>% na.omit
 samples$birth_weight %<>% as.integer
 samples$pair_id %<>% as.integer
 samples$age %<>% as.integer
 samples$tissue = NULL
-samples %<>% na.omit
+setkey(samples,"gsm")
 
 ```
 
-Remove technical replicates, sort by `pair_id`, and select first 20 samples
+Restrict to the first 20 samples
 ```{r}
-samples %<>% unique(by=c("pair_id","birth_weight"))
-samples = samples[order(pair_id,birth_weight)]
 samples = samples[1:20]
 ```
 
 Swap two samples on purpose.
 ```{r}
-swap = samples[4,list(red,grn)]
-samples[4,c("red","grn"):= samples[5,list(red,grn)]]
-samples[5,c("red","grn"):= swap]
+swap = samples["GSM1506276",list(red,grn)]
+samples["GSM1506276",c("red","grn"):= samples["GSM1506277",list(red,grn)]]
+samples["GSM1506277",c("red","grn"):= swap]
 rm(swap)
 ```
 
@@ -160,4 +159,3 @@ Check for outliers among the SNP probes. Such can indicate sample contamination 
 samples$log_odds = snp_outliers(snps)
 table(samples$log_odds > -4)
 ```
-
