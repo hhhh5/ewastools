@@ -15,7 +15,6 @@
 check_snp_agreement = function(genotypes,weights,donor_ids,sample_ids){
 
 	stopifnot(anyDuplicated(sample_ids)==0)
-	stopifnot(anyDuplicated(donor_ids)!=0)
 
 	sample_ids = as.character(sample_ids)
 
@@ -71,7 +70,6 @@ check_snp_agreement = function(genotypes,weights,donor_ids,sample_ids){
 agreement_ = function(genotypes,weights,donor_ids,sample_ids,...){
 
 	stopifnot(anyDuplicated(sample_ids)==0)
-	stopifnot(anyDuplicated(donor_ids)!=0)
 
 	conflicts = cbind(CJ(donor_ids,donor_ids,sorted=FALSE),CJ(sample_ids,sample_ids,sorted=FALSE))
 	setcolorder(conflicts,c(1,3,2,4))
