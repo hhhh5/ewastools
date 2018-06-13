@@ -7,24 +7,22 @@
 \alias{detectionP.minfi}
 \title{Detection p-values}
 \usage{
-detectionP(raw, method = "oob")
+detectionP(raw)
 
 mask(raw, threshold)
 
 detP_threshold(raw, males = NULL, females = NULL)
 
-detectionP.minfi(rgSet, method = "oob")
+detectionP.minfi(rgSet)
 }
 \arguments{
 \item{raw}{Output of calling \code{\link{read_idats}}, must include component \code{detP} for \code{mask} and \code{detP_threshold}.}
 
-\item{method}{Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{negative}).}
-
-\item{threshold}{p-value threshold above which oberservations are set to NA. Thresholds are entered as log10 p, meaning that a p-value of 1e-5 is entered as -5.}
+\item{threshold}{p-value threshold (arithmetic scale) above which oberservations are set to NA.}
 
 \item{rgSet}{minfi rgSet object}
 
-\item{male, female}{Indices of male and female subjects}
+\item{male/female}{Indices of male and female subjects}
 }
 \value{
 For \code{detectionP}, a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
