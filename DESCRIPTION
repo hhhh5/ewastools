@@ -1,7 +1,7 @@
 Package: ewastools
 Type: Package
 Title: EWAS Tools
-Version: 1.2
+Version: 1.3
 Date: 2017-05-23
 Authors: Allan C. Just, Jonathan Alexander Heiss
 Maintainer: Jonathan Alexander Heiss <hhhh5@posteo.de>

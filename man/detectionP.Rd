@@ -13,7 +13,7 @@ mask(raw, threshold)
 
 detP_threshold(raw, males = NULL, females = NULL)
 
-detectionP.minfi(rgSet, type = "m+u")
+detectionP.minfi(rgSet, method = "oob")
 }
 \arguments{
 \item{raw}{Output of calling \code{\link{read_idats}}, must include component \code{detP} for \code{mask} and \code{detP_threshold}.}
@@ -23,8 +23,6 @@ detectionP.minfi(rgSet, type = "m+u")
 \item{threshold}{p-value threshold above which oberservations are set to NA. Thresholds are entered as log10 p, meaning that a p-value of 1e-5 is entered as -5.}
 
 \item{rgSet}{minfi rgSet object}
-
-\item{type}{Which probes should be used to estimate the background distribution, out-of-band intensities (\code{oob}) or negative control probes (\code{m+u}).}
 
 \item{male, female}{Indices of male and female subjects}
 }

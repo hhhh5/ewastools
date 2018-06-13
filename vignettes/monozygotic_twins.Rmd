@@ -29,67 +29,88 @@ knitr::opts_chunk$set(fig.align="center")
 library(stringi)
 library(data.table)
 library(magrittr)
-library(GEOmetadb)
 library(ewastools)
+library(purrr)
 ```
 
 *This vignette demonstrates the use of the ewastools package on a public available 450K dataset, with a focus on the implemented quality checks for identifying failed assays, mislabeled or contaminated samples. ewastools provides also functions for preprocessing (dye bias correction, normalization) and estimation of leukocyte composition.*
 
-Download the GEOmetadb database and extract the metadata for the GSE61496 dataset. This dataset is comprised of 150 pairs of monozygotic twins (i.e. 300 samples + 10 technical replicates).
+Download and parse the metadata for the GSE61496 dataset. This dataset is comprised of 150 pairs of monozygotic twins (i.e. 300 samples + 10 technical replicates).
 
 ```{r}
-getSQLiteFile(destdir="../data-raw")
-con <- dbConnect(SQLite(), "../data-raw/GEOmetadb.sqlite")
+samples = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE61496&targ=gsm&form=text&view=brief"
+samples = readLines(samples)
+samples = split(samples,cumsum(samples %like% "^\\^SAMPLE = GSM") )
 
-samples = dbGetQuery(con, "SELECT gsm,series_id,supplementary_file,characteristics_ch1 FROM gsm
-	WHERE gpl='GPL13534' AND series_id like 'GSE61496'")
-setDT(samples)
-dbDisconnect(con)
+# Extract GSM accessions
+names(samples) = map(samples,1) %>% stri_match_first(regex="GSM\\d+")
+
+# Parse meta data
+imap(samples,function(s,acc){
+	s = strsplit(s,split=" = ",fixed=TRUE)	
+	data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
+}) -> samples
+
+samples = rbindlist(samples)
+
+# Keep only information on sample characteristics and supplementary files
+samples = samples[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
+i = samples[variable == "!Sample_characteristics_ch1",which=TRUE]
+ch = samples$value[i] %>% stri_split(fixed=": ")
+samples$variable[i] = map_chr(ch,1)
+samples$value   [i] = map_chr(ch,2)
+rm(ch)
+
+# Find the URLs pointing to the two .idat files
+samples[variable=="!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
+samples[variable=="!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
+
+samples[variable=="sex, 1=m, 2=f",variable:="sex"]
+samples[variable=="pair id",variable:="pair_id"]
+samples[variable=="birth-weight",variable:="birth_weight"]
+
+# Reshape data.table from long to wide format
+samples = dcast(samples, gsm ~ variable)
+
+samples[,sex:=factor(sex,levels=1:2,labels=c("m","f"))]
+samples %<>% na.omit
+samples$birth_weight %<>% as.integer
+samples$pair_id %<>% as.integer
+samples$age %<>% as.integer
+samples$tissue = NULL
+setkey(samples,"gsm")
+
 ```
 
-Extract the metadata (sex and ID of twin pairs). Remove the two samples without metadata.
-
+Restrict to the first 20 samples
 ```{r}
-meta = stri_match(samples$characteristics_ch1,
-	regex="2=f: ([12]);.*age: (\\d+);.*pair id: (\\d+)")
-samples$sex = meta[,2] %>% factor(levels=c("1","2"),labels=c("m","f"))
-samples$pair_id = as.numeric(meta[,4])
-samples = samples[!is.na(sex)]
-rm(meta)
+samples = samples[1:20]
 ```
 
 Swap two samples on purpose.
 ```{r}
-swap = samples[145]$supplementary_file
-samples[145]$supplementary_file = samples[65]$supplementary_file
-samples[65]$supplementary_file = swap
+swap = samples["GSM1506276",list(red,grn)]
+samples["GSM1506276",c("red","grn"):= samples["GSM1506277",list(red,grn)]]
+samples["GSM1506277",c("red","grn"):= swap]
 rm(swap)
 ```
 
-Parse the .idat file names, create a new folder and download the dataset. Requires approx. 2.5GB of storage.
+Download the dataset.
 ```{r}
-files = stri_match(samples$supplementary_file,
-	regex="^(ftp://ftp\\S*Grn\\.idat\\.gz);[:blank:](ftp://ftp\\S*Red\\.idat\\.gz)")
-files = files[,2:3]
-
-dir.create("../data-raw/GSE61496")
-invisible(lapply(files,function(file) download.file(file,destfile=paste0("../data-raw/GSE61496/",basename(file)),quiet=TRUE) ))
-
-files = basename(files)
-files = stri_sub(files[1:310],1,-13)
-samples$file = files
-samples = samples[,list(gsm,pair_id,sex,file)]
+map2(samples$red, samples$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+map2(samples$grn, samples$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+samples$red = NULL; samples$grn = NULL
 ```
 
 Read in the dataset.
 ```{r}
-raw = read_idats(paste0("../data-raw/GSE61496/",samples$file),quiet=TRUE)
+meth = read_idats(samples$gsm,quiet=TRUE)
 ```
 
 The first check evaluates 17 control metrics. The "Bisulfite Conversion II" metric is exemplary plotted below. 3 samples fall below 1, which is the cut-off recommended by Illumina.
 ```{r fig.width=6,fig.height=3.5}
-ctrls = control_metrics(raw)
-stripchart(ctrls$`Bisulfite Conversion II`,method="jitter",pch=4,xlab='Bisulfite Conversion II')
+ctrls = control_metrics(meth)
+stripchart(ctrls$`Bisulfite Conversion II`,method="jitter",pch=4,xlab='Bisulfite Conversion II',xlim=c(0,10))
 abline(v=1,col=2,lty=3)
 ```
 
@@ -100,16 +121,13 @@ sample_failure(ctrls) %>% table
 
 Before the next check, dye bias is corrected and beta-values are computed. No normalization is performed.
 ```{r}
-dye = correct_dye_bias(raw)
-meth = dont_normalize(dye)
+meth %<>% correct_dye_bias
+beta = dont_normalize(meth)
 ```
 
 Sex check. The samples swapped above resulted in sex mismatches plotted in red. The actual sex of a sample donor can be inferred by calling `predict_sex()`.
 ```{r fig.width=6,fig.height=6}
-XY = check_sex(dye)
-samples$X = XY$X
-samples$Y = XY$Y
-rm(XY)
+samples[,c("X","Y") := check_sex(meth)]
 
 samples$predicted_sex = predict_sex(samples$X,samples$Y,which(samples$sex=='m'),which(samples$sex=='f'))
 
@@ -120,32 +138,24 @@ legend("topright",pch=c(1,4),legend=c("female","male"))
 
 Genotype calling and classification of SNP outliers. First extract SNP probe positions from the manifest and use the matrix of beta-values as input for `call_genotypes`. This function estimates the parameters of a mixture model and returns posterior probabilities used as soft classification.
 ```{r}
-snps = dye$manifest[probe_type=='rs',index]
-snps = meth[snps,]
-
-gt = call_genotypes(snps)
+snps = meth$manifest[probe_type=='rs',index]
+snps = beta[snps,]
+snps = call_genotypes(snps,learn=FALSE)
 ```
 
 Use the classified SNPs to compare genetic fingerprints between samples. Monozygotic twins are in this check treated as one donor. List all conflicts, e.g. unexpected agreement or disagreement of fingerprints. The sample swap resulted in 8 conflicts: rows 1,4 and 5 indicate that sample #65 does not have the same fingerprint as #59, #303 and #309, even though they are supposed to come from the same donor. Analogously, row 6 indicates that sample #145 does not match the genetic fingerprint of sample #151. Rows 2,3,7 and 8 on the other hand shows the unexpected fingerprint matches between samples that are supposed to come from two different donors.
 ```{r}
-check_snp_agreement(gt$gamma,1-gt$outliers,samples$pair_id,1:310)
+check_snp_agreement(snps$gamma,1-snps$outliers,samples$pair_id,samples$gsm)
 ```
 
-The same data can be shown as a plot. The label "TRUE" corresponds to twin pairs, "FALSE" to non-twin pairs. There are eight (overlapping) outliers corresponding to the entries in the list above.
+The same data can be shown as a plot. There are four (overlapping) outliers corresponding to the entries in the list above.
 
 ```{r fig.width=6, fig.height=4}
-agreement_(gt$gamma,1-gt$outliers,samples$pair_id,1:310)
+ewastools:::agreement_(snps$gamma,1-snps$outliers,samples$pair_id,samples$gsm,names=c("Unrelated","Twins"))
 ```
 
-Check for outliers among the SNP probes. Such can indicate sample contamination or other technical problems. There are 7 samples that lie above our recommended cut-off.
+Check for outliers among the SNP probes. Such can indicate sample contamination or other technical problems. All 20 samples pass our recommended cut-off.
 ```{r}
-log_odds = snp_outliers(gt)
-table(log_odds > -4)
+samples$log_odds = snp_outliers(snps)
+table(samples$log_odds > -4)
 ```
-
-Check if the 26 flagged samples perform worse on the outlier metric (the average log odds of being an outlier across the 65 SNP probes). Answer: they do, confirming that these samples warrant closer inspection.
-```{r fig.width=6, fig.height=4}
-boxplot( split(log_odds,sample_failure(ctrls)),horizontal=TRUE,xlab="Average log odds")
-abline(v=-4,lty=3,col=2)
-```
-

@@ -27,14 +27,15 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     J = length(idat_files)
 
-    zipped = file.exists(paste0(idat_files[1],"_Grn.idat.gz"))
-    if(zipped){ suffix = ".idat.gz" } else suffix = ".idat"
+    zipped = !file.exists(paste0(idat_files,"_Grn.idat"))
+    suffix = rep(".idat",times=J)
+    suffix[zipped] = ".idat.gz"
 
-    ex = file.exists( paste0(idat_files,"_",rep(c("Grn","Red"),each=J),suffix))
+    ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
     if(!all(ex)) stop("Some .idat files are missing")
 
     # read itensities
-    idat_order = illuminaio::readIDAT(paste0(idat_files[1],"_Grn",suffix))$MidBlock
+    idat_order = illuminaio::readIDAT(paste0(idat_files[1],"_Grn",suffix[1]))$MidBlock
     P = length(idat_order) # number of features
     print(P)
 
@@ -94,7 +95,7 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     ### read the intensities of the green channel
     for(j in 1:J){
-        tmp = illuminaio::readIDAT(paste0(idat_files[j],"_Grn",suffix))
+        tmp = illuminaio::readIDAT(paste0(idat_files[j],"_Grn",suffix[j]))
         if(!identical(tmp$MidBlock,idat_order)) stop("Different versions of .idat files")
         
         barcodes[j] = tmp$Barcode
@@ -130,7 +131,7 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     ### the red channel
     for(j in 1:J){
-        tmp = illuminaio::readIDAT(paste0(idat_files[j],"_Red",suffix))
+        tmp = illuminaio::readIDAT(paste0(idat_files[j],"_Red",suffix[j]))
         if(!identical(tmp$MidBlock,idat_order)) stop("Different versions of .idat files")
         
         tmp = tmp$Quants
