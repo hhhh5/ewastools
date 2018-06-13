@@ -86,7 +86,7 @@ detP_threshold = function(raw,males=NULL,females=NULL){
 #' @rdname detectionP
 #' @export
 #'
-detectionP.minfi <- function(rgSet,method="oob") {
+detectionP.minfi <- function(rgSet) {
     minfi:::.isRGOrStop(rgSet)
     locusNames <- getManifestInfo(rgSet, "locusNames")
     detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
