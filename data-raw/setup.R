@@ -66,8 +66,6 @@ save(manifest_epic,controls_epic,manifest_450K,controls_450K,file="../R/sysdata.
 # -------------------------------- Purified blood cells 
 
 # 450K datasets
-# test set (GSE77797)  https://doi.org/10.1186/s12859-016-0943-7
-
 
 #--------------------------------------------------------------
 # de Goede (GSE68456) https://doi.org/10.1186/s13148-015-0129-6
@@ -112,8 +110,8 @@ goede[,file:=paste0("GSE68456","/",gsm)]
 goede[,cell_type:=fct_recode(cell_type,B="B cell",CD4="CD4 T cell",CD8="CD8 T cell",GR="Granulocyte",MO="Monocyte",NK="NK cell",nRBC="nRBC")]
 goede[,donor:=stri_extract_last(title,regex="ind\\d+")]
 
-# map2(goede$red, goede$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
-# map2(goede$grn, goede$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+map2(goede$red, goede$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+map2(goede$grn, goede$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 
 goede = goede[,list(study="goede",cell_type,donor,sex,file)]
 
@@ -157,7 +155,7 @@ beta = meth %>% dont_normalize
 train_model = function(studies,cell_types,output){
     
     train = purified[study %in% studies & cell_type %in% cell_types]
-    train_beta = beta[,train$j]
+    train_beta = na.omit(beta[,train$j])
 
     markers = list() 
 
@@ -177,7 +175,7 @@ train_model = function(studies,cell_types,output){
         }) 
      
         i = which(p.adjust(tmp[1,])<0.05) 
-        o = order(tmp[2,i]) 
+        o = order(tmp[2,i],na.last=NA)
         markers[[ct]] = c(i[head(o,50)],i[tail(o,50)]) 
     } 
 

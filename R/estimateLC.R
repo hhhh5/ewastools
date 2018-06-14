@@ -13,6 +13,7 @@ estimateLC <- function(meth,ref){
 
     coefs = read.table(system.file(paste0("data/",ref,".txt"),package="ewastools"))
     coefs = as.matrix(coefs)
+    n_celltypes = ncol(coefs)
 
     markers = match(rownames(coefs),rownames(meth))
     EST = sapply(1:J,function(j){
@@ -21,8 +22,8 @@ estimateLC <- function(meth,ref){
         quadprog::solve.QP(
              t(coefs[i,]) %*% coefs[i,]
             ,t(coefs[i,]) %*% tmp[i]
-            ,diag(6)
-            ,rep(0,6)
+            ,diag(n_celltypes)
+            ,rep(0,n_celltypes)
         )$sol
         })
     EST = t(EST)
