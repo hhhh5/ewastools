@@ -4,10 +4,15 @@
 \alias{estimateLC}
 \title{Estimate leukcoyte composition}
 \usage{
-estimateLC(meth, ref)
+estimateLC(meth, ref = "bakulski+goede")
+}
+\arguments{
+\item{meth}{Matrix of beta values}
+
+\item{ref}{Choice of reference dataset: available options are `gervin` [2], `reinius` [3], `goede` [4], `bakulski` [5] or specific combinations of them. Current default is `bakulski+goede`.}
 }
 \value{
-Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, Granulocytes, Monocytes and Natural killer cells using the Houseman algorithm. The model was trained on a dataset of both peripheral and cord blood, in order to apply to study populations of broad age range.
+Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
 }
 \description{
 Estimate leukcoyte composition
@@ -20,4 +25,6 @@ Estimate leukcoyte composition
 {Reinius LE, Acevedo N, Joerink M, Pershagen G, Dahlén SE, Greco D, Söderhäll C, Scheynius A, Kere J. Differential DNA methylation in purified human blood cells: implications for cell lineage and studies on disease susceptibility. PloS one. 2012 Jul 25;7(7):e41361.}
 
 {de Goede OM, Razzaghian HR, Price EM, Jones MJ, Kobor MS, Robinson WP, Lavoie PM. Nucleated red blood cells impact DNA methylation and expression analyses of cord blood hematopoietic cells. Clinical epigenetics. 2015 Dec;7(1):95.}
+
+{Bakulski KM, Feinberg JI, Andrews SV, Yang J, Brown S, L. McKenney S, Witter F, Walston J, Feinberg AP, Fallin MD. DNA methylation of cord blood cell types: applications for mixed cell birth studies. Epigenetics. 2016 May 3;11(5):354-62.}
 }

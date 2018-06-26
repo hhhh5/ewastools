@@ -5,6 +5,8 @@ library(parallel)
 library(purrr)
 library(forcats)
 library(ewastools)
+library(strict)
+library(minfi)
 
 # -------------------------------- EPIC chip manifest
 
@@ -142,14 +144,99 @@ reinius$cell_type = fct_recode(reinius$Type,MO="CD14+ Monocytes",NK="CD56+ NK-ce
 reinius$sex = "m"
 reinius = reinius[,list(study="reinius",cell_type,donor,sex,file)]
 
-# -------------------------------- 
+#----------------------------------------------------
 
 purified = rbind(goede,gervin,reinius,use.names=TRUE,fill=TRUE)
 purified %<>% droplevels
 purified[,j:=1:.N]
 
-meth = read_idats(purified$file) %>% correct_dye_bias %>% detectionP %>% mask(0.05)
-beta = meth %>% dont_normalize
+beta = purified$file %>% read_idats(.) %>% correct_dye_bias(.) %>% ewastools::detectionP(.) %>% ewastools::mask(.,0.05) %>% dont_normalize
+
+#----------------------------------------------------
+# Bakulski
+#----------------------------------------------------
+
+load("bakulski/FlowSorted.CordBlood.450k.rda") 
+ 
+pheno = pData(FlowSorted.CordBlood.450k)
+pheno %<>% as.data.frame %>% setDT
+J = nrow(pheno)
+
+pheno$cell_type = fct_recode(pheno$CellType,MO="Mono",NK="NK",CD8="CD8T",CD4="CD4T",GR="Gran",B="Bcell",WB="WholeBlood",nRBC="nRBC")
+pheno[,sex:=factor(Sex,levels=c("M","F"),labels=c("m","f"))]
+pheno = pheno[,list(study="bakulski",cell_type,donor=Individual.ID,sex,file=NA,j=(nrow(purified)+1):(nrow(purified)+J))]
+
+purified = rbind(purified,pheno)
+
+
+r = getRed  (FlowSorted.CordBlood.450k)
+g = getGreen(FlowSorted.CordBlood.450k)
+idat_order = rownames(r)
+
+meth = list()
+meth$platform = "450K"
+manifest = copy(ewastools:::manifest_450K)
+controls = copy(ewastools:::controls_450K)
+
+manifest[channel!="Both",Ui:=match(addressU,idat_order)]
+manifest[channel!="Both",Mi:=match(addressM,idat_order)]
+manifest[channel=="Both",Ui:=match(addressU,idat_order)]
+manifest[channel=="Both",Mi:=Ui]
+    
+controls[,i:=match(address,idat_order)]
+
+manifest[,index:=1L:.N]
+controls[,index:=1L:.N]
+
+manifest[channel=="Grn",OOBi:=1:.N]
+manifest[channel=="Red",OOBi:=1:.N]
+
+### indices of probes by probe type and channel channel
+i1g = manifest[channel=="Grn" ]
+i1r = manifest[channel=="Red" ]
+i2  = manifest[channel=="Both"]
+
+M = U = matrix(NA_real_   ,nrow=nrow(manifest),ncol=J) # methylated (M) and unmethylated (U) signal intensities
+ctrlG = ctrlR = matrix(NA_real_,nrow=nrow(controls),ncol=J) # signal intensities of control probes
+oobG = list(M=matrix(NA_real_,nrow=nrow(i1r),ncol=J),U=matrix(NA_real_,nrow=nrow(i1r),ncol=J))
+oobR = list(M=matrix(NA_real_,nrow=nrow(i1g),ncol=J),U=matrix(NA_real_,nrow=nrow(i1g),ncol=J))
+
+### the red channel
+M[i1r$index,]     = r[i1r$Mi,]
+U[i1r$index,]     = r[i1r$Ui,]
+U[i2$index ,]     = r[ i2$Ui,]
+ctrlR             = r[controls$i,]
+oobR$M[i1g$OOBi,] = r[i1g$Mi,]
+oobR$U[i1g$OOBi,] = r[i1g$Ui,]
+
+### green channel
+M[i1g$index,]     = g[i1g$Mi,]
+U[i1g$index,]     = g[i1g$Ui,]
+M[i2$index ,]     = g[ i2$Mi,]
+ctrlG             = g[controls$i,]
+oobG$M[i1r$OOBi,] = g[i1r$Mi,]
+oobG$U[i1r$OOBi,] = g[i1r$Ui,]
+
+M[M==0] = NA
+U[U==0] = NA
+
+ctrlG[ctrlG==0] = NA
+ctrlR[ctrlR==0] = NA
+
+meth$manifest = manifest
+meth$M = M
+meth$U = U
+meth$controls = controls
+meth$ctrlR = ctrlR
+meth$ctrlG = ctrlG
+meth$oobR = oobR
+meth$oobG = oobG
+meth$meta = data.table(sample_id="BB" %s+% 1:104)
+rm(M,U,oobG,oobR,controls,ctrlR,ctrlG,manifest,pheno)
+
+beta2 = meth %>% correct_dye_bias(.) %>% ewastools::detectionP(.) %>% ewastools::mask(.,0.05) %>% dont_normalize(.)
+
+beta = cbind(beta,beta2)
 
 # -------------------------------- 
 train_model = function(studies,cell_types,output){
@@ -196,38 +283,8 @@ train_model("gervin" ,c("GR","MO","B","CD4","CD8","NK"),"../data/gervin.txt")
 train_model("reinius",c("GR","MO","B","CD4","CD8","NK"),"../data/reinius.txt")
 train_model(c("gervin","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/gervin+reinius.txt")
 train_model("goede",c("GR","MO","B","CD4","CD8","NK","nRBC"),"../data/goede.txt")
-
-
-
-for(ct in cell_types){ 
-    cat(ct,'\n') 
- 
-    j = purified$cell_type == ct 
- 
-    tmp = apply(beta,1,function(x){ 
-        if(!any(is.na(x[j]))) 
-        {  
-            tmp = t.test(x[j],x[!j],var.equal=T) 
-            return(c(tmp$p.value,tmp$estimate[1]-tmp$estimate[2])) 
-        }else{ 
-            return(c(NA,NA)) 
-        } 
-    }) 
- 
-    i = which(p.adjust(tmp[1,])<0.05) 
-    o = order(tmp[2,i]) 
-    markers[[ct]] = c(i[head(o,50)],i[tail(o,50)]) 
-} 
-
-markers %<>% unlist %>% unique 
-
-coefs = sapply(cell_types,function(ct){ 
-    j = purified$cell_type == ct 
-    rowMeans(beta[markers,j],na.rm=TRUE) 
-}) 
-rownames(coefs) = rownames(beta)[markers] 
-colnames(coefs) = cell_types 
-
-write.table(coefs,file="../data/blood_coefs.txt",row.names=TRUE) 
-
-# --------------------------------
+train_model("bakulski",c("GR","MO","B","CD4","CD8","NK","nRBC"),"../data/bakulski.txt")
+train_model(c("bakulski","goede"),c("GR","MO","B","CD4","CD8","NK","nRBC"),"../data/bakulski+goede.txt")
+train_model(c("bakulski","gervin"),c("GR","MO","B","CD4","CD8","NK"),"../data/bakulski+gervin.txt")
+train_model(c("bakulski","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/bakulski+reinius.txt")
+train_model(c("goede","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/goede+reinius.txt")
