@@ -39,7 +39,7 @@ read_idats <- function(idat_files,quiet=FALSE){
     print(P)
 
     # create annotation
-    if(P %in% c(1051815,1052641))
+    if(P %in% c(1051815,1051943,1052641))
     {
         platform="EPIC"
         manifest = data.table::copy(ewastools:::manifest_epic)
