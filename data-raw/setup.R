@@ -238,7 +238,8 @@ beta2 = meth %>% correct_dye_bias(.) %>% ewastools::detectionP(.) %>% ewastools:
 
 beta = cbind(beta,beta2)
 
-# -------------------------------- 
+# --------------------------------
+
 train_model = function(studies,cell_types,output){
     
     train = purified[study %in% studies & cell_type %in% cell_types]
@@ -288,3 +289,57 @@ train_model(c("bakulski","goede"),c("GR","MO","B","CD4","CD8","NK","nRBC"),"../d
 train_model(c("bakulski","gervin"),c("GR","MO","B","CD4","CD8","NK"),"../data/bakulski+gervin.txt")
 train_model(c("bakulski","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/bakulski+reinius.txt")
 train_model(c("goede","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/goede+reinius.txt")
+
+# --------------------------------
+# EPIC reference dataset https://doi.org/10.1186/s13059-018-1448-7
+
+dir.create("GSE110554")
+
+### Select datasets by GSE accession 
+salas = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE110554&targ=gsm&form=text&view=brief"
+salas %<>% map(readLines) %>% unlist
+salas = split( salas, cumsum(salas %like% "^\\^SAMPLE = GSM") )
+
+names(salas) =  map(salas,1) %>% stri_match_first(regex="GSM\\d+")
+
+salas %<>% imap(function(s,acc){
+  s = strsplit(s,split=" = ",fixed=TRUE)  
+  data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
+})
+
+salas %<>% rbindlist
+
+salas = salas[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
+
+i = salas[variable == "!Sample_characteristics_ch1",which=TRUE]
+ch = salas$value[i] %>% stri_split(fixed=": ")
+salas$variable[i] = map_chr(ch,1)
+salas$value   [i] = map_chr(ch,2)
+rm(ch)
+
+# Find the URLs pointing to the two .idat files
+salas[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
+salas[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
+
+salas[,variable:=fct_recode(variable,B="bcell",CD4="cd4t",CD8="cd8t",NE="neu",MO="mono",NK="nk")]
+salas = dcast(salas,gsm ~ variable,fill=NA)
+salas = salas[,list(gsm,B,CD4,CD8,MO,NE,NK,purity,cell_type=`cell type`,red,grn)]
+
+salas[,cell_type:=fct_recode(cell_type,B="Bcell",CD4="CD4T",CD8="CD8T",NE="Neu",MO="Mono",NK="NK")]
+salas[,file:=paste0("GSE110554","/",gsm)]
+
+map2(salas$red, salas$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+map2(salas$grn, salas$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+
+beta = salas %$% file %>% read_idats %>% correct_dye_bias %>% ewastools::detectionP(.) %>% ewastools::mask(.,0.05) %>% dont_normalize
+
+purified = salas
+purified$study = "salas"
+purified[,j:=1:.N]
+
+# --------------------------------
+
+train_model("salas",c("B","CD4","CD8","MO","NE","NK"),"../data/salas.txt")
+
+
+
