@@ -5,7 +5,8 @@ library(stringi)
 library(car)
 library(ewastools)
 
-samples = c("GSE77797","GSE99863","GSE42861")
+
+samples = c("GSE77797","GSE99863","GSE42861","GSE85042")
 samples = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" %s+% samples %s+% "&targ=gsm&form=text&view=brief"
 samples %<>% map(readLines) %>% unlist
 samples %<>% split(.,cumsum(. %like% "^\\^SAMPLE = GSM") )
@@ -60,7 +61,7 @@ gse77797$B   %<>% as.numeric
 meth = gse77797 %$% gsm %>% read_idats %>% correct_dye_bias %>% dont_normalize
 
 cell_types = c("B","CD4","CD8","GR","MO","NK")
-training = c("reinius","blood_coefs","gervin","gervin+reinius","goede","bakulski","bakulski+goede","bakulski+gervin","bakulski+reinius","weird","goede+reinius")
+training = c("reinius","gervin","gervin+reinius","goede","bakulski","bakulski+goede","bakulski+gervin","bakulski+reinius","goede+reinius")
 
 R1 = sapply(training,function(ref){
 
@@ -132,15 +133,38 @@ R4 = sapply(training,function(ref){
 	}))
 })
 
-#                      B   CD4   CD8    GR    MO    NK        R2        R3        R4
-# reinius          0.995 0.936 0.986 0.998 0.981 0.830 0.2823696 0.1741940 0.2587702
-# blood_coefs      0.997 0.886 0.977 0.998 0.984 0.947 0.2833378 0.1655963 0.2369633
-# gervin           0.996 0.751 0.854 0.997 0.983 0.942 0.2762569 0.1582688 0.2387656
-# gervin+reinius   0.996 0.796 0.883 0.998 0.982 0.945 0.2864695 0.1670512 0.2339372
-# goede            0.994 0.845 0.972 0.998 0.980 0.933 0.2716647 0.2041458 0.4210794
-# bakulski         0.997 0.799 0.926 0.998 0.983 0.596 0.2904914 0.2269359 0.4206478
-# bakulski+goede   0.996 0.855 0.975 0.998 0.980 0.925 0.2813881 0.2409419 0.4231429 0.4529437 (+nRBC)
-# bakulski+gervin  0.997 0.675 0.927 0.998 0.987 0.936 0.2971072 0.1653110 0.2376338
-# bakulski+reinius 0.996 0.899 0.976 0.998 0.977 0.770 0.2865207 0.1719765 0.2305330
-# weird            0.997 0.771 0.948 0.998 0.990 0.973 0.2805447 0.1718598 0.2575877
-# goede+reinius    0.996 0.875 0.979 0.998 0.982 0.946 0.2828753 0.1651178 0.2294623 
+
+# ---------------------------------------------------------------------------
+# 71 cord blood samples (GSE85042)
+gse85042 = samples$GSE85042[,list(gsm,red,grn)]
+gse85042[,meth:=runif(.N)]
+
+meth = gse85042 %$% gsm %>% read_idats %>% correct_dye_bias %>% dont_normalize
+
+R5 = sapply(training,function(ref){
+
+	cat(ref)
+	LC = estimateLC(meth,ref=ref)
+	LC[,meth:=runif(.N)]
+	m = lm(meth ~ B+CD4+CD8+GR+MO+NK,data=LC)
+	mm = model.matrix(m)
+
+	mean(apply(na.omit(meth),1,function(meth_i){
+		m[1:8] = lm.fit(mm,meth_i)
+		summary(m)$adj.r.squared
+	}))
+})
+
+
+
+
+#                      B   CD4   CD8    GR    MO    NK        R2        R3        R5        R4
+# reinius          0.995 0.936 0.986 0.998 0.981 0.830 0.2823696 0.1741940 0.1339679 0.2587702
+# gervin           0.996 0.751 0.854 0.997 0.983 0.942 0.2762569 0.1582688 0.1108876 0.2387656
+# gervin+reinius   0.996 0.796 0.883 0.998 0.982 0.945 0.2864695 0.1670512 0.1186851 0.2339372
+# goede            0.994 0.845 0.972 0.998 0.980 0.933 0.2716647 0.2041458 0.1868533 0.4210794
+# bakulski         0.997 0.799 0.926 0.998 0.983 0.596 0.2904914 0.2269359 0.2058096 0.4206478
+# bakulski+goede   0.996 0.855 0.975 0.998 0.980 0.925 0.2813881 0.2409419 0.2025652 0.4231429 0.4529437 (+nRBC)
+# bakulski+gervin  0.997 0.675 0.927 0.998 0.987 0.936 0.2971072 0.1653110 0.1563384 0.2376338
+# bakulski+reinius 0.996 0.899 0.976 0.998 0.977 0.770 0.2865207 0.1719765 0.1682092 0.2305330
+# goede+reinius    0.996 0.875 0.979 0.998 0.982 0.946 0.2828753 0.1651178 0.1298767 0.2294623 
