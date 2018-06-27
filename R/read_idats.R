@@ -35,12 +35,11 @@ read_idats <- function(idat_files,quiet=FALSE){
     if(!all(ex)) stop("Some .idat files are missing")
 
     # read itensities
-    idat_order = illuminaio::readIDAT(paste0(idat_files[1],"_Grn",suffix[1]))$MidBlock
-    P = length(idat_order) # number of features
+    P = illuminaio::readIDAT(paste0(idat_files[1],"_Grn",suffix[1]))$nSNPsRead
     print(P)
 
     # create annotation
-    if(P==1052641)
+    if(P %in% c(1051815,1051943,1052641))
     {
         platform="EPIC"
         manifest = data.table::copy(ewastools:::manifest_epic)
@@ -58,105 +57,92 @@ read_idats <- function(idat_files,quiet=FALSE){
         platform="UNK"
     }
 
-    manifest[channel!="Both",Ui:=match(addressU,idat_order)]
-    manifest[channel!="Both",Mi:=match(addressM,idat_order)]
-    manifest[channel=="Both",Ui:=match(addressU,idat_order)]
-    manifest[channel=="Both",Mi:=Ui]
-    
-    controls[,i:=match(address,idat_order)]
-
+    setkeyv(manifest,c("chr","mapinfo"))
     manifest[,index:=1L:.N]
     controls[,index:=1L:.N]
 
     manifest[channel=="Grn",OOBi:=1:.N]
     manifest[channel=="Red",OOBi:=1:.N]
 
-    ### indices of probes by probe type and channel channel
-    i1g = manifest[channel=="Grn" ]
-    i1r = manifest[channel=="Red" ]
-    i2  = manifest[channel=="Both"]
-
-    sample_ids = strsplit(x=idat_files,split="/")
-    sample_ids = sapply(sample_ids,tail,n=1L)
-
     M = U = matrix(NA_real_   ,nrow=nrow(manifest),ncol=J) # methylated (M) and unmethylated (U) signal intensities
     S = T = matrix(NA_integer_,nrow=nrow(manifest),ncol=J) # standard deviations
     N = V = matrix(NA_integer_,nrow=nrow(manifest),ncol=J) # number of beads underlying methylated (N) and unmethylated (V) signal intensities
     ctrlG = ctrlR = matrix(NA_real_,nrow=nrow(controls),ncol=J) # signal intensities of control probes
     ctrlN = matrix(NA_integer_,nrow=nrow(controls),ncol=J)
-    oobG = list(M=matrix(NA_real_,nrow=nrow(i1r),ncol=J),U=matrix(NA_real_,nrow=nrow(i1r),ncol=J))
-    oobR = list(M=matrix(NA_real_,nrow=nrow(i1g),ncol=J),U=matrix(NA_real_,nrow=nrow(i1g),ncol=J))
+    oobG = list(M=matrix(NA_real_,nrow=manifest[channel=="Red",.N],ncol=J),U=matrix(NA_real_,nrow=manifest[channel=="Red",.N],ncol=J))
+    oobR = list(M=matrix(NA_real_,nrow=manifest[channel=="Grn",.N],ncol=J),U=matrix(NA_real_,nrow=manifest[channel=="Grn",.N],ncol=J))
 
 
-    if(!quiet) pb <- txtProgressBar(min=0,max=2*J,style=3)
+    if(!quiet) pb <- txtProgressBar(min=0,max=J,style=3)
 
     barcodes = rep(NA_character_,J)
     dates    = rep(NA_character_,J)
 
-    ### read the intensities of the green channel
     for(j in 1:J){
-        tmp = illuminaio::readIDAT(paste0(idat_files[j],"_Grn",suffix[j]))
-        if(!identical(tmp$MidBlock,idat_order)) stop("Different versions of .idat files")
-        
-        barcodes[j] = tmp$Barcode
+
+        red = illuminaio::readIDAT(paste0(idat_files[j],"_Red",suffix[j]))
+        grn = illuminaio::readIDAT(paste0(idat_files[j],"_Grn",suffix[j]))
+
+        idat_order = red$MidBlock
+        if(!identical(idat_order,grn$MidBlock)) stop("Red and green .idat files do not agree!")
+
+        barcodes[j] = red$Barcode
 
         # This information is sometimes not recorded
-        if(nrow(tmp$RunInfo)>1) dates[j] = tmp$RunInfo[2,1]
+        if(nrow(red$RunInfo)>1) dates[j] = red$RunInfo[2,1]
 
-        tmp = tmp$Quants
-        means  = tmp[,"Mean"]
-        sds    = tmp[,"SD"]
-        nbeads = tmp[,"NBeads"]
+        manifest[,Ui:=match(addressU,idat_order)]
+        manifest[,Mi:=match(addressM,idat_order)]
+        controls[, i:=match(address ,idat_order)]
+
+        setindexv(manifest,"channel")
+        manifest["Both",Mi:=Ui,on="channel"]
+
+        ### Type I Red probes
+        i = manifest["Red",on="channel"]
+
+        U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
+        T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
+        V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
+    
+        M[ i$index,j ] = red$Quants[ i$Mi,1 ]
+        S[ i$index,j ] = red$Quants[ i$Mi,2 ]
+        N[ i$index,j ] = red$Quants[ i$Mi,3 ]
+
+        oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
+        oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
+
+        ### Type I Green probes
+        i = manifest["Grn",on="channel"]
+
+        U[ i$index,j ] = grn$Quants[ i$Ui,1 ]
+        T[ i$index,j ] = grn$Quants[ i$Ui,2 ]
+        V[ i$index,j ] = grn$Quants[ i$Ui,3 ]
+
+        M[ i$index,j ] = grn$Quants[ i$Mi,1 ]
+        S[ i$index,j ] = grn$Quants[ i$Mi,2 ]
+        N[ i$index,j ] = grn$Quants[ i$Mi,3 ]
+
+        oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
+        oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
         
-        M[i1g$index,j] = means [i1g$Mi]
-        S[i1g$index,j] = sds   [i1g$Mi]
-        N[i1g$index,j] = nbeads[i1g$Mi]
-        
-        U[i1g$index,j] = means [i1g$Ui]
-        T[i1g$index,j] = sds   [i1g$Ui]
-        V[i1g$index,j] = nbeads[i1g$Ui]
+        ### Type II probes
+        i = manifest["Both",on="channel"]
 
-        M[i2$index ,j] = means [ i2$Mi]
-        S[i2$index ,j] = sds   [ i2$Mi]
-        N[i2$index ,j] = nbeads[ i2$Mi]
+        U[ i$index,j ] = red$Quants[ i$Ui,1 ]
+        T[ i$index,j ] = red$Quants[ i$Ui,2 ]
+        V[ i$index,j ] = red$Quants[ i$Ui,3 ]
 
-        ctrlG[,j] = means [controls$i]
-        ctrlN[,j] = nbeads[controls$i]
+        M[ i$index,j ] = grn$Quants[ i$Mi,1 ]
+        S[ i$index,j ] = grn$Quants[ i$Mi,2 ]
+        N[ i$index,j ] = grn$Quants[ i$Mi,3 ]
 
-        oobG$M[i1r$OOBi,j] = means[i1r$Mi]
-        oobG$U[i1r$OOBi,j] = means[i1r$Ui]
+        ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
+        ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
+        ctrlN[ controls$index,j ] = red$Quants[ controls$i,2 ]
 
         if(!quiet) setTxtProgressBar(pb, j)
-    }
 
-    ### the red channel
-    for(j in 1:J){
-        tmp = illuminaio::readIDAT(paste0(idat_files[j],"_Red",suffix[j]))
-        if(!identical(tmp$MidBlock,idat_order)) stop("Different versions of .idat files")
-        
-        tmp = tmp$Quants
-        means  = tmp[,"Mean"]
-        sds    = tmp[,"SD"]
-        nbeads = tmp[,"NBeads"]
-
-        M[i1r$index,j] = means [i1r$Mi]
-        S[i1r$index,j] = sds   [i1r$Mi]
-        N[i1r$index,j] = nbeads[i1r$Mi]
-
-        U[i1r$index,j] = means [i1r$Ui]
-        T[i1r$index,j] = sds   [i1r$Ui]
-        V[i1r$index,j] = nbeads[i1r$Ui]
-
-        U[i2$index ,j] = means [ i2$Ui]
-        T[i2$index ,j] = sds   [ i2$Ui]
-        V[i2$index ,j] = nbeads[ i2$Ui]
-
-        ctrlR[,j]    = means[controls$i]
-
-        oobR$M[i1g$OOBi,j] = means[i1g$Mi]
-        oobR$U[i1g$OOBi,j] = means[i1g$Ui]
-
-        if(!quiet) setTxtProgressBar(pb, j+J)
     }
 
     if(!quiet) close(pb)
@@ -166,6 +152,9 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     ctrlG[ctrlN==0] = NA
     ctrlR[ctrlN==0] = NA
+
+    sample_ids = strsplit(x=idat_files,split="/")
+    sample_ids = sapply(sample_ids,tail,n=1L)
 
     meta = data.table(
          sample_id = sample_ids

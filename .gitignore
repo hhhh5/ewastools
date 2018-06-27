@@ -3,7 +3,9 @@ data-raw/MethylationEPIC_v-1-0_B4\.csv
 
 data-raw/reinius
 data-raw/GSE68456
-data-raw/GSE61496
+data-raw/GSE77797
+data-raw/GSE110554
+data-raw/gervin
 
 data-raw/GSE50192\.csv
 data-raw/GSE50192_GPL13534_Matrix_signal_intensities_raw_data\.txt\.gz
@@ -14,3 +16,4 @@ data-raw/FlowSorted\.CordBlood\.450k\.rda
 data-raw/GEOmetadb\.sqlite
 
 data-raw/tmp\.rds
+data-raw/bakulski/FlowSorted\.CordBlood\.450k\.rda

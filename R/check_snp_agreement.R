@@ -37,13 +37,13 @@ check_snp_agreement = function(genotypes,weights,donor_ids,sample_ids){
 
 	# first drop the duplicate entries and the diagonal
 	d[upper.tri(d,diag=TRUE)] = NA_real_
-	conflicts$similarity = as.numeric(d)
+	conflicts$agreement = as.numeric(d)
 	rm(tmp,d)
-	conflicts = conflicts[!is.na(similarity)]
+	conflicts = conflicts[!is.na(agreement)]
 	
 	# drop cases of no interest
-	conflicts = conflicts[!(donor1!=donor2 & similarity<0.90)]
-	conflicts = conflicts[!(donor1==donor2 & similarity>0.90)]
+	conflicts = conflicts[!(donor1!=donor2 & agreement<0.90)]
+	conflicts = conflicts[!(donor1==donor2 & agreement>0.90)]
 
 	if(nrow(conflicts)==0) return(NULL)
 
@@ -90,11 +90,11 @@ agreement_ = function(genotypes,weights,donor_ids,sample_ids,...){
 
 	# first drop the duplicate entries and the diagonal
 	d[upper.tri(d,diag=TRUE)] = NA_real_
-	conflicts$similarity = as.numeric(d)
+	conflicts$agreement = as.numeric(d)
 	rm(tmp,d)
-	conflicts = conflicts[!is.na(similarity)]
+	conflicts = conflicts[!is.na(agreement)]
 
-	boxplot(similarity ~ I(donor1==donor2),data=conflicts,horizontal=TRUE,ylim=c(0,1),xlab='Agreement',...)
+	boxplot(agreement ~ I(donor1==donor2),data=conflicts,horizontal=TRUE,ylim=c(0,1),xlab='Agreement',...)
 	
 	return(invisible(NULL))
 }

@@ -245,7 +245,7 @@ normalize <- function(raw,tissue=''){
 #'
 dont_normalize <- function(raw){
 
-    if(!all(c('manifest','M','U','N','V','meta')%in%names(raw))) stop('Invalid argument')
+    if(!all(c('manifest','M','U','meta')%in%names(raw))) stop('Invalid argument')
 
     with(raw,{
 
