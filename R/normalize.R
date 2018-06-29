@@ -93,23 +93,16 @@ correct_dye_bias2 = function (raw)
     })
 
     for(j in 1:J){
-        Ci[,j] = exp(mm[1,j]) * Ci[,j]^mm[2,j]
-        Gi[,j] = exp(mm[3,j]) * Gi[,j]^mm[4,j]
-
-        (log(Ci[,j]) + log(Ti[,j])) %>% divide_by(2) %>% mean(na.rm=T) -> f1
-        log(Ai[,j]) %>% mean(na.rm=T) -> f2
-        (f2/f1) %>% exp -> f
-
         i = i2$index
         raw$M[i, j] = exp(mm[3,j]) * raw$M[i, j]^mm[4,j]
 
         i = i1g$index
-        raw$M[i, j] = f * exp(mm[1,j]) * raw$M[i, j]^mm[2,j]
-        raw$U[i, j] = f * exp(mm[1,j]) * raw$U[i, j]^mm[2,j]
+        raw$M[i, j] = exp(mm[1,j]) * raw$M[i, j]^mm[2,j]
+        raw$U[i, j] = exp(mm[1,j]) * raw$U[i, j]^mm[2,j]
         
         i = i1r$index
-        raw$M[i, j] = f * raw$M[i, j]
-        raw$U[i, j] = f * raw$U[i, j]
+        raw$M[i, j] = raw$M[i, j]
+        raw$U[i, j] = raw$U[i, j]
     }
 
     return(raw)
