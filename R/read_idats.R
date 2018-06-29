@@ -139,7 +139,7 @@ read_idats <- function(idat_files,quiet=FALSE){
 
         ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
         ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
-        ctrlN[ controls$index,j ] = red$Quants[ controls$i,2 ]
+        ctrlN[ controls$index,j ] = red$Quants[ controls$i,3 ]
 
         if(!quiet) setTxtProgressBar(pb, j)
 
