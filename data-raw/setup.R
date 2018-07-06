@@ -23,6 +23,7 @@ manifest_epic = manifest_epic[,list(
     ,next_base=Next_Base
     ,chr=CHR
     ,mapinfo=MAPINFO
+    ,strand=factor(Strand)
 )]
 
 manifest_epic[                          ,probe_type:="cg"]
@@ -50,6 +51,7 @@ manifest_450K = manifest_450K[,list(
     ,next_base=Next_Base
     ,chr=CHR
     ,mapinfo=MAPINFO
+    ,strand=factor(Strand)
 )]
 
 manifest_450K[                          ,probe_type:="cg"]

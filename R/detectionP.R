@@ -116,7 +116,7 @@ detectionP.minfi <- function(rgSet) {
         detP[TypeI.Green$Name, i] <- pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2),lower.tail=FALSE)
         ## Type II
         intensity <- r[TypeII$AddressA, i] + g[TypeII$AddressA, i]
-        detP[TypeII$Name, i] <- pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2),log.p=TRU,lower.tail=FALSE)
+        detP[TypeII$Name, i] <- pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2),lower.tail=FALSE)
     }
     
     detP
