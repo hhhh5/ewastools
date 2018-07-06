@@ -150,6 +150,9 @@ read_idats <- function(idat_files,quiet=FALSE){
     M[N==0] = NA
     U[V==0] = NA
 
+    S[N==0 | N==1] = NA
+    T[V==0 | V==1] = NA
+
     ctrlG[ctrlN==0] = NA
     ctrlR[ctrlN==0] = NA
 
