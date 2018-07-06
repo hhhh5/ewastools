@@ -74,15 +74,15 @@ correct_dye_bias2 = function (raw)
 
     mm = sapply(1:J,function(j){
     
-        x = log(Gi[,j])
-        y = log(Ai[,j])
+        x = log(Ai[,j])
+        y = log(Gi[,j])
         keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
         x = x[keep]
         y = y[keep]
         m1 = mblm::mblm(y ~ x, repeated = FALSE)
     
-        x = log(Ci[,j])
-        y = log(Ti[,j])
+        x = log(Ti[,j])
+        y = log(Ci[,j])
         keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
         x = x[keep]
         y = y[keep]
@@ -94,15 +94,11 @@ correct_dye_bias2 = function (raw)
 
     for(j in 1:J){
         i = i2$index
-        raw$M[i, j] = exp(mm[3,j]) * raw$M[i, j]^mm[4,j]
-
-        i = i1g$index
-        raw$M[i, j] = exp(mm[1,j]) * raw$M[i, j]^mm[2,j]
         raw$U[i, j] = exp(mm[1,j]) * raw$U[i, j]^mm[2,j]
-        
+
         i = i1r$index
-        raw$M[i, j] = raw$M[i, j]
-        raw$U[i, j] = raw$U[i, j]
+        raw$U[i, j] = exp(mm[3,j]) * raw$U[i, j]^mm[4,j]
+        raw$M[i, j] = exp(mm[3,j]) * raw$M[i, j]^mm[4,j]
     }
 
     return(raw)
