@@ -27,10 +27,12 @@ detectionP.minfi(rgSet)
 \value{
 For \code{detectionP}, a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
 
+For \code{detectionP.minfi} a matrix of detection p-values.
+
 For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
 }
 \description{
-Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or out-of-band intensities. \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold.
+Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or out-of-band intensities. \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold. \code{detectionP.minfi} provides an implementation for \code{RGChannelSet} objects as used in the \code{minfi} package.
 }
 \author{
 Jonathan A. Heiss
