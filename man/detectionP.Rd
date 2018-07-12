@@ -3,7 +3,7 @@
 \name{detectionP}
 \alias{detectionP}
 \alias{mask}
-\alias{detP_threshold}
+\alias{eval_detP_cutoffs}
 \alias{detectionP.minfi}
 \title{Detection p-values}
 \usage{
@@ -11,7 +11,7 @@ detectionP(raw)
 
 mask(raw, threshold)
 
-detP_threshold(raw, males = NULL, females = NULL)
+eval_detP_cutoffs(raw, males = NULL, females = NULL)
 
 detectionP.minfi(rgSet)
 }

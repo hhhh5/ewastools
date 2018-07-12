@@ -64,7 +64,7 @@ mask <- function(raw,threshold){
 #' @rdname detectionP
 #' @export
 #'
-detP_threshold = function(raw,males=NULL,females=NULL){
+eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
 
     if(is.null(males) | is.null(females)) stop('Please specify the column indices for male and female subjects')
     if(!'detP'%in%names(raw)) stop('detP component missing')
@@ -72,14 +72,15 @@ detP_threshold = function(raw,males=NULL,females=NULL){
     chrY = raw$manifest[chr=='Y',index]
     chrY = raw$detP[chrY,]
 
-    thresholds = -(0:30)
+    cutoffs = c(1,0.5,0.1,0.05,0.01,0.001,0.0001)
 
-    tmp = sapply(thresholds,function(t){ colSums(chrY>t,na.rm=TRUE) })
+    tmp = sapply(cutoffs,function(t){ colSums(chrY>t,na.rm=TRUE) })
     males   = apply(tmp[males  ,],2,quantile,prob=0.9)
     females = apply(tmp[females,],2,quantile,prob=0.1)
 
-    plot  (-thresholds,females,ylim=c(0,nrow(chrY)),ylab='Chr Y # undetected ',xlab='-log10 p threshold')
-    points(-thresholds,males,pch=3)
+    plot  (-log10(cutoffs),females,ylim=c(0,nrow(chrY)),ylab='Chr Y # undetected ',xlab='p-value cutoff',xaxt="n")
+    points(-log10(cutoffs),males,pch=3)
+    axis(1,at=-log10(cutoffs),labels=cutoffs)
     legend('topleft',pch=c(3,1),legend=c('Male 90% Quantile','Female 10% Quantile'))
     invisible(NULL)
 }
