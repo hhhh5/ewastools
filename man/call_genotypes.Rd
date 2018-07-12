@@ -9,9 +9,9 @@
 \usage{
 call_genotypes(snpmatrix, learn = TRUE, maxiter = 50)
 
-mxm_(mxm)
+mxm_(genotypes)
 
-snp_outliers(gt)
+snp_outliers(genotypes)
 
 eBeta(x, w)
 }
@@ -20,7 +20,7 @@ eBeta(x, w)
 
 \item{maxiter}{Maximal number of iterations of the Expectation-Maximization algorithm learning the mixture model}
 
-\item{mxm}{Mixture model, output of \code{call_genotypes}}
+\item{genotypes}{Output of \code{call_genotypes}}
 }
 \value{
 For \code{call_genotypes}, a list containing
@@ -28,6 +28,8 @@ For \code{call_genotypes}, a list containing
 \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
 \item{outliers}{A-posteriori probability of SNP being an outlier}
 \item{gamma}{A-posteriori probabilities for each of the three genotypes}
+
+For \code{snp_outliers}, a metric assessing the outlierness of the SNP beta-values. High values may indicate either contaminated or failed samples.
 
 For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with the density function of the mixture model overlaid.
 }

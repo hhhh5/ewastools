@@ -8,7 +8,7 @@
 #' @rdname call_genotypes
 #'
 #' @param snpmatrix Matrix of beta-values for SNP probes. Provide SNPs probes as rows and samples as columns. 
-#' @param mxm Mixture model, output of \code{call_genotypes}
+#' @param genotypes Output of \code{call_genotypes}
 #' @param maxiter Maximal number of iterations of the Expectation-Maximization algorithm learning the mixture model
 #' 
 #' @return  For \code{call_genotypes}, a list containing
@@ -16,6 +16,7 @@
 #' \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
 #' \item{outliers}{A-posteriori probability of SNP being an outlier}
 #' \item{gamma}{A-posteriori probabilities for each of the three genotypes}
+#' @return For \code{snp_outliers}, a metric assessing the outlierness of the SNP beta-values. High values may indicate either contaminated or failed samples.
 #' @return For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with the density function of the mixture model overlaid.
 #' @export
 #'
@@ -151,9 +152,9 @@ call_genotypes <- function(snpmatrix,learn=TRUE,maxiter=50){
 #' @rdname call_genotypes
 #' @export
 #'
-mxm_ = function(mxm){
+mxm_ = function(genotypes){
 	
-	with(mxm,{
+	with(genotypes,{
 
 		hist(snps,breaks=200,freq=FALSE,xlab='β-value',main=NA)
 		curve(  
@@ -171,11 +172,11 @@ mxm_ = function(mxm){
 #' @rdname call_genotypes
 #' @export
 #'
-snp_outliers = function(gt){
+snp_outliers = function(genotypes){
 
- 	if(!"outliers"%in%names(gt)) stop('Invalid argument')
+ 	if(!"outliers"%in%names(genotypes)) stop('Invalid argument')
 
- 	log_odds = gt$outliers / (1-gt$outliers)
+ 	log_odds = genotypes$outliers / (1-genotypes$outliers)
  	log_odds = colMeans(log2(log_odds),na.rm=TRUE)
 }
 
