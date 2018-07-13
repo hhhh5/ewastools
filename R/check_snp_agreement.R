@@ -146,6 +146,6 @@ enumerate_sample_donors = function(genotypes){
 	e[c(TRUE,FALSE)] = samesame$sample1
 	e[c(FALSE,TRUE)] = samesame$sample2
 
-	g = make_graph(edges=e,n=J,directed=FALSE)
+	g = igraph::make_graph(edges=e,n=J,directed=FALSE)
 	return(igraph::components(g,mode="strong")$membership)
 }
