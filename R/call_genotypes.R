@@ -178,6 +178,7 @@ snp_outliers = function(genotypes){
 
  	log_odds = genotypes$outliers / (1-genotypes$outliers)
  	log_odds = colMeans(log2(log_odds),na.rm=TRUE)
+ 	log_odds
 }
 
 #' @rdname call_genotypes
