@@ -5,7 +5,7 @@ NULL
 #' 
 #' @export
 #' 
-#' @param idat_files Character vector of relative or absolute filepaths, but without the suffixes '_Grn.idat' and '_Red.idat'
+#' @param idat_files Character vector of relative or absolute filepaths, but without the suffixes '_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".
 #' @param quiet If TRUE, a progress bar is shown.
 #' 
 #' @return A list containing
@@ -168,8 +168,8 @@ read_idats <- function(idat_files,quiet=FALSE){
     raw = list(
          platform=platform
         ,manifest=manifest
-        ,M=M,S=S,U=U
-        ,N=N,T=T,V=V
+        ,U=U,T=T,V=V
+        ,M=M,S=S,N=N
         ,controls=controls
         ,ctrlG=ctrlG,ctrlR=ctrlR,ctrlN=ctrlN
         ,oobG=oobG,oobR=oobR
@@ -191,8 +191,14 @@ read_idats <- function(idat_files,quiet=FALSE){
 #'
 drop_samples <- function(raw,j=NULL){
 
-    raw$M = raw$M[,-j,drop=FALSE]; raw$N = raw$N[,-j,drop=FALSE]
-    raw$U = raw$U[,-j,drop=FALSE]; raw$V = raw$V[,-j,drop=FALSE]
+    raw$U = raw$U[,-j,drop=FALSE]
+    raw$M = raw$M[,-j,drop=FALSE]
+
+    raw$T = raw$T[,-j,drop=FALSE]
+    raw$S = raw$S[,-j,drop=FALSE]
+
+    raw$V = raw$V[,-j,drop=FALSE]
+    raw$N = raw$N[,-j,drop=FALSE]
 
     raw$ctrlG = raw$ctrlG[,-j,drop=FALSE]
     raw$ctrlR = raw$ctrlR[,-j,drop=FALSE]
