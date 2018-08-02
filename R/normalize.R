@@ -107,7 +107,7 @@ correct_dye_bias2 = function (raw)
 #' @rdname Preprocessing
 #' @export
 #'
-normalize <- function(raw,tissue=''){
+normalize <- function(raw,tissue='',quiet=FALSE){
 
     if(!all(c('manifest','M','U','N','V','controls','ctrlG','ctrlR','meta')%in%names(raw))) stop('Invalid argument')
 
@@ -152,8 +152,8 @@ normalize <- function(raw,tissue=''){
             rur = log(apply(U[hk_1r$index,],1,median,na.rm=TRUE))
         }
 
-        cat('[Correcting intensity-dependent bias]\n')
-        pb <- txtProgressBar(min=0,max=J,style=3)
+        if(!quiet) cat('[Correcting intensity-dependent bias]\n')
+        if(!quiet) pb <- txtProgressBar(min=0,max=J,style=3)
 
         ### correct intensity-dependent bias
         for(j in 1:J){
@@ -184,16 +184,18 @@ normalize <- function(raw,tissue=''){
             x = M[i1r$index,j]; x = x * exp(-predict(f,log(x))); M[i1r$index,j] <- ifelse(is.na(x),M[i1r$index,j],x)
             x = U[i1r$index,j]; x = x * exp(-predict(f,log(x))); U[i1r$index,j] <- ifelse(is.na(x),U[i1r$index,j],x)
             x = U[ i2$index,j]; x = x * exp(-predict(f,log(x))); U[ i2$index,j] <- ifelse(is.na(x),U[ i2$index,j],x)
-            setTxtProgressBar(pb, j)
+            
+            if(!quiet) setTxtProgressBar(pb, j)
         }
-        close(pb)
+
+        if(!quiet) close(pb)
 
         meth = log(M/U)
         rm(M,U,rmg,rmr,rug,rur)
 
         ### correct methylation-dependent bias
-        cat('[Correcting methylation-dependent bias]\n')
-        pb <- txtProgressBar(min=0,max=J,style=3)
+        if(!quiet) cat('[Correcting methylation-dependent bias]\n')
+        if(!quiet) pb <- txtProgressBar(min=0,max=J,style=3)
 
         if(tissue=='blood'){
             rb = hk_2$refU
@@ -213,10 +215,10 @@ normalize <- function(raw,tissue=''){
             x = meth[i2$index,j]
             x = x - predict(f,x)
             meth[i2$index,j] <- ifelse(is.na(x),meth[i2$index,j],x)
-            setTxtProgressBar(pb,j)
+            if(!quiet) setTxtProgressBar(pb,j)
         }
 
-        close(pb)
+        if(!quiet) close(pb)
         rm(rb)
    
         meth = exp(meth)
