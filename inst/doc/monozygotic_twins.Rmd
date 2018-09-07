@@ -35,7 +35,7 @@ library(purrr)
 
 *This vignette demonstrates the use of the ewastools package on a public available 450K dataset, with a focus on the implemented quality checks for identifying failed assays, mislabeled or contaminated samples. ewastools provides also functions for preprocessing (dye bias correction, normalization) and estimation of leukocyte composition.*
 
-Download and parse the metadata for the GSE61496 dataset. This dataset is comprised of 150 pairs of monozygotic twins (i.e. 300 samples + 10 technical replicates).
+Download and parse the metadata for the GSE61496 dataset. This dataset is comprised of 150 pairs of monozygotic twins (i.e. 300 samples + 10 technical replicates). We'll restrict it to the first 20 samples.
 
 ```{r}
 samples = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE61496&targ=gsm&form=text&view=brief"
@@ -114,7 +114,7 @@ stripchart(ctrls$`Bisulfite Conversion II`,method="jitter",pch=4,xlab='Bisulfite
 abline(v=1,col=2,lty=3)
 ```
 
-A logical vector of passed/failed is returned by `sample_failure()`. In this case, 26 samples were flagged. These samples warrant closer inspection (we'll skip this).
+A logical vector of passed/failed is returned by `sample_failure()`. In this case all 20 samples passed.
 ```{r}
 sample_failure(ctrls) %>% table
 ```
