@@ -50,21 +50,16 @@ check_snp_agreement = function(genotypes,donor_ids,sample_ids){
 	conflicts = conflicts[!(donor1==donor2 & agreement>0.90)]
 
 	if(nrow(conflicts)==0) return(NULL)
-
-	### find the components of the graph (consider list of conflicts as edges in a graph)
 	
-	# union/find data structure
-	sets = unique(c(conflicts$sample1,conflicts$sample2))
-	sets = hash::hash(keys=sets,values=sets)
+	### find the weakly connected components of the graph (consider conflicts as edges in a graph)
+	e = rep(NA,times=2*nrow(conflicts))
+	e[c(TRUE,FALSE)] = conflicts$sample1
+	e[c(FALSE,TRUE)] = conflicts$sample2
 
-	# union
-	for(i in 1:nrow(conflicts)){ sets[[ conflicts[i]$sample1 ]] = sets [[ conflicts[i]$sample2 ]] }
-	# find roots
-	sets = sapply(hash::keys(sets),function(key){ while(key!=sets[[key]]){ key = sets[[key]] }; return(key) })
-	sets = hash::hash(keys=names(sets),values=sets)
-	conflicts[,group:=hash::values(sets,keys=sample1)]
-	rm(sets)
+	g = igraph::make_graph(edges=e,directed=FALSE)
+	g = igraph::components(g,mode="weak")$membership
 
+	conflicts$group = g[conflicts$sample1]
 	conflicts = split(conflicts,by='group',keep.by=FALSE)
 	return(conflicts)
 }

@@ -12,7 +12,7 @@ correct_dye_bias(raw)
 
 correct_dye_bias2(raw)
 
-normalize(raw, tissue = "")
+normalize(raw, tissue = "", quiet = FALSE)
 
 dont_normalize(raw)
 }
