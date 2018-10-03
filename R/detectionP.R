@@ -48,8 +48,8 @@ detectionP <- function(raw){
             sR = summits(beta[iR])
             sG = summits(beta[iG])
 
-            bkgU = (beta[iR]-sR[2]) %>% abs %>% order %>% head(1000)
-            bkgM = (beta[iR]-sR[1]) %>% abs %>% order %>% head(1000)
+            bkgU = head(order(abs(beta[iR]-sR[2])),n=1000)
+            bkgM = head(order(abs(beta[iR]-sR[1])),n=1000)
 
             bkgU = iR[bkgU]
             bkgM = iR[bkgM]
@@ -60,8 +60,8 @@ detectionP <- function(raw){
             sdUR = mad(U[bkgU,j],na.rm=TRUE)
             sdMR = mad(M[bkgM,j],na.rm=TRUE)
 
-            bkgU = (beta[iG]-sG[2]) %>% abs %>% order %>% head(1000)
-            bkgM = (beta[iG]-sG[1]) %>% abs %>% order %>% head(1000)
+            bkgU = head(order(abs(beta[iG]-sG[2])),n=1000)
+            bkgM = head(order(abs(beta[iG]-sG[1])),n=1000)
 
             bkgU = iG[bkgU]
             bkgM = iG[bkgM]
@@ -161,38 +161,60 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
 #' @rdname detectionP
 #' @export
 #'
-detectionP.minfi <- function(rgSet) {
+detectionP.minfi <- function(rgSet){
     minfi:::.isRGOrStop(rgSet)
-    locusNames <- getManifestInfo(rgSet, "locusNames")
-    detP <- matrix(NA_real_, ncol = ncol(rgSet), nrow = length(locusNames),
-                   dimnames = list(locusNames, colnames(rgSet)))
 
-    r <- minfi::getRed(rgSet)
-    g <- minfi::getGreen(rgSet)
+    locusNames = getManifestInfo(rgSet, "locusNames")
+    detP = matrix(NA_real_,ncol=ncol(rgSet),nrow=length(locusNames),dimnames = list(locusNames, colnames(rgSet)))
 
-    oob = minfi::getOOB(rgSet)
-    rMu <- matrixStats::colMedians(oob$Red)
-    rSd <- matrixStats::colMads(oob$Red)
+    i2 = minfi::getProbeInfo(rgSet, type = "II")
+    iR = minfi::getProbeInfo(rgSet, type = "I-Red")
+    iG = minfi::getProbeInfo(rgSet, type = "I-Green")
 
-    gMu <- matrixStats::colMedians(oob$Grn)
-    gSd <- matrixStats::colMads(oob$Grn)
+    i2 = as.data.table(as.data.frame(i2))
+    iR = as.data.table(as.data.frame(iR))
+    iG = as.data.table(as.data.frame(iG))
+
+    for(j in 1:ncol(rgSet)){
+
+        beta = getBeta(rgSet[,j])
+        r = minfi::getRed  (rgSet[,j])
+        g = minfi::getGreen(rgSet[,j])
+
+        sR = summits(beta[iR$Name,1])
+        sG = summits(beta[iG$Name,1])
+
+        # Red channel
+        bkgU = head(order(abs(beta[iR$Name,1]-sR[2])),n=1000)
+        bkgM = head(order(abs(beta[iR$Name,1]-sR[1])),n=1000)
+
+        bkgU = iR[bkgU]$AddressA
+        bkgM = iR[bkgM]$AddressB
+
+        muUR = median(r[bkgU,1],na.rm=TRUE)
+        muMR = median(r[bkgM,1],na.rm=TRUE)
+
+        sdUR = mad(r[bkgU,1],na.rm=TRUE)
+        sdMR = mad(r[bkgM,1],na.rm=TRUE)
+
+        # Green channel
+        bkgU = head(order(abs(beta[iG$Name,1]-sG[2])),n=1000)
+        bkgM = head(order(abs(beta[iG$Name,1]-sG[1])),n=1000)
+
+        bkgU = iG[bkgU]$AddressA
+        bkgM = iG[bkgM]$AddressB
+
+        muUG = median(g[bkgU,1],na.rm=TRUE)
+        muMG = median(g[bkgM,1],na.rm=TRUE)
+
+        sdUG = mad(g[bkgU,1],na.rm=TRUE)
+        sdMG = mad(g[bkgM,1],na.rm=TRUE)
 
 
-    TypeII <- minfi::getProbeInfo(rgSet, type = "II")
-    TypeI.Red <- minfi::getProbeInfo(rgSet, type = "I-Red")
-    TypeI.Green <- minfi::getProbeInfo(rgSet, type = "I-Green")
-
-    for (i in 1:ncol(rgSet)) {   
-        ## Type I Red
-        intensity <- r[TypeI.Red$AddressA, i] + r[TypeI.Red$AddressB, i]
-        detP[TypeI.Red$Name, i] <- pnorm(intensity, mean=rMu[i]*2, sd=rSd[i]*sqrt(2),lower.tail=FALSE)
-        ## Type I Green
-        intensity <- g[TypeI.Green$AddressA, i] + g[TypeI.Green$AddressB, i]
-        detP[TypeI.Green$Name, i] <- pnorm(intensity, mean=gMu[i]*2, sd=gSd[i]*sqrt(2),lower.tail=FALSE)
-        ## Type II
-        intensity <- r[TypeII$AddressA, i] + g[TypeII$AddressA, i]
-        detP[TypeII$Name, i] <- pnorm(intensity, mean=rMu[i]+gMu[i], sd=sqrt(rSd[i]^2+gSd[i]^2),lower.tail=FALSE)
+        detP[iR$Name,j] = pnorm(r[iR$AddressA,1]+r[iR$AddressB,1],mean=muUR+muMR,sd=sqrt(sdUR^2+sdMR^2),lower.tail=FALSE)
+        detP[iG$Name,j] = pnorm(g[iG$AddressA,1]+g[iG$AddressB,1],mean=muUG+muMG,sd=sqrt(sdUG^2+sdMG^2),lower.tail=FALSE)
+        detP[i2$Name,j] = pnorm(r[i2$AddressA,1]+g[i2$AddressA,1],mean=muUR+muMG,sd=sqrt(sdUR^2+sdMG^2),lower.tail=FALSE)
     }
-    
+
     detP
 }
