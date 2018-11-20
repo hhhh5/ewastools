@@ -177,7 +177,7 @@ detectionP.minfi <- function(rgSet){
 
     for(j in 1:ncol(rgSet)){
 
-        beta = getBeta(rgSet[,j])
+        beta = minfi::getBeta(rgSet[,j])
         r = minfi::getRed  (rgSet[,j])
         g = minfi::getGreen(rgSet[,j])
 
