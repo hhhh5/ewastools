@@ -131,14 +131,37 @@ points(Y ~ X,data=samples[sex!=predicted_sex],pch=ifelse(samples$sex=="f",1,3),c
 legend("topright",pch=c(1,4),legend=c("female","male"))
 ```
 
-Filter undetected observations and compute beta-values. No normalization is performed.
+## Filtering using detection p-values
+
+`ewastools` implements an improved estimation of background signal (implemented in the function `detectionP`) that leads to much fewer Y chromosome probes being called among females compared to the conventional way using negative control probes (implemented in `detectionP.neg`). The same cut-off of 0.01 was used both times.
+
+```{r fig.width=6,fig.height=4}
+chrY = meth$manifest[chr=='Y',index]
+females = samples$predicted_sex == "f"
+
+## conventional
+P.neg = meth %>% detectionP.neg
+P.neg = P.neg[chrY,females]
+P.neg = colSums(P.neg<0.01,na.rm=TRUE)
+
+## non-specific fluorescence
+meth %<>% detectionP
+
+P.nsp = meth$detP[chrY,females]
+P.nsp = colSums(P.nsp<0.01,na.rm=TRUE)
+
+boxplot(list(P.neg,P.nsp),names=c("Negative\ncontrols","Non-specific\nfluorescence"),horizontal=TRUE,xlab="Number of detected Y-chromosome probes among females")
+```
+
+Mask undetected probes and compute beta-values. No normalization is performed.
 ```{r}
-meth %<>% detectionP %>% mask(0.01)
+meth %<>% mask(0.01)
 beta = dont_normalize(meth)
 ```
 
+## Genotype calling
 
-Genotype calling and classification of SNP outliers. First extract SNP probe positions from the manifest and use the matrix of beta-values as input for `call_genotypes`. This function estimates the parameters of a mixture model and returns posterior probabilities used as soft classification. When setting the argument `learn=FALSE`, pre-specified parameters are used.
+First extract SNP probe positions from the manifest and use the matrix of beta-values as input for `call_genotypes`. This function estimates the parameters of a mixture model and returns posterior probabilities used as soft classification. When setting the argument `learn=FALSE`, pre-specified parameters are used.
 
 ```{r}
 snps = meth$manifest[probe_type=='rs',index]
