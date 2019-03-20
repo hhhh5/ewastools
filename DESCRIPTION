@@ -12,4 +12,4 @@ Suggests: knitr, rmarkdown, minfi
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

@@ -1,0 +1,426 @@
+---
+title: "Recommended Work Flow"
+author: "Jonathan Heiss"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Recommended work flow}
+  %\VignetteEngine{knitr::rmarkdown_notangle}
+  \usepackage[utf8]{inputenc}
+---
+
+<style type="text/css">
+body{ font-size: 12pt; text-align: justify; }
+img{ border: 0px;}
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+</style>
+
+```{r, include = FALSE}
+is_check <- ("CheckExEnv" %in% search()) || any(c("_R_CHECK_TIMINGS_",
+             "_R_CHECK_LICENSE_") %in% names(Sys.getenv()))
+knitr::opts_chunk$set(eval = !is_check,fig.align="center",collapse=TRUE,results="hold")
+```
+
+```{r libraries, include=FALSE}
+devtools::install_github("hhhh5/ewastools@v1.4")
+library(ewastools)
+library(stringi)
+library(data.table)
+library(magrittr)
+library(purrr)
+library(svd)
+```
+
+```{r prepare_dataset, include=FALSE, echo=FALSE}
+# Download meta data (copy URL in browser to see what the requested file looks like)
+meta = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE85210&targ=gsm&form=text&view=brief"
+meta = readLines(meta)
+
+# Split into individual samples
+meta = split(meta,cumsum(meta %like% "^\\^SAMPLE = GSM"))
+
+# Extract GSM accessions
+names(meta) = map(meta,1) %>% stri_match_first(regex="GSM\\d+")
+
+# Parse meta data
+imap(meta,function(s,acc){
+	s = strsplit(s,split=" = ",fixed=TRUE)	
+	data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
+}) -> meta
+
+meta = rbindlist(meta)
+
+# Keep only information on sample characteristics and supplementary files
+meta = meta[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
+i = meta[variable == "!Sample_characteristics_ch1",which=TRUE]
+ch = meta$value[i] %>% stri_split(fixed=": ")
+meta$variable[i] = map_chr(ch,1)
+meta$value   [i] = map_chr(ch,2)
+rm(ch)
+
+# Find the URLs pointing to the two .idat files
+meta[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
+meta[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
+
+# Reshape data.table from long to wide format
+meta = dcast(meta, gsm ~ variable)
+
+# Select and case the relevant variables
+meta = meta[,.(gsm,smoker=factor(`subject status`),red,grn)]
+meta = rbind(meta
+	,list(
+	 "GSM1185585"
+	,"non-smoker"
+	,"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1185nnn/GSM1185585/suppl/GSM1185585_6285625091_R04C01_Red.idat.gz"
+	,"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM1185nnn/GSM1185585/suppl/GSM1185585_6285625091_R04C01_Grn.idat.gz")
+	,list(
+	 "GSM2219539"
+	,"smoker"
+	,"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2219nnn/GSM2219539/suppl/GSM2219539_6222421029_R02C01_Red.idat.gz"
+	,"ftp://ftp.ncbi.nlm.nih.gov/geo/samples/GSM2219nnn/GSM2219539/suppl/GSM2219539_6222421029_R02C01_Grn.idat.gz")
+	 )
+
+
+# Select the samples
+setkey(meta,"gsm")
+meta = meta[c(
+	## first 15 smokers
+ "GSM2260480","GSM2260482","GSM2260485","GSM2260486","GSM2260487"
+,"GSM2260488","GSM2260489","GSM2260491","GSM2260493","GSM2260494"
+,"GSM2260495","GSM2260496","GSM2260498","GSM2260499","GSM2260500"
+	
+	## first 15 non-smokers
+,"GSM2260481","GSM2260483","GSM2260484","GSM2260490","GSM2260492"
+,"GSM2260497","GSM2260501","GSM2260511","GSM2260514","GSM2260516"
+,"GSM2260519","GSM2260525","GSM2260528","GSM2260530","GSM2260532"
+	
+,"GSM2260543" # same person as GSM2260485
+,"GSM2260653" # this is the potentially contaminated sample
+,"GSM1185585" # unrelated sample from another GSE, granulocytes instead of whole blood
+,"GSM2219539" # unrelated sample of lung tissue
+,"GSM2260573" # sample for which we'll change sex
+)]
+
+# Download .idat files
+map2(meta$red,meta$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
+map2(meta$grn,meta$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+meta$red = NULL; meta$grn = NULL
+
+# Import the methylation data
+meth = read_idats(meta$gsm)
+meta[,c("X","Y"):=check_sex(meth)]
+meta[,sex:=ifelse(X>1.,"f","m")]
+
+meta = meta[,.(gsm,sex,smoker)]
+meta[gsm=="GSM2260573",sex:="f"]
+
+write.csv(meta,file="meta.csv",row.names=FALSE)
+```
+
+This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. Analysis would start with gathering the meta/phenotype data.
+```{r}
+meta = fread("meta.csv")
+head(meta)
+```
+
+`meta` contains a column `gsm`, which in this case represents also the prefix of the .idat file names as we are using public data downloaded from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository. In most cases, the file names will be a combination of the Sentrix barcode, Sentrix position and color channel and will look similar to this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel, and like `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel. `read_idats` can be used to import methylation data. It's first argument is a character vector containing the absolute or relative file path and file name but without the color channel part, e.g. `C:/folder/subfolder/200379120004_R01C01`. Both .idat files need to be in the same folder.
+
+```{r}
+meth = read_idats(meta$gsm,quiet=TRUE) # `quiet=TRUE` supresses the progress bar
+```
+
+The entire pre-processing, including filtering by detection p-values, dye-bias correction and conversion into beta-values, can be done in one line ...
+```
+beta = meth %>% detectionP %>% mask(0.01) %>% correct_dye_bias %>% dont_normalize
+```
+... but we will break it up in order to describe the various steps.
+
+The first step should be to filter out unreliable data points which result from low fluorescence intensities. These can be the result of insufficiently amplified DNA. Filtering is done using so-called **detection p-values**, calculated from comparing fluorescence intensities to a noise distribution. Probes below a predefined significance threshold are deemed detected, otherwise undetected. The conventional way of calculating these p-values, as implemented in the GenomeStudio software, lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected. `ewastools` implements an improved estimation of noise levels that improves accuracy.
+
+```{r}
+meth %<>% detectionP
+```
+
+For easy comparison a function `detectionP.neg()` is provided, which estimates background the conventional way.
+
+```{r}
+P.new = meth$detP
+P.neg = meth %>% detectionP.neg
+```
+
+We can see the improved accuracy by counting the number of Y chromosome probes that are called detected for a male and a female samples.
+
+```{r fig.width=6,fig.height=4}
+chrY = meth$manifest[chr=='Y',index]
+
+  male = which(meta$sex=="m")[1]
+female = which(meta$sex=="f")[1]
+
+P.neg = P.neg[chrY,c(male,female)]
+P.new = P.new[chrY,c(male,female)]
+
+P.neg = colSums(P.neg<0.01,na.rm=TRUE)
+P.new = colSums(P.new<0.01,na.rm=TRUE)
+
+names(P.neg) = c("male","female")
+names(P.new) = c("male","female")
+```
+
+Using the conventional detection p-value, for the female sample `r P.neg["female"]` Y chromosome probes are called detected, a number close to all 416 Y chromosome probes as for the male sample.
+
+```{r}
+P.neg
+```
+
+Using the improved method gives a much more accurate result, with still all 416 Y chromosome classified as detected for the male sample, but only  `r P.neg["female"]` classified as detected for the female sample.
+```{r}
+P.new
+```
+
+We used a significance threshold of 0.01 above. Moving forward, probes above this threshold should be masked, i.e. set to missing.
+
+```{r}
+meth %<>% mask(0.01)
+```
+
+Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (also called red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias, resulting in beta-values above 0.5 even for semi-methylated CpG sites. Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
+
+```{r}
+meth %<>% correct_dye_bias
+```
+The final step is the conversion of intensities to beta-values. While `ewastools` implements the LOESS normalization [(Heiss and Brenner, 2015)](https://doi.org/10.3389/fgene.2015.00092), I advise against normalization as it does little to protect against batch effects but can result in the removal of genuine biological signal. Instead I recommended to adjust for relevant technical covariates in regression models later.
+```{r}
+beta = dont_normalize(meth)
+```
+
+Before beginning with the actual epigenome-wide association study, it is advised to check a dataset for problematic samples.
+
+## Quality checks
+
+**Control metrics**
+
+The first quality check evaluates 17 control metrics which are describe in the [BeadArray Controls
+     Reporter Software Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf) from Illumina. Exemplary, the "Bisulfite Conversion II" metric is plotted below. Three samples fall below the Illumina-recommended cut-off of 1. Input for `control_metrics()` is the output of `read_idats()`, e.g. the object holding raw or dye-bias-corrected intensities.
+     
+```{r fig.width=6,fig.height=3.5}
+ctrls = control_metrics(meth)
+stripchart(ctrls$`Bisulfite Conversion II`,method="jitter",pch=4,xlab='Bisulfite Conversion II',xlim=c(0,10))
+abline(v=1,col=2,lty=3)
+```
+
+A logical vector of passed/failed is returned by `sample_failure()` which compares all 17 metrics against the thresholds recommended by Illumina. In this case all samples passed (i.e., `failed==FALSE`).
+```{r}
+meta$failed = sample_failure(ctrls)
+table(meta$failed)
+```
+
+---
+
+**Sex mismatches**
+
+The sex of the sample donor can reliable be inferred from the methylation data. This functionality is implemented by the combination of `check_sex()` and `predict_sex()`. `check_sex()` computes the normalized average total fluorescence intensities of the probes targeting the X and Y chromosome. `predict_sex()` uses the output of `check_sex()` and recorded sex in order to identify mislabeled samples. The function `check_sex()` should be applied to dye-bias corrected intensities.
+
+Plotted below are the normalized average total fluorescence intensities of X and Y chromosome probes.
+
+```{r fig.width=6,fig.height=6}
+meta[,c("X","Y") := check_sex(meth)]
+meta[,predicted_sex:=predict_sex(X,Y,which(sex=="m"),which(sex=="f"))]
+
+tmp = meta[predicted_sex==sex]
+plot(Y ~ X,data=tmp,pch=ifelse(tmp$sex=="f",1,4),asp=1,xlab="Normalized X chromosome intensities",ylab="Normalized Y chromosome intensities")
+tmp = meta[predicted_sex!=sex]
+points(Y ~ X,data=tmp,pch=ifelse(tmp$sex=="f",1,4),col=2)
+legend("topright",pch=c(1,4),legend=c("female","male"))
+```
+
+Samples form two cluster of males (top left) and females (bottom left). The one mislabeled sample here (in red) can easily be identified and should be flagged.
+
+```{r}
+meta[sex!=predicted_sex,exclude:=TRUE] # flag sample
+meta[sex!=predicted_sex,.(gsm,sex,predicted_sex)]
+```
+
+Another sample falls outside the two clusters.
+
+```{r}
+meta[X %between% c(0.85,0.95) & Y %between% c(0.65,0.75),.(gsm,X,Y,sex,predicted_sex)]
+```
+
+There are several possible explanations for samples not clustering with males or females, for example chromosome abnormalities. Or sample contamination. The latter theory can be tested in the next quality check.
+
+---
+
+**Genotype calling and outliers**
+
+For the next check we first need the row indexes of the SNP probes in `beta`. `meth`, the output of `read_idats()`, contains a data.table object with the relevant information.
+
+```{r}
+meth$manifest
+```
+
+SNP probes are labelled `"rs"`.
+
+```{r}
+snps = meth$manifest[probe_type=="rs",index]
+snps = beta[snps,]
+```
+
+These SNPs are then used as input for `call_genotypes()`. This function estimates the parameters of a mixture model consisting of three Beta distributions representing the heterozygous and the two homozygous genotypes, and a fourth component, a uniform distribution, representing outliers.  The functions returns posterior probabilities used for soft classification. When setting the argument `learn=FALSE`, a pre-specified mixture model is used. In this case, we use the pre-specified model as the dataset is quite small and maximum likelihood estimation might be unstable.
+
+```{r}
+genotypes = call_genotypes(snps,learn=FALSE)
+```
+
+`snp_outliers()` returns the average log odds of belonging to the outlier component across all SNP probes. I recommend to flag samples with a score greater than -4 for exclusion.
+
+```{r}
+meta$outlier = snp_outliers(genotypes)
+meta[outlier > -4,.(gsm,X,Y,outlier)]
+meta[outlier > -4,exclude:=TRUE] # flag sample
+```
+
+The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
+
+Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks if the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets. 
+
+```{r}
+meta$donor_id = enumerate_sample_donors(genotypes)
+
+# List duplicates
+meta[,n:=.N,by=donor_id]
+meta[n>1,.(gsm,donor_id)]
+meta[gsm=="GSM2260543",exclude:=TRUE] # drop duplicate
+```
+
+Here samples GSM2260485 and GSM2260543 come from the same donor.
+
+---
+
+**PCA**
+
+Principal component analysis is a popular feature reduction method: it projects high-dimensional data into a lower-dimensional representation while trying to retain as much variability as possible. This is especially useful when either individual features are highly correlated and it is therefore reasonable to summarize them, or when (sometimes subtle) traces of background effects can be found across of large number of features.
+
+We will drop the X and Y chromosome as we would like to find important drivers of methylation beyond sex.
+
+```{r}
+set.seed(982278)
+chrXY = meth$manifest[chr%in%c("X","Y") & probe_type!="rs",index]
+pcs = beta[-chrXY,]
+pcs = pcs - rowMeans(pcs)
+pcs = na.omit(pcs)
+pcs = t(pcs)
+pcs = trlan.svd(pcs,neig=2) # compute the first two principal components
+pcs = pcs$u
+
+meta$pc1 = pcs[,1]
+meta$pc2 = pcs[,2]
+```
+
+```{r fig.width=6,fig.height=6}
+plot(pc2 ~ pc1,pch=ifelse(sex=="f",1,4),meta,asp=1,xlab="PC #1",ylab="PC #2")
+legend("topright",pch=c(1,4),legend=c("female","male"))
+```
+
+There is one clear outlier.
+
+```{r}
+meta[pc1< -0.8,exclude:=TRUE]
+meta[pc1< -0.8,.(gsm,pc1,pc2)]
+```
+
+GSM2219539 is actually a lung tissue sample from another GEO dataset (included here for educational purposes). It dominates the first principal component and should be excluded as it otherwise could drastically change the results of downstream analyses.
+
+PCA may be applied iteratively. After excluding samples that manifest as outliers, repeating PCA can give very different principal components.
+
+---
+
+**Leukocyte composition**
+
+This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues). The function `estimateLC()` implements the [Houseman method](https://doi.org/10.1186/1471-2105-13-86) to predict the leukocyte composition. The user has the choice between various sets of model parameters trained on various reference datasets (see `?estimateLC` for a list of options). The function operates on the matrix of beta-values.
+
+```{r}
+LC = estimateLC(beta)
+meta = cbind(meta,LC)
+round(head(LC),3)
+```
+
+`LC` contains estimated proportions for seven cell types (dependent on the chosen reference dataset).
+
+A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting `GR` this sample can easily be spotted.
+
+```{r fig.width=6,fig.height=4}
+plot(meta$GR*100,ylab="Granulocyte fraction (%)")
+```
+
+It is the second to last sample, GSM1185585.
+
+```{r}
+meta[which.max(GR),.(gsm,GR)]
+meta[which.max(GR),exclude:=TRUE]
+```
+
+The lung sample is also prominent, with an estimated proportion of `GR` near zero.
+
+```{r}
+meta[which.min(GR),.(gsm,GR)]
+meta[which.min(GR),exclude:=TRUE]
+```
+
+We drop the problematic samples
+
+```{r}
+drop = meta[exclude==TRUE,which=TRUE]
+
+meth %<>% drop_samples(j=drop)
+beta = beta[,-drop]
+meta = meta[ -drop]
+```
+
+## EWAS
+
+You've cleaned and pre-processed the data, now it is time for the actual EWAS.
+First it is important to correctly code the variables. `smoker` and `sex` are vectors of type `character`, but should be converted to  factors.
+
+```{r}
+meta = meta[,.(
+	 gsm
+	,sex = factor(sex,levels=c("m","f")) # first level is the reference
+	,smoker = factor(smoker,levels=c("non-smoker","smoker"))
+	,GR,MO,B,CD4,CD8,NK,nRBC
+)]
+```
+
+We want test all CpG sites for their association with smoking. The following code snippet is not optimized for speed but readability.
+
+```{r}
+f = function(meth){
+	m = lm(meth~1+sex+smoker+GR+MO+B+CD4+CD8+NK+nRBC,data=meta)
+	coef(summary(m))["smokersmoker",4]
+}
+
+f = possibly(f,otherwise=NA_real_)
+
+pvals = apply(beta,1,f)
+```
+
+We create a data.table holding the p-values and information about the probes.
+
+```{r}
+SMK = data.table(probe_id=rownames(beta),pval=pvals)
+SMK %<>% na.omit
+SMK[,qval:=p.adjust(pval,m="fdr")]
+SMK = SMK[qval<0.05]
+print(SMK)
+```
+
+Some of the significant CpGs are known biomarkers that have been validated in various cohorts.
+
+## Final comments
+
+Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:hhhh5@posteo.de), or file an issue or submit an pull request on GitHub (https://github.com/hhhh5/ewastools).
+
+```{r cleanup, include=FALSE, echo=FALSE}
+file.remove(meta$gsm %s+% "_Red.idat")
+file.remove(meta$gsm %s+% "_Grn.idat")
+file.remove("meta.csv")
+```
