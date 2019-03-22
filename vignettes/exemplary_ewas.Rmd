@@ -18,7 +18,7 @@ code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
 ```{r, include = FALSE}
 is_check <- ("CheckExEnv" %in% search()) || any(c("_R_CHECK_TIMINGS_",
              "_R_CHECK_LICENSE_") %in% names(Sys.getenv()))
-knitr::opts_chunk$set(eval = !is_check,fig.align="center",collapse=TRUE,results="hold")
+knitr::opts_chunk$set(eval = !is_check,fig.align="center",collapse=TRUE)
 ```
 
 ```{r libraries, include=FALSE}
@@ -117,13 +117,23 @@ pheno[gsm=="GSM2260573",sex:="f"]
 write.csv(pheno,file="pheno.csv",row.names=FALSE)
 ```
 
-This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. Analysis would start with gathering the pheno/phenotype data.
+This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository, the phenotype data is stored in a file named `pheno.csv`
+
+```
+devtools::install_github("hhhh5/ewastools@master")
+library(ewastools)
+library(stringi)
+library(data.table)
+library(magrittr)	
+library(purrr)
+library(svd)
+```
 ```{r}
 pheno = fread("pheno.csv")
 head(pheno)
 ```
 
-`pheno` contains a column `gsm`, which in this case represents also the prefix of the .idat file names as we are using public data downloaded from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository. In most cases, the file names will be a combination of the Sentrix barcode, Sentrix position and color channel and will look similar to this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel, and like `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel. `read_idats` can be used to import methylation data. It's first argument is a character vector containing the absolute or relative file path and file name but without the color channel part, e.g. `C:/folder/subfolder/200379120004_R01C01`. Both .idat files need to be in the same folder.
+`pheno` contains a column `gsm`, which in this case represents also the prefix of the .idat file names. Usually, however, the file names are a combination of the Sentrix barcode, Sentrix position and color channel and will look something like this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel, and analogously `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel. `read_idats` can be used to import methylation data. It's first argument is a character vector containing the absolute or relative file paths and names but without the color channel and file extension, e.g. `C:/folder/subfolder/200379120004_R01C01`. Both red and green .idat files of a particular sample need to be in the same folder.
 
 ```{r}
 meth = read_idats(pheno$gsm,quiet=TRUE) # `quiet=TRUE` supresses the progress bar
@@ -135,7 +145,7 @@ beta = meth %>% detectionP %>% mask(0.01) %>% correct_dye_bias %>% dont_normaliz
 ```
 ... but we will break it up in order to describe the various steps.
 
-The first step should be to filter out unreliable data points which result from low fluorescence intensities. These can be the result of insufficiently amplified DNA. Filtering is done using so-called **detection p-values**, calculated from comparing fluorescence intensities to a noise distribution. Probes below a predefined significance threshold are deemed detected, otherwise undetected. The conventional way of calculating these p-values, as implemented in the GenomeStudio software, lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected. `ewastools` implements an improved estimation of noise levels that improves accuracy.
+The first step should be to filter out unreliable data points which result from low fluorescence intensities. These can be the result of insufficiently amplified DNA. Filtering is done using so-called **detection p-values**, calculated from comparing fluorescence intensities to a noise distribution. Probes below a chosen significance threshold are deemed detected, otherwise undetected. The conventional way of calculating these p-values, as implemented in the GenomeStudio software, lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected. `ewastools` implements an improved estimation of noise levels that improves accuracy.
 
 ```{r}
 meth %<>% detectionP
@@ -172,7 +182,7 @@ Using the conventional detection p-value, for the female sample `r P.neg["female
 P.neg
 ```
 
-Using the improved method gives a much more accurate result, with still all 416 Y chromosome classified as detected for the male sample, but only  `r P.neg["female"]` classified as detected for the female sample.
+Using the improved method gives a much more accurate result with all 416 Y chromosome probes classified as detected for the male sample, but only  `r P.neg["female"]` probes classified as detected for the female sample. More information can be found in [Heiss and Just, 2019](https://doi.org/10.1186/s13148-019-0615-3).
 ```{r}
 P.new
 ```
@@ -183,7 +193,7 @@ We used a significance threshold of 0.01 above. Moving forward, probes above thi
 meth %<>% mask(0.01)
 ```
 
-Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (also called red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias, resulting in beta-values above 0.5 even for semi-methylated CpG sites. Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
+Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
 
 ```{r}
 meth %<>% correct_dye_bias
@@ -279,9 +289,9 @@ pheno[outlier > -4,.(gsm,X,Y,outlier)]
 pheno[outlier > -4,exclude:=TRUE] # flag sample
 ```
 
-The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
+The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
 
-Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks if the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets. 
+Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets. 
 
 ```{r}
 pheno$donor_id = enumerate_sample_donors(genotypes)
@@ -352,7 +362,7 @@ A second foreign sample from another GEO dataset has been hidden in the dataset,
 plot(pheno$GR*100,ylab="Granulocyte fraction (%)")
 ```
 
-It is the second to last sample, GSM1185585.
+It is the third to last sample, GSM1185585.
 
 ```{r}
 pheno[which.max(GR),.(gsm,GR)]
@@ -395,10 +405,10 @@ We want test all CpG sites for their association with smoking. The following cod
 ```{r}
 f = function(meth){
 	m = lm(meth~1+sex+smoker+GR+MO+B+CD4+CD8+NK+nRBC,data=pheno)
-	coef(summary(m))["smokersmoker",4]
+	coef(summary(m))["smokersmoker",4] # extract the p-value for the smoking
 }
 
-f = possibly(f,otherwise=NA_real_)
+f = possibly(f,otherwise=NA_real_) # catch errors
 
 pvals = apply(beta,1,f)
 ```
