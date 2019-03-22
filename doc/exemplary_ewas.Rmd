@@ -32,42 +32,42 @@ library(svd)
 ```
 
 ```{r prepare_dataset, include=FALSE, echo=FALSE}
-# Download meta data (copy URL in browser to see what the requested file looks like)
-meta = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE85210&targ=gsm&form=text&view=brief"
-meta = readLines(meta)
+# Download pheno data (copy URL in browser to see what the requested file looks like)
+pheno = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE85210&targ=gsm&form=text&view=brief"
+pheno = readLines(pheno)
 
 # Split into individual samples
-meta = split(meta,cumsum(meta %like% "^\\^SAMPLE = GSM"))
+pheno = split(pheno,cumsum(pheno %like% "^\\^SAMPLE = GSM"))
 
 # Extract GSM accessions
-names(meta) = map(meta,1) %>% stri_match_first(regex="GSM\\d+")
+names(pheno) = map(pheno,1) %>% stri_match_first(regex="GSM\\d+")
 
-# Parse meta data
-imap(meta,function(s,acc){
+# Parse pheno data
+imap(pheno,function(s,acc){
 	s = strsplit(s,split=" = ",fixed=TRUE)	
 	data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
-}) -> meta
+}) -> pheno
 
-meta = rbindlist(meta)
+pheno = rbindlist(pheno)
 
 # Keep only information on sample characteristics and supplementary files
-meta = meta[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
-i = meta[variable == "!Sample_characteristics_ch1",which=TRUE]
-ch = meta$value[i] %>% stri_split(fixed=": ")
-meta$variable[i] = map_chr(ch,1)
-meta$value   [i] = map_chr(ch,2)
+pheno = pheno[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
+i = pheno[variable == "!Sample_characteristics_ch1",which=TRUE]
+ch = pheno$value[i] %>% stri_split(fixed=": ")
+pheno$variable[i] = map_chr(ch,1)
+pheno$value   [i] = map_chr(ch,2)
 rm(ch)
 
 # Find the URLs pointing to the two .idat files
-meta[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
-meta[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
+pheno[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
+pheno[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
 
 # Reshape data.table from long to wide format
-meta = dcast(meta, gsm ~ variable)
+pheno = dcast(pheno, gsm ~ variable)
 
 # Select and case the relevant variables
-meta = meta[,.(gsm,smoker=factor(`subject status`),red,grn)]
-meta = rbind(meta
+pheno = pheno[,.(gsm,smoker=factor(`subject status`),red,grn)]
+pheno = rbind(pheno
 	,list(
 	 "GSM1185585"
 	,"non-smoker"
@@ -82,8 +82,8 @@ meta = rbind(meta
 
 
 # Select the samples
-setkey(meta,"gsm")
-meta = meta[c(
+setkey(pheno,"gsm")
+pheno = pheno[c(
 	## first 15 smokers
  "GSM2260480","GSM2260482","GSM2260485","GSM2260486","GSM2260487"
 ,"GSM2260488","GSM2260489","GSM2260491","GSM2260493","GSM2260494"
@@ -102,31 +102,31 @@ meta = meta[c(
 )]
 
 # Download .idat files
-map2(meta$red,meta$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
-map2(meta$grn,meta$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
-meta$red = NULL; meta$grn = NULL
+map2(pheno$red,pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
+map2(pheno$grn,pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+pheno$red = NULL; pheno$grn = NULL
 
 # Import the methylation data
-meth = read_idats(meta$gsm)
-meta[,c("X","Y"):=check_sex(meth)]
-meta[,sex:=ifelse(X>1.,"f","m")]
+meth = read_idats(pheno$gsm)
+pheno[,c("X","Y"):=check_sex(meth)]
+pheno[,sex:=ifelse(X>1.,"f","m")]
 
-meta = meta[,.(gsm,sex,smoker)]
-meta[gsm=="GSM2260573",sex:="f"]
+pheno = pheno[,.(gsm,sex,smoker)]
+pheno[gsm=="GSM2260573",sex:="f"]
 
-write.csv(meta,file="meta.csv",row.names=FALSE)
+write.csv(pheno,file="pheno.csv",row.names=FALSE)
 ```
 
-This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. Analysis would start with gathering the meta/phenotype data.
+This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. Analysis would start with gathering the pheno/phenotype data.
 ```{r}
-meta = fread("meta.csv")
-head(meta)
+pheno = fread("pheno.csv")
+head(pheno)
 ```
 
-`meta` contains a column `gsm`, which in this case represents also the prefix of the .idat file names as we are using public data downloaded from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository. In most cases, the file names will be a combination of the Sentrix barcode, Sentrix position and color channel and will look similar to this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel, and like `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel. `read_idats` can be used to import methylation data. It's first argument is a character vector containing the absolute or relative file path and file name but without the color channel part, e.g. `C:/folder/subfolder/200379120004_R01C01`. Both .idat files need to be in the same folder.
+`pheno` contains a column `gsm`, which in this case represents also the prefix of the .idat file names as we are using public data downloaded from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository. In most cases, the file names will be a combination of the Sentrix barcode, Sentrix position and color channel and will look similar to this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel, and like `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel. `read_idats` can be used to import methylation data. It's first argument is a character vector containing the absolute or relative file path and file name but without the color channel part, e.g. `C:/folder/subfolder/200379120004_R01C01`. Both .idat files need to be in the same folder.
 
 ```{r}
-meth = read_idats(meta$gsm,quiet=TRUE) # `quiet=TRUE` supresses the progress bar
+meth = read_idats(pheno$gsm,quiet=TRUE) # `quiet=TRUE` supresses the progress bar
 ```
 
 The entire pre-processing, including filtering by detection p-values, dye-bias correction and conversion into beta-values, can be done in one line ...
@@ -153,8 +153,8 @@ We can see the improved accuracy by counting the number of Y chromosome probes t
 ```{r fig.width=6,fig.height=4}
 chrY = meth$manifest[chr=='Y',index]
 
-  male = which(meta$sex=="m")[1]
-female = which(meta$sex=="f")[1]
+  male = which(pheno$sex=="m")[1]
+female = which(pheno$sex=="f")[1]
 
 P.neg = P.neg[chrY,c(male,female)]
 P.new = P.new[chrY,c(male,female)]
@@ -210,8 +210,8 @@ abline(v=1,col=2,lty=3)
 
 A logical vector of passed/failed is returned by `sample_failure()` which compares all 17 metrics against the thresholds recommended by Illumina. In this case all samples passed (i.e., `failed==FALSE`).
 ```{r}
-meta$failed = sample_failure(ctrls)
-table(meta$failed)
+pheno$failed = sample_failure(ctrls)
+table(pheno$failed)
 ```
 
 ---
@@ -223,12 +223,12 @@ The sex of the sample donor can reliable be inferred from the methylation data. 
 Plotted below are the normalized average total fluorescence intensities of X and Y chromosome probes.
 
 ```{r fig.width=6,fig.height=6}
-meta[,c("X","Y") := check_sex(meth)]
-meta[,predicted_sex:=predict_sex(X,Y,which(sex=="m"),which(sex=="f"))]
+pheno[,c("X","Y") := check_sex(meth)]
+pheno[,predicted_sex:=predict_sex(X,Y,which(sex=="m"),which(sex=="f"))]
 
-tmp = meta[predicted_sex==sex]
+tmp = pheno[predicted_sex==sex]
 plot(Y ~ X,data=tmp,pch=ifelse(tmp$sex=="f",1,4),asp=1,xlab="Normalized X chromosome intensities",ylab="Normalized Y chromosome intensities")
-tmp = meta[predicted_sex!=sex]
+tmp = pheno[predicted_sex!=sex]
 points(Y ~ X,data=tmp,pch=ifelse(tmp$sex=="f",1,4),col=2)
 legend("topright",pch=c(1,4),legend=c("female","male"))
 ```
@@ -236,14 +236,14 @@ legend("topright",pch=c(1,4),legend=c("female","male"))
 Samples form two cluster of males (top left) and females (bottom left). The one mislabeled sample here (in red) can easily be identified and should be flagged.
 
 ```{r}
-meta[sex!=predicted_sex,exclude:=TRUE] # flag sample
-meta[sex!=predicted_sex,.(gsm,sex,predicted_sex)]
+pheno[sex!=predicted_sex,exclude:=TRUE] # flag sample
+pheno[sex!=predicted_sex,.(gsm,sex,predicted_sex)]
 ```
 
 Another sample falls outside the two clusters.
 
 ```{r}
-meta[X %between% c(0.85,0.95) & Y %between% c(0.65,0.75),.(gsm,X,Y,sex,predicted_sex)]
+pheno[X %between% c(0.85,0.95) & Y %between% c(0.65,0.75),.(gsm,X,Y,sex,predicted_sex)]
 ```
 
 There are several possible explanations for samples not clustering with males or females, for example chromosome abnormalities. Or sample contamination. The latter theory can be tested in the next quality check.
@@ -274,9 +274,9 @@ genotypes = call_genotypes(snps,learn=FALSE)
 `snp_outliers()` returns the average log odds of belonging to the outlier component across all SNP probes. I recommend to flag samples with a score greater than -4 for exclusion.
 
 ```{r}
-meta$outlier = snp_outliers(genotypes)
-meta[outlier > -4,.(gsm,X,Y,outlier)]
-meta[outlier > -4,exclude:=TRUE] # flag sample
+pheno$outlier = snp_outliers(genotypes)
+pheno[outlier > -4,.(gsm,X,Y,outlier)]
+pheno[outlier > -4,exclude:=TRUE] # flag sample
 ```
 
 The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
@@ -284,12 +284,12 @@ The one sample failing this check is the same sample that did not belong to eith
 Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks if the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets. 
 
 ```{r}
-meta$donor_id = enumerate_sample_donors(genotypes)
+pheno$donor_id = enumerate_sample_donors(genotypes)
 
 # List duplicates
-meta[,n:=.N,by=donor_id]
-meta[n>1,.(gsm,donor_id)]
-meta[gsm=="GSM2260543",exclude:=TRUE] # drop duplicate
+pheno[,n:=.N,by=donor_id]
+pheno[n>1,.(gsm,donor_id)]
+pheno[gsm=="GSM2260543",exclude:=TRUE] # drop duplicate
 ```
 
 Here samples GSM2260485 and GSM2260543 come from the same donor.
@@ -312,20 +312,20 @@ pcs = t(pcs)
 pcs = trlan.svd(pcs,neig=2) # compute the first two principal components
 pcs = pcs$u
 
-meta$pc1 = pcs[,1]
-meta$pc2 = pcs[,2]
+pheno$pc1 = pcs[,1]
+pheno$pc2 = pcs[,2]
 ```
 
 ```{r fig.width=6,fig.height=6}
-plot(pc2 ~ pc1,pch=ifelse(sex=="f",1,4),meta,asp=1,xlab="PC #1",ylab="PC #2")
+plot(pc2 ~ pc1,pch=ifelse(sex=="f",1,4),pheno,asp=1,xlab="PC #1",ylab="PC #2")
 legend("topright",pch=c(1,4),legend=c("female","male"))
 ```
 
 There is one clear outlier.
 
 ```{r}
-meta[pc1< -0.8,exclude:=TRUE]
-meta[pc1< -0.8,.(gsm,pc1,pc2)]
+pheno[pc1< -0.8,exclude:=TRUE]
+pheno[pc1< -0.8,.(gsm,pc1,pc2)]
 ```
 
 GSM2219539 is actually a lung tissue sample from another GEO dataset (included here for educational purposes). It dominates the first principal component and should be excluded as it otherwise could drastically change the results of downstream analyses.
@@ -340,7 +340,7 @@ This quality check will only apply in case of blood samples (blood is, however, 
 
 ```{r}
 LC = estimateLC(beta)
-meta = cbind(meta,LC)
+pheno = cbind(pheno,LC)
 round(head(LC),3)
 ```
 
@@ -349,31 +349,31 @@ round(head(LC),3)
 A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting `GR` this sample can easily be spotted.
 
 ```{r fig.width=6,fig.height=4}
-plot(meta$GR*100,ylab="Granulocyte fraction (%)")
+plot(pheno$GR*100,ylab="Granulocyte fraction (%)")
 ```
 
 It is the second to last sample, GSM1185585.
 
 ```{r}
-meta[which.max(GR),.(gsm,GR)]
-meta[which.max(GR),exclude:=TRUE]
+pheno[which.max(GR),.(gsm,GR)]
+pheno[which.max(GR),exclude:=TRUE]
 ```
 
 The lung sample is also prominent, with an estimated proportion of `GR` near zero.
 
 ```{r}
-meta[which.min(GR),.(gsm,GR)]
-meta[which.min(GR),exclude:=TRUE]
+pheno[which.min(GR),.(gsm,GR)]
+pheno[which.min(GR),exclude:=TRUE]
 ```
 
 We drop the problematic samples
 
 ```{r}
-drop = meta[exclude==TRUE,which=TRUE]
+drop = pheno[exclude==TRUE,which=TRUE]
 
 meth %<>% drop_samples(j=drop)
 beta = beta[,-drop]
-meta = meta[ -drop]
+pheno = pheno[ -drop]
 ```
 
 ## EWAS
@@ -382,7 +382,7 @@ You've cleaned and pre-processed the data, now it is time for the actual EWAS.
 First it is important to correctly code the variables. `smoker` and `sex` are vectors of type `character`, but should be converted to  factors.
 
 ```{r}
-meta = meta[,.(
+pheno = pheno[,.(
 	 gsm
 	,sex = factor(sex,levels=c("m","f")) # first level is the reference
 	,smoker = factor(smoker,levels=c("non-smoker","smoker"))
@@ -394,7 +394,7 @@ We want test all CpG sites for their association with smoking. The following cod
 
 ```{r}
 f = function(meth){
-	m = lm(meth~1+sex+smoker+GR+MO+B+CD4+CD8+NK+nRBC,data=meta)
+	m = lm(meth~1+sex+smoker+GR+MO+B+CD4+CD8+NK+nRBC,data=pheno)
 	coef(summary(m))["smokersmoker",4]
 }
 
@@ -420,7 +420,7 @@ Some of the significant CpGs are known biomarkers that have been validated in va
 Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:hhhh5@posteo.de), or file an issue or submit an pull request on GitHub (https://github.com/hhhh5/ewastools).
 
 ```{r cleanup, include=FALSE, echo=FALSE}
-file.remove(meta$gsm %s+% "_Red.idat")
-file.remove(meta$gsm %s+% "_Grn.idat")
-file.remove("meta.csv")
+file.remove(pheno$gsm %s+% "_Red.idat")
+file.remove(pheno$gsm %s+% "_Grn.idat")
+file.remove("pheno.csv")
 ```
