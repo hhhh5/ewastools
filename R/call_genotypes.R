@@ -156,7 +156,7 @@ mxm_ = function(genotypes){
 	
 	with(genotypes,{
 
-		hist(snps,breaks=200,freq=FALSE,xlab='β-value',main=NA)
+		hist(snps,breaks=200,freq=FALSE,xlab="beta-value",main=NA)
 		curve(  
 	    	par$alpha+(1-par$alpha)*(
 	    	par$pi[1]*dbeta(x,shape1=par$shapes1[1],shape2=par$shapes2[1])+
