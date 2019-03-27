@@ -62,7 +62,6 @@ correct_dye_bias2 = function (raw)
     if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))  stop("Invalid argument")
 
     i1g = raw$manifest[channel == "Grn", ]
-    i1r = raw$manifest[channel == "Red" & next_base=="T", ]
     i2 = raw$manifest[channel == "Both", ]
 
     Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai,]
@@ -72,37 +71,35 @@ correct_dye_bias2 = function (raw)
     
     J = ncol(raw$M)
 
-    mm = sapply(1:J,function(j){
-    
-        x = log(Ai[,j])
-        y = log(Gi[,j])
-        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
-        x = x[keep]
-        y = y[keep]
-        m1 = mblm::mblm(y ~ x, repeated = FALSE)
-    
-        x = log(Ti[,j])
-        y = log(Ci[,j])
-        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
-        x = x[keep]
-        y = y[keep]
-        m2 = mblm::mblm(y ~ x, repeated = FALSE)
-    
-        c(coef(m1),coef(m2))
-
-    })
-
     for(j in 1:J){
-        i = i2$index
-        raw$U[i, j] = exp(mm[1,j]) * raw$U[i, j]^mm[2,j]
+    
+        x = log(Gi[,j])
+        y = log(Ai[,j])
+        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
+        x = x[keep]
+        y = y[keep]
+        m = mblm::mblm(y ~ x, repeated = FALSE)
 
-        i = i1r$index
-        raw$U[i, j] = exp(mm[3,j]) * raw$U[i, j]^mm[4,j]
-        raw$M[i, j] = exp(mm[3,j]) * raw$M[i, j]^mm[4,j]
+        i = i2$index
+        raw$M[i, j] = exp(coef(m)[1] + log(raw$M[i, j]) * coef(m)[2])
+    
+        x = log(Ci[,j])
+        y = log(Ti[,j])
+        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
+        x = x[keep]
+        y = y[keep]
+        m = mblm::mblm(y ~ x, repeated = FALSE)
+    
+        i = i1g$index
+        raw$U[i, j] = exp(coef(m)[1] + log(raw$U[i, j]) * coef(m)[2])
+        raw$M[i, j] = exp(coef(m)[1] + log(raw$M[i, j]) * coef(m)[2])
+
     }
 
     return(raw)
 }
+
+
 
 #' @rdname Preprocessing
 #' @export
