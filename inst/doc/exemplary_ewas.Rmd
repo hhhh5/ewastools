@@ -379,11 +379,10 @@ pheno[which.min(GR),exclude:=TRUE]
 We drop the problematic samples
 
 ```{r}
-drop = pheno[exclude==TRUE,which=TRUE]
-
-meth %<>% drop_samples(j=drop)
-beta = beta[,-drop]
+drop  = pheno[exclude==TRUE,which=TRUE]
 pheno = pheno[ -drop]
+beta  = beta [,-drop]
+meth %<>% drop_samples(j=drop)
 ```
 
 ## EWAS
@@ -400,7 +399,7 @@ pheno = pheno[,.(
 )]
 ```
 
-We want test all CpG sites for their association with smoking. The following code snippet is not optimized for speed but readability.
+We want test all CpG sites for their association with smoking. Unfortunately, the phenotype data is very sparse, as it is typcial for public datasets. Aside from smoking, only sex and the estimated proportions of the seven cell types will be including in the model. The following code snippet is optimized for readability not speed.
 
 ```{r}
 f = function(meth){
@@ -413,7 +412,7 @@ f = possibly(f,otherwise=NA_real_) # catch errors
 pvals = apply(beta,1,f)
 ```
 
-We create a data.table holding the p-values and information about the probes.
+We create a `data.table` holding the p-values and information about the probes.
 
 ```{r}
 SMK = data.table(probe_id=rownames(beta),pval=pvals)
@@ -423,7 +422,7 @@ SMK = SMK[qval<0.05]
 print(SMK)
 ```
 
-Some of the significant CpGs are known biomarkers that have been validated in various cohorts.
+Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR) for which the association with smoking has been validated in several cohorts [(Zeilinger et. al., 2013)](https://dx.doi.org/10.1371%2Fjournal.pone.0063812).
 
 ## Final comments
 
