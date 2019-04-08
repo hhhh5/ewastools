@@ -22,7 +22,6 @@ knitr::opts_chunk$set(eval = !is_check,fig.align="center",collapse=TRUE)
 ```
 
 ```{r libraries, include=FALSE}
-devtools::install_github("hhhh5/ewastools@v1.4")
 library(ewastools)
 library(stringi)
 library(data.table)
@@ -429,7 +428,7 @@ Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR
 Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:hhhh5@posteo.de), or file an issue or submit a pull request on GitHub (https://github.com/hhhh5/ewastools).
 
 ```{r cleanup, include=FALSE, echo=FALSE}
-file.remove(pheno$gsm %s+% "_Red.idat")
-file.remove(pheno$gsm %s+% "_Grn.idat")
+file.remove(pheno$gsm %s+% "_Red.idat.gz")
+file.remove(pheno$gsm %s+% "_Grn.idat.gz")
 file.remove("pheno.csv")
 ```

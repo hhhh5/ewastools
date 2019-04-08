@@ -22,7 +22,6 @@ knitr::opts_chunk$set(eval = !is_check,fig.align="center",collapse=TRUE)
 ```
 
 ```{r libraries, include=FALSE}
-devtools::install_github("hhhh5/ewastools@v1.4")
 library(ewastools)
 library(stringi)
 library(data.table)
@@ -102,8 +101,8 @@ pheno = pheno[c(
 )]
 
 # Download .idat files
-map2(pheno$red,pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
-map2(pheno$grn,pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+# map2(pheno$red,pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
+# map2(pheno$grn,pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
 pheno$red = NULL; pheno$grn = NULL
 
 # Import the methylation data
@@ -149,13 +148,13 @@ The first step should be to filter out unreliable data points which result from 
 
 ```{r}
 meth %<>% detectionP
+P.new = meth$detP
 ```
 
 For easy comparison a function `detectionP.neg()` is provided, which estimates background the conventional way.
 
 ```{r}
-P.new = meth$detP
-P.neg = meth %>% detectionP.neg
+P.neg = meth %>% detectionP.neg %$% detP
 ```
 
 We can see the improved accuracy by counting the number of Y chromosome probes that are called detected for a male and a female samples.
@@ -369,7 +368,7 @@ pheno[which.max(GR),.(gsm,GR)]
 pheno[which.max(GR),exclude:=TRUE]
 ```
 
-The lung sample is also prominent, with an estimated proportion of `GR` near zero.
+The lung sample is also prominent, with an estimated proportion of `GR` of (not exactly because of numerical issues) zero.
 
 ```{r}
 pheno[which.min(GR),.(gsm,GR)]
@@ -426,10 +425,10 @@ Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR
 
 ## Final comments
 
-Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:hhhh5@posteo.de), or file an issue or submit an pull request on GitHub (https://github.com/hhhh5/ewastools).
+Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:hhhh5@posteo.de), or file an issue or submit a pull request on GitHub (https://github.com/hhhh5/ewastools).
 
 ```{r cleanup, include=FALSE, echo=FALSE}
-file.remove(pheno$gsm %s+% "_Red.idat")
-file.remove(pheno$gsm %s+% "_Grn.idat")
+file.remove(pheno$gsm %s+% "_Red.idat.gz")
+file.remove(pheno$gsm %s+% "_Grn.idat.gz")
 file.remove("pheno.csv")
 ```
