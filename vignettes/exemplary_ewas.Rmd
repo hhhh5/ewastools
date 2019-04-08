@@ -369,7 +369,7 @@ pheno[which.max(GR),.(gsm,GR)]
 pheno[which.max(GR),exclude:=TRUE]
 ```
 
-The lung sample is also prominent, with an estimated proportion of `GR` near zero.
+The lung sample is also prominent, with an estimated proportion of `GR` of (not exactly because of numerical issues) zero.
 
 ```{r}
 pheno[which.min(GR),.(gsm,GR)]
