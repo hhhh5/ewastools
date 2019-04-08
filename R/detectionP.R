@@ -6,8 +6,8 @@
 #' @param male/female Indices of male and female subjects
 #' @param rgSet minfi rgSet object 
 #' 
-#' @return For \code{detectionP} a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
-#' @return For \code{detectionP.minfi} and \code{detectionP.neg} a matrix of detection p-values.
+#' @return For \code{detectionP} and \code{detectionP.neg} a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
+#' @return For \code{detectionP.minfi} a matrix of detection p-values.
 #' @return For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
 #'
 #' @references{Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection p values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
@@ -116,7 +116,8 @@ detectionP.neg <- function(raw){
         for(j in 1:ncol(M)) 
             detP[i,j] = pnorm(U[i,j]+M[i,j],mean=muR[j]+muG[j],sd=sqrt(sdR[j]^2+sdG[j]^2),lower.tail=FALSE,log.p=TRUE) 
 
-    detP/log(10)
+    raw$detP = detP/log(10)
+    return(raw)
   })
 }
 

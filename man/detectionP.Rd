@@ -31,9 +31,9 @@ detectionP.minfi(rgSet)
 \item{male/female}{Indices of male and female subjects}
 }
 \value{
-For \code{detectionP} a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
+For \code{detectionP} and \code{detectionP.neg} a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added.
 
-For \code{detectionP.minfi} and \code{detectionP.neg} a matrix of detection p-values.
+For \code{detectionP.minfi} a matrix of detection p-values.
 
 For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
 }

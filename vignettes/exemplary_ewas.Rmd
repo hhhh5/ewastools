@@ -149,13 +149,13 @@ The first step should be to filter out unreliable data points which result from 
 
 ```{r}
 meth %<>% detectionP
+P.new = meth$detP
 ```
 
 For easy comparison a function `detectionP.neg()` is provided, which estimates background the conventional way.
 
 ```{r}
-P.new = meth$detP
-P.neg = meth %>% detectionP.neg
+P.neg = meth %>% detectionP.neg %$% detP
 ```
 
 We can see the improved accuracy by counting the number of Y chromosome probes that are called detected for a male and a female samples.
