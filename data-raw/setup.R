@@ -8,64 +8,41 @@ library(ewastools)
 library(strict)
 library(minfi)
 
-# -------------------------------- EPIC chip manifest
 
-### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865927)
+detectionP.neg <- function(raw){
+  
+  with(raw,{
+    
+    bkgR = bkgG = controls[group=='NEGATIVE',index] 
+    
+    bkgR = ctrlR[bkgR,,drop=FALSE]
+    bkgG = ctrlG[bkgG,,drop=FALSE]
+    
+    muG = apply(bkgG,2,median,na.rm=TRUE)
+    sdG = apply(bkgG,2,mad   ,na.rm=TRUE)
+    
+    muR = apply(bkgR,2,median,na.rm=TRUE) 
+    sdR = apply(bkgR,2,mad   ,na.rm=TRUE) 
+    
+    detP = matrix(NA_real_,nrow=nrow(U),ncol=ncol(U))
+    
+    i = manifest[channel=='Red' ,index] 
+    for(j in 1:ncol(M))  
+      detP[i,j] = pnorm(U[i,j]+M[i,j],mean=2*muR[j],sd=sqrt(2)*sdR[j],lower.tail=FALSE,log.p=TRUE) 
+    
+    i = manifest[channel=='Grn' ,index] 
+    for(j in 1:ncol(M))  
+      detP[i,j] = pnorm(U[i,j]+M[i,j],mean=2*muG[j],sd=sqrt(2)*sdG[j],lower.tail=FALSE,log.p=TRUE) 
+    
+    i = manifest[channel=='Both',index] 
+    for(j in 1:ncol(M)) 
+      detP[i,j] = pnorm(U[i,j]+M[i,j],mean=muR[j]+muG[j],sd=sqrt(sdR[j]^2+sdG[j]^2),lower.tail=FALSE,log.p=TRUE) 
+    
+    raw$detP = detP/log(10)
+    return(raw)
+  })
+}
 
-manifest_epic = fread("MethylationEPIC_v-1-0_B3.csv"
-    ,skip="IlmnID",header=TRUE,nrows=865918,integer64="character",sep=",",sep2=";")
-
-manifest_epic = manifest_epic[,list(
-     probe_id=IlmnID
-    ,addressU=as.integer(AddressA_ID)
-    ,addressM=as.integer(AddressB_ID)
-    ,channel=Color_Channel
-    ,next_base=Next_Base
-    ,chr=CHR
-    ,mapinfo=MAPINFO
-    ,strand=factor(Strand)
-)]
-
-manifest_epic[                          ,probe_type:="cg"]
-manifest_epic[substr(probe_id,1,2)=="ch",probe_type:="ch"]
-manifest_epic[substr(probe_id,1,2)=="rs",probe_type:="rs"]
-
-manifest_epic[channel=="",channel:="Both"]
-
-controls_epic = fread("MethylationEPIC_v-1-0_B3.csv",skip=865927,header=FALSE)
-controls_epic = controls_epic[,1:4]
-names(controls_epic) = c("address","group","channel","name")
-
-# -------------------------------- 450K chip manifest
-
-### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865927)
-
-manifest_450K = fread("HumanMethylation450_15017482_v1-2.csv"
-    ,skip="IlmnID",header=TRUE,nrows=485577,integer64="character",sep=",",sep2=";")
-
-manifest_450K = manifest_450K[,list(
-     probe_id=IlmnID
-    ,addressU=AddressA_ID
-    ,addressM=AddressB_ID
-    ,channel=Color_Channel
-    ,next_base=Next_Base
-    ,chr=CHR
-    ,mapinfo=MAPINFO
-    ,strand=factor(Strand)
-)]
-
-manifest_450K[                          ,probe_type:="cg"]
-manifest_450K[substr(probe_id,1,2)=="ch",probe_type:="ch"]
-manifest_450K[substr(probe_id,1,2)=="rs",probe_type:="rs"]
-
-manifest_450K[channel=="",channel:="Both"]
-
-controls_450K = fread("HumanMethylation450_15017482_v1-2.csv",skip=485586,header=FALSE)
-controls_450K = controls_450K[,1:4]
-names(controls_450K) = c("address","group","channel","name")
-
-
-save(manifest_epic,controls_epic,manifest_450K,controls_450K,file="../R/sysdata.rda",compress="xz")
 
 # -------------------------------- Purified blood cells 
 
