@@ -348,7 +348,7 @@ PCA may be applied iteratively. After excluding samples that manifest as outlier
 This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues). The function `estimateLC()` implements the [Houseman method](https://doi.org/10.1186/1471-2105-13-86) to predict the leukocyte composition. The user has the choice between various sets of model parameters trained on various reference datasets (see `?estimateLC` for a list of options). The function operates on the matrix of beta-values.
 
 ```{r}
-LC = estimateLC(beta)
+LC = estimateLC(beta,ref="deGoede+Reinius")
 pheno = cbind(pheno,LC)
 round(head(LC),3)
 ```

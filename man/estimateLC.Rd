@@ -4,12 +4,12 @@
 \alias{estimateLC}
 \title{Estimate leukcoyte composition}
 \usage{
-estimateLC(meth, ref = "bakulski+goede")
+estimateLC(meth, ref)
 }
 \arguments{
 \item{meth}{Matrix of beta values}
 
-\item{ref}{Choice of reference dataset: available options are `gervin` [2], `reinius` [3], `goede` [4], `bakulski` [5], `lolipop` [6],  or specific combinations of them. Current default is `bakulski+goede`.}
+\item{ref}{Choice of reference dataset: available options are `gervin` [2], `reinius` [3], `goede` [4], `bakulski` [5], `lolipop` [6],  or specific combinations of them.}
 }
 \value{
 Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
@@ -27,6 +27,8 @@ Estimate leukcoyte composition
 {de Goede OM, Razzaghian HR, Price EM, Jones MJ, Kobor MS, Robinson WP, Lavoie PM. Nucleated red blood cells impact DNA methylation and expression analyses of cord blood hematopoietic cells. Clinical epigenetics. 2015 Dec;7(1):95.}
 
 {Bakulski KM, Feinberg JI, Andrews SV, Yang J, Brown S, L. McKenney S, Witter F, Walston J, Feinberg AP, Fallin MD. DNA methylation of cord blood cell types: applications for mixed cell birth studies. Epigenetics. 2016 May 3;11(5):354-62.}
+
+{Gervin K, Salas LA, Bakulski KM,van Zelm MC, Koestler DC, Wiencke JK, Duijts L, Moll HA, Kelsey KT, Kobor MS, Lyle R, Christensen BC, Felix J, Jones MJ. Systematic evaluation and validation of reference and library selection methods for deconvolution of cord blood DNA methylation data. bioRxiv. 2019 March; DOI:10.1101/570457}
 
 {Heiss JA, Breitling LP, Lehne B, Kooner JS, Chambers JC, Brenner H. Training a model for estimating leukocyte composition using whole-blood DNA methylation and cell counts as reference. Epigenomics. 2017 Jan;9(1):13-20.}
 }
