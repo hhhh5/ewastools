@@ -73,7 +73,7 @@
       <h1>Recommended Work Flow</h1>
                         <h4 class="author">Jonathan Heiss</h4>
             
-            <h4 class="date">2019-03-27</h4>
+            <h4 class="date">2019-04-22</h4>
       
       
       <div class="hidden name"><code>exemplary_ewas.Rmd</code></div>
@@ -111,10 +111,10 @@ library(svd)</code></pre>
 <pre><code>beta = meth %&gt;% detectionP %&gt;% mask(0.01) %&gt;% correct_dye_bias %&gt;% dont_normalize</code></pre>
 <p>… but we will break it up in order to describe the various steps.</p>
 <p>The first step should be to filter out unreliable data points which result from low fluorescence intensities. These can be the result of insufficiently amplified DNA. Filtering is done using so-called <strong>detection p-values</strong>, calculated from comparing fluorescence intensities to a noise distribution. Probes below a chosen significance threshold are deemed detected, otherwise undetected. The conventional way of calculating these p-values, as implemented in the GenomeStudio software, lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected. <code>ewastools</code> implements an improved estimation of noise levels that improves accuracy.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth <span class="op">%&lt;&gt;%</span><span class="st"> </span>detectionP</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth <span class="op">%&lt;&gt;%</span><span class="st"> </span>detectionP
+P.new =<span class="st"> </span>meth<span class="op">$</span>detP</code></pre></div>
 <p>For easy comparison a function <code><a href="../reference/detectionP.html">detectionP.neg()</a></code> is provided, which estimates background the conventional way.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">P.new =<span class="st"> </span>meth<span class="op">$</span>detP
-P.neg =<span class="st"> </span>meth <span class="op">%&gt;%</span><span class="st"> </span>detectionP.neg</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">P.neg =<span class="st"> </span>meth <span class="op">%&gt;%</span><span class="st"> </span>detectionP.neg <span class="op">%$%</span><span class="st"> </span>detP</code></pre></div>
 <p>We can see the improved accuracy by counting the number of Y chromosome probes that are called detected for a male and a female samples.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">chrY =<span class="st"> </span>meth<span class="op">$</span>manifest[chr<span class="op">==</span><span class="st">'Y'</span>,index]
 
@@ -261,29 +261,29 @@ pheno[pc1<span class="op">&lt;</span><span class="st"> </span><span class="op">-
 <hr>
 <p><strong>Leukocyte composition</strong></p>
 <p>This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues). The function <code><a href="../reference/estimateLC.html">estimateLC()</a></code> implements the <a href="https://doi.org/10.1186/1471-2105-13-86">Houseman method</a> to predict the leukocyte composition. The user has the choice between various sets of model parameters trained on various reference datasets (see <code><a href="../reference/estimateLC.html">?estimateLC</a></code> for a list of options). The function operates on the matrix of beta-values.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">LC =<span class="st"> </span><span class="kw"><a href="../reference/estimateLC.html">estimateLC</a></span>(beta)
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">LC =<span class="st"> </span><span class="kw"><a href="../reference/estimateLC.html">estimateLC</a></span>(beta,<span class="dt">ref=</span><span class="st">"deGoede+Reinius"</span>)
 pheno =<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/cbind">cbind</a></span>(pheno,LC)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Round">round</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(LC),<span class="dv">3</span>)
-##       GR    MO     B   CD4   CD8    NK  nRBC
-## 1: 0.784 0.058 0.006 0.037 0.085 0.014 0.019
-## 2: 0.699 0.070 0.000 0.077 0.076 0.051 0.048
-## 3: 0.761 0.064 0.006 0.037 0.093 0.024 0.027
-## 4: 0.703 0.090 0.000 0.043 0.107 0.035 0.044
-## 5: 0.683 0.083 0.000 0.088 0.086 0.030 0.048
-## 6: 0.680 0.067 0.000 0.079 0.091 0.043 0.042</code></pre></div>
+##       MO     B   CD4   CD8    GR    NK  nRBC
+## 1: 0.048 0.007 0.025 0.087 0.821 0.020 0.000
+## 2: 0.059 0.000 0.062 0.097 0.746 0.055 0.007
+## 3: 0.050 0.009 0.062 0.047 0.799 0.048 0.000
+## 4: 0.079 0.000 0.057 0.085 0.744 0.056 0.005
+## 5: 0.079 0.004 0.093 0.074 0.727 0.040 0.011
+## 6: 0.058 0.004 0.087 0.072 0.724 0.064 0.000</code></pre></div>
 <p><code>LC</code> contains estimated proportions for seven cell types (dependent on the chosen reference dataset).</p>
 <p>A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting <code>GR</code> this sample can easily be spotted.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(pheno<span class="op">$</span>GR<span class="op">*</span><span class="dv">100</span>,<span class="dt">ylab=</span><span class="st">"Granulocyte fraction (%)"</span>)</code></pre></div>
 <p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-26-1.png" width="576" style="display: block; margin: auto;"></p>
 <p>It is the third to last sample, GSM1185585.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/which.min">which.max</a></span>(GR),.(gsm,GR)]
-##           gsm        GR
-## 1: GSM1185585 0.9839873
+##           gsm       GR
+## 1: GSM1185585 1.009805
 pheno[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/which.min">which.max</a></span>(GR),exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>]</code></pre></div>
-<p>The lung sample is also prominent, with an estimated proportion of <code>GR</code> near zero.</p>
+<p>The lung sample is also prominent, with an estimated proportion of <code>GR</code> of (not exactly because of numerical issues) zero.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/which.min">which.min</a></span>(GR),.(gsm,GR)]
-##           gsm            GR
-## 1: GSM2219539 -8.673617e-19
+##           gsm         GR
+## 1: GSM2219539 0.02205263
 pheno[<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/which.min">which.min</a></span>(GR),exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>]</code></pre></div>
 <p>We drop the problematic samples</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">drop  =<span class="st"> </span>pheno[exclude<span class="op">==</span><span class="ot">TRUE</span>,which=<span class="ot">TRUE</span>]
@@ -317,15 +317,16 @@ SMK[,qval<span class="op">:</span><span class="er">=</span><span class="kw"><a h
 SMK =<span class="st"> </span>SMK[qval<span class="op">&lt;</span><span class="fl">0.05</span>]
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(SMK)
 ##      probe_id         pval       qval
-## 1: cg21566642 4.479372e-08 0.01290707
-## 2: cg16587010 5.320220e-08 0.01290707
-## 3: cg05575921 1.974572e-07 0.03193593</code></pre></div>
+## 1: cg21566642 1.440710e-08 0.00699044
+## 2: cg01940273 1.196028e-07 0.01450806
+## 3: cg05575921 4.776904e-08 0.01158896
+## 4: cg21161138 7.968222e-08 0.01288748</code></pre></div>
 <p>Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR) for which the association with smoking has been validated in several cohorts <a href="https://dx.doi.org/10.1371%2Fjournal.pone.0063812">(Zeilinger et. al., 2013)</a>.</p>
 </div>
 <div id="final-comments" class="section level2">
 <h2 class="hasAnchor">
 <a href="#final-comments" class="anchor"></a>Final comments</h2>
-<p>Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding <code>ewastools</code>, please send an <a href="mailto:hhhh5@posteo.de">email</a>, or file an issue or submit an pull request on GitHub (<a href="https://github.com/hhhh5/ewastools" class="uri">https://github.com/hhhh5/ewastools</a>).</p>
+<p>Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding <code>ewastools</code>, please send an <a href="mailto:hhhh5@posteo.de">email</a>, or file an issue or submit a pull request on GitHub (<a href="https://github.com/hhhh5/ewastools" class="uri">https://github.com/hhhh5/ewastools</a>).</p>
 </div>
   </div>
 
