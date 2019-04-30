@@ -208,8 +208,7 @@ Before beginning with the actual epigenome-wide association study, it is advised
 
 **Control metrics**
 
-The first quality check evaluates 17 control metrics which are describe in the [BeadArray Controls
-     Reporter Software Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf) from Illumina. Exemplary, the "Bisulfite Conversion II" metric is plotted below. Three samples fall below the Illumina-recommended cut-off of 1. Input for `control_metrics()` is the output of `read_idats()`, e.g. the object holding raw or dye-bias-corrected intensities.
+The first quality check evaluates 17 control metrics which are describe in the [BeadArray Controls Reporter Software Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf) from Illumina. Exemplary, the "Bisulfite Conversion II" metric is plotted below. Three samples fall below the Illumina-recommended cut-off of 1. Input for `control_metrics()` is the output of `read_idats()`, e.g. the object holding raw or dye-bias-corrected intensities.
      
 ```{r fig.width=6,fig.height=3.5}
 ctrls = control_metrics(meth)
@@ -428,7 +427,7 @@ Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR
 Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:hhhh5@posteo.de), or file an issue or submit a pull request on GitHub (https://github.com/hhhh5/ewastools).
 
 ```{r cleanup, include=FALSE, echo=FALSE}
-file.remove(pheno$gsm %s+% "_Red.idat.gz")
-file.remove(pheno$gsm %s+% "_Grn.idat.gz")
+idats = list.files(pattern=".idat.gz$")
+file.remove(idats)
 file.remove("pheno.csv")
 ```
