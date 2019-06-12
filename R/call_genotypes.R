@@ -150,7 +150,6 @@ call_genotypes <- function(snpmatrix,learn=TRUE,maxiter=50){
 }
 
 #' @rdname call_genotypes
-#' @export
 #'
 mxm_ = function(genotypes){
 	
