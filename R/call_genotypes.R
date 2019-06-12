@@ -20,7 +20,7 @@
 #' @return For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with the density function of the mixture model overlaid.
 #' @export
 #'
-call_genotypes <- function(snpmatrix,learn=TRUE,maxiter=50){
+call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
 
 	snps = snpmatrix
 	dim(snps) = NULL
