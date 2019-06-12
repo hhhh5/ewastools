@@ -9,7 +9,7 @@ read_idats(idat_files, quiet = FALSE)
 \arguments{
 \item{idat_files}{Character vector of relative or absolute filepaths, but without the suffixes '_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".}
 
-\item{quiet}{If TRUE, a progress bar is shown.}
+\item{quiet}{If TRUE, suppresses the progress bar (useful for RMarkdown scripts).}
 }
 \value{
 A list containing

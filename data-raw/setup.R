@@ -2,177 +2,63 @@ library(data.table)
 library(stringi)
 library(magrittr)
 library(parallel)
-library(purrr)
 library(forcats)
 library(ewastools)
-library(strict)
-library(minfi)
+library(purrr)
 
-# -------------------------------- EPIC chip manifest
-
-### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865927)
-
-manifest_epic = fread("MethylationEPIC_v-1-0_B3.csv"
-    ,skip="IlmnID",header=TRUE,nrows=865918,integer64="character",sep=",",sep2=";")
-
-manifest_epic = manifest_epic[,list(
-     probe_id=IlmnID
-    ,addressU=as.integer(AddressA_ID)
-    ,addressM=as.integer(AddressB_ID)
-    ,channel=Color_Channel
-    ,next_base=Next_Base
-    ,chr=CHR
-    ,mapinfo=MAPINFO
-    ,strand=factor(Strand)
-)]
-
-manifest_epic[                          ,probe_type:="cg"]
-manifest_epic[substr(probe_id,1,2)=="ch",probe_type:="ch"]
-manifest_epic[substr(probe_id,1,2)=="rs",probe_type:="rs"]
-
-manifest_epic[channel=="",channel:="Both"]
-
-controls_epic = fread("MethylationEPIC_v-1-0_B3.csv",skip=865927,header=FALSE)
-controls_epic = controls_epic[,1:4]
-names(controls_epic) = c("address","group","channel","name")
-
-# -------------------------------- 450K chip manifest
-
-### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865927)
-
-manifest_450K = fread("HumanMethylation450_15017482_v1-2.csv"
-    ,skip="IlmnID",header=TRUE,nrows=485577,integer64="character",sep=",",sep2=";")
-
-manifest_450K = manifest_450K[,list(
-     probe_id=IlmnID
-    ,addressU=AddressA_ID
-    ,addressM=AddressB_ID
-    ,channel=Color_Channel
-    ,next_base=Next_Base
-    ,chr=CHR
-    ,mapinfo=MAPINFO
-    ,strand=factor(Strand)
-)]
-
-manifest_450K[                          ,probe_type:="cg"]
-manifest_450K[substr(probe_id,1,2)=="ch",probe_type:="ch"]
-manifest_450K[substr(probe_id,1,2)=="rs",probe_type:="rs"]
-
-manifest_450K[channel=="",channel:="Both"]
-
-controls_450K = fread("HumanMethylation450_15017482_v1-2.csv",skip=485586,header=FALSE)
-controls_450K = controls_450K[,1:4]
-names(controls_450K) = c("address","group","channel","name")
-
-
-save(manifest_epic,controls_epic,manifest_450K,controls_450K,file="../R/sysdata.rda",compress="xz")
+correct_dye_bias = function (raw) 
+{
+    if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% 
+        names(raw))) 
+        stop("Invalid argument")
+    i1g = raw$manifest[channel == "Grn", ]
+    i2 = raw$manifest[channel == "Both", ]
+    Ai = raw$controls[group == "NORM_A"][order(name)]$index
+    Ai = raw$ctrlR[Ai, ]
+    Gi = raw$controls[group == "NORM_G"][order(name)]$index
+    Gi = raw$ctrlG[Gi, ]
+    Ti = raw$controls[group == "NORM_T"][order(name)]$index
+    Ti = raw$ctrlR[Ti, ]
+    Ci = raw$controls[group == "NORM_C"][order(name)]$index
+    Ci = raw$ctrlG[Ci, ]
+    J = ncol(raw$M)
+    for (j in 1:J) {
+        x = log(Gi[, j])
+        y = log(Ai[, j])
+        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
+        x = x[keep]
+        y = y[keep]
+        m = mblm::mblm(y ~ x, repeated = FALSE)
+        i = i2$index
+        raw$M[i, j] = exp(coef(m)[1] + log(raw$M[i, j]) * coef(m)[2])
+        x = log(Ci[, j])
+        y = log(Ti[, j])
+        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
+        x = x[keep]
+        y = y[keep]
+        m = mblm::mblm(y ~ x, repeated = FALSE)
+        i = i1g$index
+        raw$U[i, j] = exp(coef(m)[1] + log(raw$U[i, j]) * coef(m)[2])
+        raw$M[i, j] = exp(coef(m)[1] + log(raw$M[i, j]) * coef(m)[2])
+    }
+    return(raw)
+}
 
 # -------------------------------- Purified blood cells 
 
-# 450K datasets
+load("FlowSorted.CordBloodCombined.450k.rda") 
 
-#--------------------------------------------------------------
-# de Goede (GSE68456) https://doi.org/10.1186/s13148-015-0129-6
-#--------------------------------------------------------------
+pheno1 = minfi::pData(FlowSorted.CordBloodCombined.450k)
+pheno1 %<>% as.data.table
+J = nrow(pheno1)
 
-dir.create("GSE68456")
+pheno1[,cell_type:=factor(CellType,levels=c("Bcell","CD4T","CD8T","Gran","Mono","NK","nRBC","WBC"),labels=c("B","CD4","CD8","GR","MO","NK","nRBC","WBC"))]
+pheno1[,sex:=factor(Sex,levels=c("M","F"),labels=c("m","f"))]
 
-### Select datasets by GSE accession 
-goede = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE68456&targ=gsm&form=text&view=brief"
-goede %<>% map(readLines) %>% unlist
-goede = split( goede, cumsum(goede %like% "^\\^SAMPLE = GSM") )
+pheno1 = pheno1[,.(donor=SampleID,sex,cell_type,study=Study,barcode=Slide,position=Array)]
 
-names(goede) =  map(goede,1) %>% stri_match_first(regex="GSM\\d+")
-
-goede %<>% imap(function(s,acc){
-  s = strsplit(s,split=" = ",fixed=TRUE)  
-  data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
-})
-
-goede %<>% rbindlist
-
-goede = goede[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file","!Sample_title")]
-
-i = goede[variable == "!Sample_characteristics_ch1",which=TRUE]
-ch = goede$value[i] %>% stri_split(fixed=": ")
-goede$variable[i] = map_chr(ch,1)
-goede$value   [i] = map_chr(ch,2)
-rm(ch)
-
-goede[variable == "!Sample_title",variable:="title"    ]
-goede[variable == "Sex"          ,variable:="sex"      ]
-goede[variable == "cell type"    ,variable:="cell_type"]
-goede = goede[!variable %in% c("facs strategy","tissue")]
-
-# Find the URLs pointing to the two .idat files
-goede[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
-goede[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
-
-goede = dcast(goede,gsm ~ variable,fill=NA)
-goede[,sex:=factor(sex,levels=c("M","F"),labels=c("m","f"))]
-goede[,file:=paste0("GSE68456","/",gsm)]
-goede[,cell_type:=fct_recode(cell_type,B="B cell",CD4="CD4 T cell",CD8="CD8 T cell",GR="Granulocyte",MO="Monocyte",NK="NK cell",nRBC="nRBC")]
-goede[,donor:=stri_extract_last(title,regex="ind\\d+")]
-
-map2(goede$red, goede$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
-map2(goede$grn, goede$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
-
-goede = goede[,list(study="goede",cell_type,donor,sex,file)]
-
-#-----------------------------------------------------
-# Gervin https://doi.org/10.1080/15592294.2016.1214782
-#-----------------------------------------------------
-
-gervin = read.csv("gervin/sampleSheet_cordblood.csv",skip=7)
-setDT(gervin)
- 
-gervin[,cell_type:=fct_recode(cellType,B="cd19",CD4="cd4",CD8="cd8",GR="gran",MO="cd14",WB="wb")]
-gervin[,donor:=stri_extract_first(Sample_Name,regex="^\\d+")]
-gervin[,file:=paste0("gervin","/",Sentrix_ID,"_",Sentrix_Position)]
-
-gervin = gervin[,list(study="gervin",cell_type,donor,file)]
-
-#----------------------------------------------------
-# Reinius https://doi.org/10.1371/journal.pone.004136
-#----------------------------------------------------
-
-reinius = fread("reinius/sample_sheet_IDAT.csv")
-
-reinius[,donor:=stri_sub(Sample,-3,-1)]
-reinius[,`Chip Row Pos`:=stri_replace_all_fixed(`Chip Row Pos`,"O","0")] 
-reinius[,`Chip CO position`:=stri_replace_all_fixed(`Chip CO position`,"O","0")] 
-reinius[,file:=paste0("reinius/",`Chip#ID`,"_",`Chip Row Pos`,`Chip CO position`)] 
-reinius$cell_type = fct_recode(reinius$Type,MO="CD14+ Monocytes",NK="CD56+ NK-cells",CD8="CD8+ T-cells",CD4="CD4+ T-cells",GR="Granulocytes",B="CD19+ B-cells",WB="Whole blood",EO="Eosinophils",NE="Neutrophils")
-reinius$sex = "m"
-reinius = reinius[,list(study="reinius",cell_type,donor,sex,file)]
-
-#----------------------------------------------------
-
-purified = rbind(goede,gervin,reinius,use.names=TRUE,fill=TRUE)
-purified %<>% droplevels
-purified[,j:=1:.N]
-
-beta = purified$file %>% read_idats(.) %>% correct_dye_bias(.) %>% ewastools::detectionP(.) %>% ewastools::mask(.,0.05) %>% dont_normalize
-
-#----------------------------------------------------
-# Bakulski
-#----------------------------------------------------
-
-load("bakulski/FlowSorted.CordBlood.450k.rda") 
- 
-pheno = pData(FlowSorted.CordBlood.450k)
-pheno %<>% as.data.frame %>% setDT
-J = nrow(pheno)
-
-pheno$cell_type = fct_recode(pheno$CellType,MO="Mono",NK="NK",CD8="CD8T",CD4="CD4T",GR="Gran",B="Bcell",WB="WholeBlood",nRBC="nRBC")
-pheno[,sex:=factor(Sex,levels=c("M","F"),labels=c("m","f"))]
-pheno = pheno[,list(study="bakulski",cell_type,donor=Individual.ID,sex,file=NA,j=(nrow(purified)+1):(nrow(purified)+J))]
-
-purified = rbind(purified,pheno)
-
-
-r = getRed  (FlowSorted.CordBlood.450k)
-g = getGreen(FlowSorted.CordBlood.450k)
+r = minfi::getRed  (FlowSorted.CordBloodCombined.450k)
+g = minfi::getGreen(FlowSorted.CordBloodCombined.450k)
 idat_order = rownames(r)
 
 meth = list()
@@ -184,7 +70,7 @@ manifest[channel!="Both",Ui:=match(addressU,idat_order)]
 manifest[channel!="Both",Mi:=match(addressM,idat_order)]
 manifest[channel=="Both",Ui:=match(addressU,idat_order)]
 manifest[channel=="Both",Mi:=Ui]
-    
+
 controls[,i:=match(address,idat_order)]
 
 manifest[,index:=1L:.N]
@@ -233,19 +119,183 @@ meth$ctrlR = ctrlR
 meth$ctrlG = ctrlG
 meth$oobR = oobR
 meth$oobG = oobG
-meth$meta = data.table(sample_id="BB" %s+% 1:104)
-rm(M,U,oobG,oobR,controls,ctrlR,ctrlG,manifest,pheno)
+meth$meta = copy(pheno1[,.(sample_id=paste0(barcode,"_",position))])
 
-beta2 = meth %>% correct_dye_bias(.) %>% ewastools::detectionP(.) %>% ewastools::mask(.,0.05) %>% dont_normalize(.)
+rm(M,U,oobG,oobR,controls,ctrlR,ctrlG,manifest,r,g,i2,i1g,i1r,idat_order,FlowSorted.CordBloodCombined.450k)
 
-beta = cbind(beta,beta2)
+beta1 = dont_normalize(correct_dye_bias(ewastools::mask(detectionP.neg(meth),-2)))
+
+#----------------------------------------------------
+# Reinius https://doi.org/10.1371/journal.pone.004136
+#----------------------------------------------------
+
+reinius = fread("reinius/sample_sheet_IDAT.csv")
+
+reinius[,donor:=stri_sub(Sample,-3,-1)]
+reinius[,`Chip Row Pos`:=stri_replace_all_fixed(`Chip Row Pos`,"O","0")] 
+reinius[,`Chip CO position`:=stri_replace_all_fixed(`Chip CO position`,"O","0")] 
+reinius[,file:=paste0("reinius/",`Chip#ID`,"_",`Chip Row Pos`,`Chip CO position`)] 
+reinius$cell_type = fct_recode(reinius$Type,MO="CD14+ Monocytes",NK="CD56+ NK-cells",CD8="CD8+ T-cells",CD4="CD4+ T-cells",GR="Granulocytes",B="CD19+ B-cells",WB="Whole blood",EO="Eosinophils",NE="Neutrophils")
+reinius$sex = "m"
+reinius = reinius[,list(study="Reinius",cell_type,donor,sex,file)]
+reinius = reinius[cell_type %in% c("MO","NK","CD8","GR","CD4","B")]
+reinius = reinius[donor != "105"]
+reinius = reinius[! (donor=="160" & cell_type %in% c("CD8","CD4"))]
+reinius = reinius[! (donor=="261" & cell_type %in% c("NK","B"))]
+reinius = reinius[! (donor=="218" & cell_type=="NK")]
+
+beta2 = dont_normalize(correct_dye_bias(ewastools::mask(detectionP.neg(read_idats(reinius$file)),-2)))
+
+#----------------------------------------------------
+
+### EPIC datasets
+
+# https://doi.org/10.1186/s13059-018-1448-7
+# dir.create("GSE110554")
+
+### Select datasets by GSE accession 
+salas = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE110554&targ=gsm&form=text&view=brief"
+salas %<>% map(readLines) %>% unlist
+salas = split( salas, cumsum(salas %like% "^\\^SAMPLE = GSM") )
+
+names(salas) =  map(salas,1) %>% stri_match_first(regex="GSM\\d+")
+
+salas %<>% imap(function(s,acc){
+  s = strsplit(s,split=" = ",fixed=TRUE)  
+  data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
+})
+
+salas %<>% rbindlist
+
+salas = salas[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
+
+i = salas[variable == "!Sample_characteristics_ch1",which=TRUE]
+ch = salas$value[i] %>% stri_split(fixed=": ")
+salas$variable[i] = map_chr(ch,1)
+salas$value   [i] = map_chr(ch,2)
+rm(ch)
+
+# Find the URLs pointing to the two .idat files
+salas[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
+salas[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
+
+salas[,variable:=fct_recode(variable,B="bcell",CD4="cd4t",CD8="cd8t",NE="neu",MO="mono",NK="nk")]
+salas = dcast(salas,gsm ~ variable,fill=NA)
+salas = salas[,list(gsm,B,CD4,CD8,MO,NE,NK,purity,cell_type=`cell type`,red,grn)]
+
+salas[,cell_type:=fct_recode(cell_type,B="Bcell",CD4="CD4T",CD8="CD8T",NE="Neu",MO="Mono",NK="NK")]
+salas[,file:=paste0("GSE110554","/",gsm)]
+salas$study = "Salas"
+
+# map2(salas$red, salas$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+# map2(salas$grn, salas$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+
+salas = salas[cell_type!="MIX",.(cell_type,study,file)]
 
 # --------------------------------
+# dir.create("GSE103541")
 
-train_model = function(studies,cell_types,output){
+### Select datasets by GSE accession 
+mill = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE103541&targ=gsm&form=text&view=brief"
+mill %<>% map(readLines) %>% unlist
+mill = split( mill, cumsum(mill %like% "^\\^SAMPLE = GSM") )
+
+names(mill) =  map(mill,1) %>% stri_match_first(regex="GSM\\d+")
+
+mill %<>% imap(function(s,acc){
+  s = strsplit(s,split=" = ",fixed=TRUE)  
+  data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
+})
+
+mill %<>% rbindlist
+
+mill = mill[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
+
+i = mill[variable == "!Sample_characteristics_ch1",which=TRUE]
+ch = mill$value[i] %>% stri_split(fixed=": ")
+mill$variable[i] = map_chr(ch,1)
+mill$value   [i] = map_chr(ch,2)
+rm(ch)
+
+# Find the URLs pointing to the two .idat files
+mill[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
+mill[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
+
+mill = mill[value!="blood"]
+mill = dcast(mill,gsm ~ variable,fill=NA)
+mill[,cell_type:=fct_recode(`cell type`,B="B-cells",CD4="CD4 T-cells",CD8="CD8 T-cells",GR="Granulocytes",MO="Monocytes")]
+mill = mill[,list(gsm,study="Mill",cell_type,red,grn)]
+
+
+# drop problematic samples
+mill = mill[!gsm %in% c("GSM2773348","GSM2773349","GSM2773350")]
+mill[,file:=paste0("GSE103541/",gsm)]
+
+# map2(mill$red, mill$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+# map2(mill$grn, mill$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
+
+mill = mill[,.(cell_type,file,study)]
+
+pheno3 = rbind(salas,mill,use.names=TRUE,fill=TRUE)
+
+beta3 = dont_normalize(correct_dye_bias(ewastools::mask(detectionP.neg(read_idats(pheno3$file)),-2)))
+
+
+#--------------------------------------
+### MERGER
+
+detach("package:minfi")
+detach("package:bumphunter")
+detach("package:SummarizedExperiment")
+detach("package:GenomicRanges")
+detach("package:Biostrings")
+detach("package:XVector")
+detach("package:DelayedArray")
+detach("package:GenomeInfoDb")
+detach("package:IRanges")
+
+
+common = paste0("beta",1:3) %>% map(get) %>% map(rownames) %>% reduce(intersect)
+common = intersect(common,ewastools:::manifest_450K[!chr%in%c("X","Y") & probe_type=="cg"]$probe_id)
+
+beta = cbind(
+     beta1[ match(common,rownames(beta1)) ,]
+    ,beta2[ match(common,rownames(beta2)) ,]
+    ,beta3[ match(common,rownames(beta3)) ,]
+    )
+
+beta = beta[common,]
+rm(beta1,beta2,beta3)
+
+pheno = rbindlist(list(pheno1,reinius,pheno3),use.names=TRUE,fill=TRUE)
+rm(mill,common,i,J,meth,pheno1,pheno3,reinius,salas)
+pheno[study=="Salas" & cell_type=="NE",cell_type:="GR"]
+
+j = pheno[cell_type!="WBC",which=TRUE]
+
+beta = beta[,j]
+pheno = pheno[j]
+pheno[,j:=1:.N]
+
+pheno %<>% droplevels
+
+
+table(pheno[,.(study,cell_type)])
+#           cell_type
+# study       B CD4 CD8 GR MO NK nRBC
+#   Bakulski 11   9   2 11 14 14    4
+#   deGoede   7   7   6  7 12  6    7
+#   Gervin   11  11  11 11  8 11    0
+#   Lin      13  14  14 14 14 14    0
+#   Mill     28  28  28 29 29  0    0
+#   Reinius   4   4   4  5  5  3    0
+#   Salas     6   7   6  6  6  6    0
+
+
+train_model = function(train,output){
     
-    train = purified[study %in% studies & cell_type %in% cell_types]
     train_beta = na.omit(beta[,train$j])
+    cell_types = unique(train$cell_type)
 
     markers = list() 
 
@@ -281,67 +331,13 @@ train_model = function(studies,cell_types,output){
     write.table(coefs,file=output,row.names=TRUE) 
 }
 
-### First model using only the Gervin dataset
-train_model("gervin" ,c("GR","MO","B","CD4","CD8","NK"),"../data/gervin.txt")
-train_model("reinius",c("GR","MO","B","CD4","CD8","NK"),"../data/reinius.txt")
-train_model(c("gervin","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/gervin+reinius.txt")
-train_model("goede",c("GR","MO","B","CD4","CD8","NK","nRBC"),"../data/goede.txt")
-train_model("bakulski",c("GR","MO","B","CD4","CD8","NK","nRBC"),"../data/bakulski.txt")
-train_model(c("bakulski","goede"),c("GR","MO","B","CD4","CD8","NK","nRBC"),"../data/bakulski+goede.txt")
-train_model(c("bakulski","gervin"),c("GR","MO","B","CD4","CD8","NK"),"../data/bakulski+gervin.txt")
-train_model(c("bakulski","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/bakulski+reinius.txt")
-train_model(c("goede","reinius"),c("GR","MO","B","CD4","CD8","NK"),"../data/goede+reinius.txt")
+studies = unique(pheno$study)
+combinations = combn(studies,2)
+combinations %<>% split(col(combinations))
+combinations = c(as.list(studies),combinations)
+names(combinations) = NULL
 
-# --------------------------------
-# EPIC reference dataset https://doi.org/10.1186/s13059-018-1448-7
-
-dir.create("GSE110554")
-
-### Select datasets by GSE accession 
-salas = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE110554&targ=gsm&form=text&view=brief"
-salas %<>% map(readLines) %>% unlist
-salas = split( salas, cumsum(salas %like% "^\\^SAMPLE = GSM") )
-
-names(salas) =  map(salas,1) %>% stri_match_first(regex="GSM\\d+")
-
-salas %<>% imap(function(s,acc){
-  s = strsplit(s,split=" = ",fixed=TRUE)  
-  data.table(gsm=acc,variable=map_chr(s,1),value=map_chr(s,2))
-})
-
-salas %<>% rbindlist
-
-salas = salas[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
-
-i = salas[variable == "!Sample_characteristics_ch1",which=TRUE]
-ch = salas$value[i] %>% stri_split(fixed=": ")
-salas$variable[i] = map_chr(ch,1)
-salas$value   [i] = map_chr(ch,2)
-rm(ch)
-
-# Find the URLs pointing to the two .idat files
-salas[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
-salas[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
-
-salas[,variable:=fct_recode(variable,B="bcell",CD4="cd4t",CD8="cd8t",NE="neu",MO="mono",NK="nk")]
-salas = dcast(salas,gsm ~ variable,fill=NA)
-salas = salas[,list(gsm,B,CD4,CD8,MO,NE,NK,purity,cell_type=`cell type`,red,grn)]
-
-salas[,cell_type:=fct_recode(cell_type,B="Bcell",CD4="CD4T",CD8="CD8T",NE="Neu",MO="Mono",NK="NK")]
-salas[,file:=paste0("GSE110554","/",gsm)]
-
-map2(salas$red, salas$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
-map2(salas$grn, salas$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
-
-beta = salas %$% file %>% read_idats %>% correct_dye_bias %>% ewastools::detectionP(.) %>% ewastools::mask(.,0.05) %>% dont_normalize
-
-purified = salas
-purified$study = "salas"
-purified[,j:=1:.N]
-
-# --------------------------------
-
-train_model("salas",c("B","CD4","CD8","MO","NE","NK"),"../data/salas.txt")
-
-
-
+mclapply(combinations,function(combo){
+    train = copy(pheno[study %in% combo])
+    train_model(train,output = paste0(paste0(combo,collapse="+"),".txt"))
+},mc.cores=length(combinations))

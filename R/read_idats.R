@@ -6,7 +6,7 @@ NULL
 #' @export
 #' 
 #' @param idat_files Character vector of relative or absolute filepaths, but without the suffixes '_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".
-#' @param quiet If TRUE, a progress bar is shown.
+#' @param quiet If TRUE, suppresses the progress bar (useful for RMarkdown scripts).
 #' 
 #' @return A list containing
 #' \item{manifest}{A data.table describing the probes}

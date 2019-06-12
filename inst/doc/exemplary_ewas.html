@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Jonathan Heiss" />
+
+<meta name="date" content="2019-04-30" />
+
+<title>Recommended Work Flow</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Recommended Work Flow</h1>
+<h4 class="author">Jonathan Heiss</h4>
+<h4 class="date">2019-04-30</h4>
+
+
+
+<style type="text/css">
+body{ font-size: 12pt; text-align: justify; }
+img{ border: 0px;}
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+</style>
+<p>This vignette exemplifies how to use the <code>ewastools</code> package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the <a href="https://www.ncbi.nlm.nih.gov/geo/">Gene Expression Omnibus</a> repository, the phenotype data is stored in a file named <code>pheno.csv</code></p>
+<pre><code>devtools::install_github(&quot;hhhh5/ewastools@master&quot;)
+library(ewastools)
+library(stringi)
+library(data.table)
+library(magrittr)   
+library(purrr)
+library(svd)</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno =<span class="st"> </span><span class="kw">fread</span>(<span class="st">&quot;pheno.csv&quot;</span>)
+<span class="kw">head</span>(pheno)
+##           gsm sex smoker
+## 1: GSM2260480   m smoker
+## 2: GSM2260482   m smoker
+## 3: GSM2260485   m smoker
+## 4: GSM2260486   m smoker
+## 5: GSM2260487   f smoker
+## 6: GSM2260488   m smoker</code></pre></div>
+<p><code>pheno</code> contains a column <code>gsm</code>, which in this case represents also the prefix of the .idat file names. Usually, however, the file names are a combination of the Sentrix barcode, Sentrix position and color channel and will look something like this <code>200379120004_R01C01_Red.idat</code> for the .idat containing the red color channel, and analogously <code>200379120004_R01C01_Grn.idat</code> for the .idat containing the green color channel. <code>read_idats</code> can be used to import methylation data. It’s first argument is a character vector containing the absolute or relative file paths and names but without the color channel and file extension, e.g. <code>C:/folder/subfolder/200379120004_R01C01</code>. Both red and green .idat files of a particular sample need to be in the same folder.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth =<span class="st"> </span><span class="kw">read_idats</span>(pheno<span class="op">$</span>gsm,<span class="dt">quiet=</span><span class="ot">TRUE</span>) <span class="co"># `quiet=TRUE` supresses the progress bar</span>
+## [1] 622399</code></pre></div>
+<p>The entire pre-processing, including filtering by detection p-values, dye-bias correction and conversion into beta-values, can be done in one line …</p>
+<pre><code>beta = meth %&gt;% detectionP %&gt;% mask(0.01) %&gt;% correct_dye_bias %&gt;% dont_normalize</code></pre>
+<p>… but we will break it up in order to describe the various steps.</p>
+<p>The first step should be to filter out unreliable data points which result from low fluorescence intensities. These can be the result of insufficiently amplified DNA. Filtering is done using so-called <strong>detection p-values</strong>, calculated from comparing fluorescence intensities to a noise distribution. Probes below a chosen significance threshold are deemed detected, otherwise undetected. The conventional way of calculating these p-values, as implemented in the GenomeStudio software, lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected. <code>ewastools</code> implements an improved estimation of noise levels that improves accuracy.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth <span class="op">%&lt;&gt;%</span><span class="st"> </span>detectionP
+P.new =<span class="st"> </span>meth<span class="op">$</span>detP</code></pre></div>
+<p>For easy comparison a function <code>detectionP.neg()</code> is provided, which estimates background the conventional way.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">P.neg =<span class="st"> </span>meth <span class="op">%&gt;%</span><span class="st"> </span>detectionP.neg <span class="op">%$%</span><span class="st"> </span>detP</code></pre></div>
+<p>We can see the improved accuracy by counting the number of Y chromosome probes that are called detected for a male and a female samples.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">chrY =<span class="st"> </span>meth<span class="op">$</span>manifest[chr<span class="op">==</span><span class="st">'Y'</span>,index]
+
+  male =<span class="st"> </span><span class="kw">which</span>(pheno<span class="op">$</span>sex<span class="op">==</span><span class="st">&quot;m&quot;</span>)[<span class="dv">1</span>]
+female =<span class="st"> </span><span class="kw">which</span>(pheno<span class="op">$</span>sex<span class="op">==</span><span class="st">&quot;f&quot;</span>)[<span class="dv">1</span>]
+
+P.neg =<span class="st"> </span>P.neg[chrY,<span class="kw">c</span>(male,female)]
+P.new =<span class="st"> </span>P.new[chrY,<span class="kw">c</span>(male,female)]
+
+P.neg =<span class="st"> </span><span class="kw">colSums</span>(P.neg<span class="op">&lt;</span><span class="fl">0.01</span>,<span class="dt">na.rm=</span><span class="ot">TRUE</span>)
+P.new =<span class="st"> </span><span class="kw">colSums</span>(P.new<span class="op">&lt;</span><span class="fl">0.01</span>,<span class="dt">na.rm=</span><span class="ot">TRUE</span>)
+
+<span class="kw">names</span>(P.neg) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;male&quot;</span>,<span class="st">&quot;female&quot;</span>)
+<span class="kw">names</span>(P.new) =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;male&quot;</span>,<span class="st">&quot;female&quot;</span>)</code></pre></div>
+<p>Using the conventional detection p-value, for the female sample 402 Y chromosome probes are called detected, a number close to all 416 Y chromosome probes as for the male sample.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">P.neg
+##   male female 
+##    416    402</code></pre></div>
+<p>Using the improved method gives a much more accurate result with all 416 Y chromosome probes classified as detected for the male sample, but only 402 probes classified as detected for the female sample. More information can be found in <a href="https://doi.org/10.1186/s13148-019-0615-3">Heiss and Just, 2019</a>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">P.new
+##   male female 
+##    416     73</code></pre></div>
+<p>We used a significance threshold of 0.01 above. Moving forward, probes above this threshold should be masked, i.e. set to missing.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth <span class="op">%&lt;&gt;%</span><span class="st"> </span><span class="kw">mask</span>(<span class="fl">0.01</span>)</code></pre></div>
+<p>Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. <code>ewastools</code> provides an improved version of RELIC (<a href="https://doi.org/10.1186/s12864-016-3426-3">Xu et al., 2017</a>) using robust Theil-Sen estimators.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth <span class="op">%&lt;&gt;%</span><span class="st"> </span>correct_dye_bias</code></pre></div>
+<p>The final step is the conversion of intensities to beta-values. While <code>ewastools</code> implements the LOESS normalization <a href="https://doi.org/10.3389/fgene.2015.00092">(Heiss and Brenner, 2015)</a>, I advise against normalization as it does little to protect against batch effects but can result in the removal of genuine biological signal. Instead I recommended to adjust for relevant technical covariates in regression models later.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">beta =<span class="st"> </span><span class="kw">dont_normalize</span>(meth)</code></pre></div>
+<p>Before beginning with the actual epigenome-wide association study, it is advised to check a dataset for problematic samples.</p>
+<div id="quality-checks" class="section level2">
+<h2>Quality checks</h2>
+<p><strong>Control metrics</strong></p>
+<p>The first quality check evaluates 17 control metrics which are describe in the <a href="https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf">BeadArray Controls Reporter Software Guide</a> from Illumina. Exemplary, the “Bisulfite Conversion II” metric is plotted below. Three samples fall below the Illumina-recommended cut-off of 1. Input for <code>control_metrics()</code> is the output of <code>read_idats()</code>, e.g. the object holding raw or dye-bias-corrected intensities.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">ctrls =<span class="st"> </span><span class="kw">control_metrics</span>(meth)
+<span class="kw">stripchart</span>(ctrls<span class="op">$</span><span class="st">`</span><span class="dt">Bisulfite Conversion II</span><span class="st">`</span>,<span class="dt">method=</span><span class="st">&quot;jitter&quot;</span>,<span class="dt">pch=</span><span class="dv">4</span>,<span class="dt">xlab=</span><span class="st">'Bisulfite Conversion II'</span>,<span class="dt">xlim=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">10</span>))
+<span class="kw">abline</span>(<span class="dt">v=</span><span class="dv">1</span>,<span class="dt">col=</span><span class="dv">2</span>,<span class="dt">lty=</span><span class="dv">3</span>)</code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<p>A logical vector of passed/failed is returned by <code>sample_failure()</code> which compares all 17 metrics against the thresholds recommended by Illumina. In this case all samples passed (i.e., <code>failed==FALSE</code>).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno<span class="op">$</span>failed =<span class="st"> </span><span class="kw">sample_failure</span>(ctrls)
+<span class="kw">table</span>(pheno<span class="op">$</span>failed)
+## 
+## FALSE 
+##    35</code></pre></div>
+<hr />
+<p><strong>Sex mismatches</strong></p>
+<p>The sex of the sample donor can reliable be inferred from the methylation data. This functionality is implemented by the combination of <code>check_sex()</code> and <code>predict_sex()</code>. <code>check_sex()</code> computes the normalized average total fluorescence intensities of the probes targeting the X and Y chromosome. <code>predict_sex()</code> uses the output of <code>check_sex()</code> and recorded sex in order to identify mislabeled samples. The function <code>check_sex()</code> should be applied to dye-bias corrected intensities.</p>
+<p>Plotted below are the normalized average total fluorescence intensities of X and Y chromosome probes.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[,<span class="kw">c</span>(<span class="st">&quot;X&quot;</span>,<span class="st">&quot;Y&quot;</span>) <span class="op">:</span><span class="er">=</span><span class="st"> </span><span class="kw">check_sex</span>(meth)]
+pheno[,predicted_sex<span class="op">:</span><span class="er">=</span><span class="kw">predict_sex</span>(X,Y,<span class="kw">which</span>(sex<span class="op">==</span><span class="st">&quot;m&quot;</span>),<span class="kw">which</span>(sex<span class="op">==</span><span class="st">&quot;f&quot;</span>))]
+
+tmp =<span class="st"> </span>pheno[predicted_sex<span class="op">==</span>sex]
+<span class="kw">plot</span>(Y <span class="op">~</span><span class="st"> </span>X,<span class="dt">data=</span>tmp,<span class="dt">pch=</span><span class="kw">ifelse</span>(tmp<span class="op">$</span>sex<span class="op">==</span><span class="st">&quot;f&quot;</span>,<span class="dv">1</span>,<span class="dv">4</span>),<span class="dt">asp=</span><span class="dv">1</span>,<span class="dt">xlab=</span><span class="st">&quot;Normalized X chromosome intensities&quot;</span>,<span class="dt">ylab=</span><span class="st">&quot;Normalized Y chromosome intensities&quot;</span>)
+tmp =<span class="st"> </span>pheno[predicted_sex<span class="op">!=</span>sex]
+<span class="kw">points</span>(Y <span class="op">~</span><span class="st"> </span>X,<span class="dt">data=</span>tmp,<span class="dt">pch=</span><span class="kw">ifelse</span>(tmp<span class="op">$</span>sex<span class="op">==</span><span class="st">&quot;f&quot;</span>,<span class="dv">1</span>,<span class="dv">4</span>),<span class="dt">col=</span><span class="dv">2</span>)
+<span class="kw">legend</span>(<span class="st">&quot;topright&quot;</span>,<span class="dt">pch=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>),<span class="dt">legend=</span><span class="kw">c</span>(<span class="st">&quot;female&quot;</span>,<span class="st">&quot;male&quot;</span>))</code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<p>Samples form two cluster of males (top left) and females (bottom left). The one mislabeled sample here (in red) can easily be identified and should be flagged.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[sex<span class="op">!=</span>predicted_sex,exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>] <span class="co"># flag sample</span>
+pheno[sex<span class="op">!=</span>predicted_sex,.(gsm,sex,predicted_sex)]
+##           gsm sex predicted_sex
+## 1: GSM2260573   f             m</code></pre></div>
+<p>Another sample falls outside the two clusters.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[X <span class="op">%between%</span><span class="st"> </span><span class="kw">c</span>(<span class="fl">0.85</span>,<span class="fl">0.95</span>) <span class="op">&amp;</span><span class="st"> </span>Y <span class="op">%between%</span><span class="st"> </span><span class="kw">c</span>(<span class="fl">0.65</span>,<span class="fl">0.75</span>),.(gsm,X,Y,sex,predicted_sex)]
+##           gsm         X        Y sex predicted_sex
+## 1: GSM2260653 0.9172741 0.710014   m             m</code></pre></div>
+<p>There are several possible explanations for samples not clustering with males or females, for example chromosome abnormalities. Or sample contamination. The latter theory can be tested in the next quality check.</p>
+<hr />
+<p><strong>Genotype calling and outliers</strong></p>
+<p>For the next check we first need the row indexes of the SNP probes in <code>beta</code>. <code>meth</code>, the output of <code>read_idats()</code>, contains a data.table object with the relevant information.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">meth<span class="op">$</span>manifest
+##           probe_id addressU addressM channel next_base chr  mapinfo strand
+##      1: rs10796216 14622465 41635319     Red         A           NA       
+##      2:   rs715359 18796328 48710462     Grn         C           NA       
+##      3:  rs1040870 22687484 20663453     Red         A           NA       
+##      4: rs10936224 34619331 30630453     Red         T           NA       
+##      5:   rs213028 10622451 24684377     Red         T           NA       
+##     ---                                                                   
+## 485573: cg17939569 73757458       NA    Both             Y 27009430      F
+## 485574: cg13365400 61745505       NA    Both             Y 27210334      F
+## 485575: cg21106100 56793430       NA    Both             Y 28555536      R
+## 485576: cg08265308 67794346 26610401     Red         A   Y 28555550      R
+## 485577: cg14273923 16749405       NA    Both             Y 28555912      F
+##         probe_type  index  OOBi     Ui     Mi
+##      1:         rs      1     1  39329 302627
+##      2:         rs      2     1  86374 372482
+##      3:         rs      3     2 120242  99780
+##      4:         rs      4     3 233473 195590
+##      5:         rs      5     4   1025 139183
+##     ---                                      
+## 485573:         cg 485573    NA 610683 610683
+## 485574:         cg 485574    NA 499079 499079
+## 485575:         cg 485575    NA 452652 452652
+## 485576:         cg 485576 89203 559764 155235
+## 485577:         cg 485577    NA  64742  64742</code></pre></div>
+<p>SNP probes are labelled <code>&quot;rs&quot;</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">snps =<span class="st"> </span>meth<span class="op">$</span>manifest[probe_type<span class="op">==</span><span class="st">&quot;rs&quot;</span>,index]
+snps =<span class="st"> </span>beta[snps,]</code></pre></div>
+<p>These SNPs are then used as input for <code>call_genotypes()</code>. This function estimates the parameters of a mixture model consisting of three Beta distributions representing the heterozygous and the two homozygous genotypes, and a fourth component, a uniform distribution, representing outliers. The functions returns posterior probabilities used for soft classification. When setting the argument <code>learn=FALSE</code>, a pre-specified mixture model is used. In this case, we use the pre-specified model as the dataset is quite small and maximum likelihood estimation might be unstable.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">genotypes =<span class="st"> </span><span class="kw">call_genotypes</span>(snps,<span class="dt">learn=</span><span class="ot">FALSE</span>)</code></pre></div>
+<p><code>snp_outliers()</code> returns the average log odds of belonging to the outlier component across all SNP probes. I recommend to flag samples with a score greater than -4 for exclusion.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno<span class="op">$</span>outlier =<span class="st"> </span><span class="kw">snp_outliers</span>(genotypes)
+pheno[outlier <span class="op">&gt;</span><span class="st"> </span><span class="op">-</span><span class="dv">4</span>,.(gsm,X,Y,outlier)]
+##           gsm         X        Y    outlier
+## 1: GSM2260653 0.9172741 0.710014 -0.8460863
+pheno[outlier <span class="op">&gt;</span><span class="st"> </span><span class="op">-</span><span class="dv">4</span>,exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>] <span class="co"># flag sample</span></code></pre></div>
+<p>The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).</p>
+<p>Other useful functions to be mentioned are <code>check_snp_agreement()</code> and <code>enumerate_sample_donors()</code>. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno<span class="op">$</span>donor_id =<span class="st"> </span><span class="kw">enumerate_sample_donors</span>(genotypes)
+
+<span class="co"># List duplicates</span>
+pheno[,n<span class="op">:</span><span class="er">=</span>.N,by=donor_id]
+pheno[n<span class="op">&gt;</span><span class="dv">1</span>,.(gsm,donor_id)]
+##           gsm donor_id
+## 1: GSM2260485        3
+## 2: GSM2260543        3
+pheno[gsm<span class="op">==</span><span class="st">&quot;GSM2260543&quot;</span>,exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>] <span class="co"># drop duplicate</span></code></pre></div>
+<p>Here samples GSM2260485 and GSM2260543 come from the same donor.</p>
+<hr />
+<p><strong>PCA</strong></p>
+<p>Principal component analysis is a popular feature reduction method: it projects high-dimensional data into a lower-dimensional representation while trying to retain as much variability as possible. This is especially useful when either individual features are highly correlated and it is therefore reasonable to summarize them, or when (sometimes subtle) traces of background effects can be found across of large number of features.</p>
+<p>We will drop the X and Y chromosome as we would like to find important drivers of methylation beyond sex.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">982278</span>)
+chrXY =<span class="st"> </span>meth<span class="op">$</span>manifest[chr<span class="op">%in%</span><span class="kw">c</span>(<span class="st">&quot;X&quot;</span>,<span class="st">&quot;Y&quot;</span>) <span class="op">&amp;</span><span class="st"> </span>probe_type<span class="op">!=</span><span class="st">&quot;rs&quot;</span>,index]
+pcs =<span class="st"> </span>beta[<span class="op">-</span>chrXY,]
+pcs =<span class="st"> </span>pcs <span class="op">-</span><span class="st"> </span><span class="kw">rowMeans</span>(pcs)
+pcs =<span class="st"> </span><span class="kw">na.omit</span>(pcs)
+pcs =<span class="st"> </span><span class="kw">t</span>(pcs)
+pcs =<span class="st"> </span><span class="kw">trlan.svd</span>(pcs,<span class="dt">neig=</span><span class="dv">2</span>) <span class="co"># compute the first two principal components</span>
+pcs =<span class="st"> </span>pcs<span class="op">$</span>u
+
+pheno<span class="op">$</span>pc1 =<span class="st"> </span>pcs[,<span class="dv">1</span>]
+pheno<span class="op">$</span>pc2 =<span class="st"> </span>pcs[,<span class="dv">2</span>]</code></pre></div>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(pc2 <span class="op">~</span><span class="st"> </span>pc1,<span class="dt">pch=</span><span class="kw">ifelse</span>(sex<span class="op">==</span><span class="st">&quot;f&quot;</span>,<span class="dv">1</span>,<span class="dv">4</span>),pheno,<span class="dt">asp=</span><span class="dv">1</span>,<span class="dt">xlab=</span><span class="st">&quot;PC #1&quot;</span>,<span class="dt">ylab=</span><span class="st">&quot;PC #2&quot;</span>)
+<span class="kw">legend</span>(<span class="st">&quot;topright&quot;</span>,<span class="dt">pch=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>),<span class="dt">legend=</span><span class="kw">c</span>(<span class="st">&quot;female&quot;</span>,<span class="st">&quot;male&quot;</span>))</code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<p>There is one clear outlier.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[pc1<span class="op">&lt;</span><span class="st"> </span><span class="op">-</span><span class="fl">0.8</span>,exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>]
+pheno[pc1<span class="op">&lt;</span><span class="st"> </span><span class="op">-</span><span class="fl">0.8</span>,.(gsm,pc1,pc2)]
+##           gsm        pc1        pc2
+## 1: GSM2219539 -0.9300883 -0.1484162</code></pre></div>
+<p>GSM2219539 is actually a lung tissue sample from another GEO dataset (included here for educational purposes). It dominates the first principal component and should be excluded as it otherwise could drastically change the results of downstream analyses.</p>
+<p>PCA may be applied iteratively. After excluding samples that manifest as outliers, repeating PCA can give very different principal components.</p>
+<hr />
+<p><strong>Leukocyte composition</strong></p>
+<p>This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues). The function <code>estimateLC()</code> implements the <a href="https://doi.org/10.1186/1471-2105-13-86">Houseman method</a> to predict the leukocyte composition. The user has the choice between various sets of model parameters trained on various reference datasets (see <code>?estimateLC</code> for a list of options). The function operates on the matrix of beta-values.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">LC =<span class="st"> </span><span class="kw">estimateLC</span>(beta,<span class="dt">ref=</span><span class="st">&quot;deGoede+Reinius&quot;</span>)
+pheno =<span class="st"> </span><span class="kw">cbind</span>(pheno,LC)
+<span class="kw">round</span>(<span class="kw">head</span>(LC),<span class="dv">3</span>)
+##       MO     B   CD4   CD8    GR    NK  nRBC
+## 1: 0.048 0.007 0.025 0.087 0.821 0.020 0.000
+## 2: 0.059 0.000 0.062 0.097 0.746 0.055 0.007
+## 3: 0.050 0.009 0.062 0.047 0.799 0.048 0.000
+## 4: 0.079 0.000 0.057 0.085 0.744 0.056 0.005
+## 5: 0.079 0.004 0.093 0.074 0.727 0.040 0.011
+## 6: 0.058 0.004 0.087 0.072 0.724 0.064 0.000</code></pre></div>
+<p><code>LC</code> contains estimated proportions for seven cell types (dependent on the chosen reference dataset).</p>
+<p>A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting <code>GR</code> this sample can easily be spotted.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(pheno<span class="op">$</span>GR<span class="op">*</span><span class="dv">100</span>,<span class="dt">ylab=</span><span class="st">&quot;Granulocyte fraction (%)&quot;</span>)</code></pre></div>
+<p><img src="data:image/png;base64,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" style="display: block; margin: auto;" /></p>
+<p>It is the third to last sample, GSM1185585.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[<span class="kw">which.max</span>(GR),.(gsm,GR)]
+##           gsm       GR
+## 1: GSM1185585 1.009805
+pheno[<span class="kw">which.max</span>(GR),exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>]</code></pre></div>
+<p>The lung sample is also prominent, with an estimated proportion of <code>GR</code> of (not exactly because of numerical issues) zero.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno[<span class="kw">which.min</span>(GR),.(gsm,GR)]
+##           gsm         GR
+## 1: GSM2219539 0.02205263
+pheno[<span class="kw">which.min</span>(GR),exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>]</code></pre></div>
+<p>We drop the problematic samples</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">drop  =<span class="st"> </span>pheno[exclude<span class="op">==</span><span class="ot">TRUE</span>,which=<span class="ot">TRUE</span>]
+pheno =<span class="st"> </span>pheno[ <span class="op">-</span>drop]
+beta  =<span class="st"> </span>beta [,<span class="op">-</span>drop]
+meth <span class="op">%&lt;&gt;%</span><span class="st"> </span><span class="kw">drop_samples</span>(<span class="dt">j=</span>drop)</code></pre></div>
+</div>
+<div id="ewas" class="section level2">
+<h2>EWAS</h2>
+<p>You’ve cleaned and pre-processed the data, now it is time for the actual EWAS. First it is important to correctly code the variables. <code>smoker</code> and <code>sex</code> are vectors of type <code>character</code>, but should be converted to factors.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">pheno =<span class="st"> </span>pheno[,.(
+     gsm
+    ,<span class="dt">sex =</span> <span class="kw">factor</span>(sex,<span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;m&quot;</span>,<span class="st">&quot;f&quot;</span>)) <span class="co"># first level is the reference</span>
+    ,<span class="dt">smoker =</span> <span class="kw">factor</span>(smoker,<span class="dt">levels=</span><span class="kw">c</span>(<span class="st">&quot;non-smoker&quot;</span>,<span class="st">&quot;smoker&quot;</span>))
+    ,GR,MO,B,CD4,CD8,NK,nRBC
+)]</code></pre></div>
+<p>We want test all CpG sites for their association with smoking. Unfortunately, the phenotype data is very sparse, as it is typcial for public datasets. Aside from smoking, only sex and the estimated proportions of the seven cell types will be including in the model. The following code snippet is optimized for readability not speed.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">f =<span class="st"> </span><span class="cf">function</span>(meth){
+    m =<span class="st"> </span><span class="kw">lm</span>(meth<span class="op">~</span><span class="dv">1</span><span class="op">+</span>sex<span class="op">+</span>smoker<span class="op">+</span>GR<span class="op">+</span>MO<span class="op">+</span>B<span class="op">+</span>CD4<span class="op">+</span>CD8<span class="op">+</span>NK<span class="op">+</span>nRBC,<span class="dt">data=</span>pheno)
+    <span class="kw">coef</span>(<span class="kw">summary</span>(m))[<span class="st">&quot;smokersmoker&quot;</span>,<span class="dv">4</span>] <span class="co"># extract the p-value for the smoking</span>
+}
+
+f =<span class="st"> </span><span class="kw">possibly</span>(f,<span class="dt">otherwise=</span><span class="ot">NA_real_</span>) <span class="co"># catch errors</span>
+
+pvals =<span class="st"> </span><span class="kw">apply</span>(beta,<span class="dv">1</span>,f)</code></pre></div>
+<p>We create a <code>data.table</code> holding the p-values and information about the probes.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">SMK =<span class="st"> </span><span class="kw">data.table</span>(<span class="dt">probe_id=</span><span class="kw">rownames</span>(beta),<span class="dt">pval=</span>pvals)
+SMK <span class="op">%&lt;&gt;%</span><span class="st"> </span>na.omit
+SMK[,qval<span class="op">:</span><span class="er">=</span><span class="kw">p.adjust</span>(pval,<span class="dt">m=</span><span class="st">&quot;fdr&quot;</span>)]
+SMK =<span class="st"> </span>SMK[qval<span class="op">&lt;</span><span class="fl">0.05</span>]
+<span class="kw">print</span>(SMK)
+##      probe_id         pval       qval
+## 1: cg21566642 1.440710e-08 0.00699044
+## 2: cg01940273 1.196028e-07 0.01450806
+## 3: cg05575921 4.776904e-08 0.01158896
+## 4: cg21161138 7.968222e-08 0.01288748</code></pre></div>
+<p>Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR) for which the association with smoking has been validated in several cohorts <a href="https://dx.doi.org/10.1371%2Fjournal.pone.0063812">(Zeilinger et. al., 2013)</a>.</p>
+</div>
+<div id="final-comments" class="section level2">
+<h2>Final comments</h2>
+<p>Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding <code>ewastools</code>, please send an <a href="mailto:hhhh5@posteo.de">email</a>, or file an issue or submit a pull request on GitHub (<a href="https://github.com/hhhh5/ewastools" class="uri">https://github.com/hhhh5/ewastools</a>).</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
