@@ -75,8 +75,9 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     if(!quiet) pb <- txtProgressBar(min=0,max=J,style=3)
 
-    barcodes = rep(NA_character_,J)
-    dates    = rep(NA_character_,J)
+    barcodes  = rep(NA_character_,J)
+    positions = rep(NA_character_,J)
+    dates     = rep(NA_character_,J)
 
     for(j in 1:J){
 
@@ -86,7 +87,8 @@ read_idats <- function(idat_files,quiet=FALSE){
         idat_order = red$MidBlock
         if(!identical(idat_order,grn$MidBlock)) stop("Red and green .idat files do not agree!")
 
-        barcodes[j] = red$Barcode
+        barcodes [j] = red$Barcode
+        positions[j] = red$Unknowns$MostlyA
 
         # This information is sometimes not recorded
         if(nrow(red$RunInfo)>1) dates[j] = red$RunInfo[2,1]
@@ -163,6 +165,8 @@ read_idats <- function(idat_files,quiet=FALSE){
          sample_id = sample_ids
         ,date = as.IDate(dates,"%m/%d/%Y %r")
         ,time = as.ITime(dates,"%m/%d/%Y %r")
+        ,barcode = barcodes
+        ,position = positions
         )
 
     raw = list(
