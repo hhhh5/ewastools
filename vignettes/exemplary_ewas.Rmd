@@ -189,17 +189,17 @@ P.new
 We used a significance threshold of 0.01 above. Moving forward, probes above this threshold should be masked, i.e. set to missing.
 
 ```{r}
-meth %<>% mask(0.01)
+beta = meth %>% mask(0.01)
 ```
 
 Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
 
 ```{r}
-meth %<>% correct_dye_bias
+beta %<>% correct_dye_bias
 ```
 The final step is the conversion of intensities to beta-values. While `ewastools` implements the LOESS normalization [(Heiss and Brenner, 2015)](https://doi.org/10.3389/fgene.2015.00092), I advise against normalization as it does little to protect against batch effects but can result in the removal of genuine biological signal. Instead I recommended to adjust for relevant technical covariates in regression models later.
 ```{r}
-beta = dont_normalize(meth)
+beta %<>% dont_normalize
 ```
 
 Before beginning with the actual epigenome-wide association study, it is advised to check a dataset for problematic samples.
@@ -227,6 +227,8 @@ table(pheno$failed)
 **Sex mismatches**
 
 The sex of the sample donor can reliable be inferred from the methylation data. This functionality is implemented by the combination of `check_sex()` and `predict_sex()`. `check_sex()` computes the normalized average total fluorescence intensities of the probes targeting the X and Y chromosome. `predict_sex()` uses the output of `check_sex()` and recorded sex in order to identify mislabeled samples. The function `check_sex()` should be applied to dye-bias corrected intensities.
+
+*Important:* This test should be performed using dye-bias corrected intensities **before** masking undetected probes, as this step would mask many of the Y chromosome probes used here.
 
 Plotted below are the normalized average total fluorescence intensities of X and Y chromosome probes.
 
@@ -289,7 +291,9 @@ pheno[outlier > -4,exclude:=TRUE] # flag sample
 
 The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
 
-Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets. 
+Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets.
+
+[Note] *When calling `check_snp_aggreement()` I recommend to run the function on all samples with and outlier metric below -2, i.e., greater than the cut-off of -4 used to exclude contaminated samples, but still small enough to guarantee that the SNP calls are accurate.*
 
 ```{r}
 pheno$donor_id = enumerate_sample_donors(genotypes)
