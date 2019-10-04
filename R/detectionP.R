@@ -46,20 +46,28 @@ detectionP <- function(raw){
 
             beta = M[,j]/(U[,j]+M[,j])
             
+            # red color channel
+            # locate the peaks for (un)methylated sites
             sR = summits(beta[iR])
-            sG = summits(beta[iG])
 
+            # pick 1000 CpG sites closest to the peaks
+            # sR[2] is the   methylated peak, provides unmethylated background signal
             bkgU = head(order(abs(beta[iR]-sR[2])),n=1000)
+            # sR[1] is the unmethylated peak, provides   methylated background signal
             bkgM = head(order(abs(beta[iR]-sR[1])),n=1000)
 
             bkgU = iR[bkgU]
             bkgM = iR[bkgM]
 
+            # median and MAD for these 1000 sites
             muUR = median(U[bkgU,j],na.rm=TRUE)
             muMR = median(M[bkgM,j],na.rm=TRUE)
 
             sdUR = mad(U[bkgU,j],na.rm=TRUE)
             sdMR = mad(M[bkgM,j],na.rm=TRUE)
+
+            # green color channel
+            sG = summits(beta[iG])
 
             bkgU = head(order(abs(beta[iG]-sG[2])),n=1000)
             bkgM = head(order(abs(beta[iG]-sG[1])),n=1000)

@@ -7,7 +7,7 @@
 \alias{eBeta}
 \title{Genotype calling}
 \usage{
-call_genotypes(snpmatrix, learn = TRUE, maxiter = 50)
+call_genotypes(snpmatrix, learn = FALSE, maxiter = 50)
 
 mxm_(genotypes)
 
@@ -35,8 +35,7 @@ For \code{mxm_}, a histogram showing the distribution of beta-values for SNP pro
 }
 \description{
 Detect SNP probes which do not fit into on of the three categories (AA,AB,BB).
-A mixture model (3 normal distribution, 1 uniform distribution for outliers) is fitted to all SNP probes.
-In order to achieve a more normal distribution beta-values are transformed to M-values first.
+A mixture model (3 Beta distributions, 1 uniform distribution for outliers) is fitted to all SNP probes.
 After learning the model parameters via EM algorithm, the probability of being an outlier is computed for each SNP.
 }
 \author{

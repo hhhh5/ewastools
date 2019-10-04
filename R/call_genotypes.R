@@ -1,7 +1,6 @@
 #' @title Genotype calling
 #' @description Detect SNP probes which do not fit into on of the three categories (AA,AB,BB).
-#' A mixture model (3 normal distribution, 1 uniform distribution for outliers) is fitted to all SNP probes.
-#' In order to achieve a more normal distribution beta-values are transformed to M-values first.
+#' A mixture model (3 Beta distributions, 1 uniform distribution for outliers) is fitted to all SNP probes.
 #' After learning the model parameters via EM algorithm, the probability of being an outlier is computed for each SNP.
 #'
 #' @author Jonathan A. Heiss
