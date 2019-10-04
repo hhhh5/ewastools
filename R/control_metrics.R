@@ -66,9 +66,9 @@ control_metrics = function(raw){
 		attr(metrics$`Target Removal 1`,'threshold') <- 1
 		attr(metrics$`Target Removal 2`,'threshold') <- 1
 
-		# Bisulfite conversion I
-		ii  = controls[name%like%'I-C[12]',index]
-		bkg = controls[name%like%'I-U[12]',index]
+		# Bisulfite conversion I (no I-C6/I-U6 probes for EPIC but 450K)
+		ii  = controls[name%like%'I.C[12]',index] # 450K: "I C1"; EPIC "I-C1", otherwise always with dash "-"
+		bkg = controls[name%like%'I.U[12]',index] # 450K: "I U1"; EPIC "I-U1", otherwise always with dash "-"
 		metrics$`Bisulfite Conversion I Green` = apply(ctrlG[ii,,drop=FALSE],2,min) / apply(ctrlG[bkg,,drop=FALSE],2,max)
 		ii  = controls[name%like%'I-C[45]',index]
 		bkg = controls[name%like%'I-U[45]',index] 
