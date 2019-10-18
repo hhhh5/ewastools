@@ -106,6 +106,8 @@ correct_dye_bias2 = function (raw)
 #'
 normalize <- function(raw,tissue='',quiet=FALSE){
 
+    .Deprecated(old="ewastools::normalize")
+
     if(!all(c('manifest','M','U','N','V','controls','ctrlG','ctrlR','meta')%in%names(raw))) stop('Invalid argument')
 
     with(raw,{
