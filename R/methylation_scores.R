@@ -20,7 +20,7 @@ methylation_score = function(beta,model){
 		y = colSums(y,na.rm=TRUE)
 		return(y)
 
-	}else if(model=="gestational_age"){
+	}else if(model=="cord_blood:gestational_age"){
 
 		### model based on doi.org/10.1186/s13059-016-1068-z
 		markers = data.table(
@@ -33,6 +33,21 @@ methylation_score = function(beta,model){
 		y = y * markers$coef
 		y = colSums(y,na.rm=TRUE)
 		y = y + 41.72579759
+		return(y)
+
+	}else if(model=="placenta:gestational_age"){
+
+		### https://doi.org/10.18632/aging.102049
+		markers = system.file(paste0("data/102049-SupFile1.csv"),package="ewastools")
+		markers = fread(markers)
+		setnames(markers,1:2,c("probe_id","coef"))
+		markers = markers[-1]
+
+		i = match(markers$probe_id,rownames(beta))
+		y = beta[i,]
+		y = y * markers$coef
+		y = colSums(y,na.rm=TRUE)
+		y = y + 24.99772133
 		return(y)
 
 	}else if(model=="horvath_clock"){
