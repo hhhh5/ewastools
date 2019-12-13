@@ -11,15 +11,19 @@ check_sex = function(raw){
 
 	with(raw,{
 
+		# select allosomal probes
 		chrX = manifest[chr=='X',index]
 		chrY = manifest[chr=='Y',index]
 
+		# compute the total intensities
 		chrX = colMeans(M[chrX,,drop=FALSE]+U[chrX,,drop=FALSE],na.rm=TRUE)
 		chrY = colMeans(M[chrY,,drop=FALSE]+U[chrY,,drop=FALSE],na.rm=TRUE)
 
+		# compute the average total intensity across all autosomal probes
     	autosomes = manifest[!chr%in%c("X","Y"),index]
 		autosomes = colMeans(M[autosomes,,drop=FALSE]+U[autosomes,,drop=FALSE],na.rm=TRUE)
 
+		# normalize total intensities
 		chrX = chrX/autosomes
 		chrY = chrY/autosomes
 
@@ -34,12 +38,15 @@ check_sex = function(raw){
 #' @export
 predict_sex = function(X,Y,male,female){
 
+	# compute the robust Hodges-Lehmann estimator for the total intensity for X chr probes
 	cutX = outer(X[male],X[female],"+")
 	cutX = median(cutX)/2
 
+	# ... likewise for Y chr probes
 	cutY = outer(Y[male],Y[female],"+")
 	cutY = median(cutY)/2
 
+	# Prediction based on in which quadrant (cutX/cutY) samples fall
 	prediction = rep(NA,times=length(X))
 	prediction[X>=cutX & Y<=cutY] =  "f"
 	prediction[X<=cutX & Y>=cutY] =  "m"
