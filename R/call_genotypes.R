@@ -23,19 +23,31 @@ call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
 
 	snps = snpmatrix
 	dim(snps) = NULL
+
+	# Drop NAs to be able to compute likelihoods, but keep
+	# score of which entries to reinsert them again later
 	NAs = which(is.na(snps))
 	snps = na.omit(snps)
 	n = length(snps)
 
 	if(learn==FALSE){
+		
 		# Use predefined model parameters
 		# (might work better if training set is small or contains many outliers)
 
+		# Class probability for outliers
 		alpha = 0.06646095
+		
+		# Class probabilities for homozygous and heterozygous genotypes
 		pi = c(0.2818387,0.4330363,0.2851250)
+
+		# Beta distribution parameters
 		shapes1 = c(2.206479,80.830012,40.640821)
 		shapes2 = c(38.043029,84.411900,3.315509)
-		p = 1 # Uniform distribution
+
+		# Uniform distribution representing outliers
+		p = 1
+		
 		loglik = NULL
 
 		gamma = cbind(
@@ -50,10 +62,10 @@ call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
 	 
 		outliers = (alpha*p) / ((alpha*p) + tmp)
 
-	}else{ # Learn dataset-specific model parameters
+	}else{ # Learn dataset-specific model parameters using the EM algorithm
 
 		alpha = 1e-2
-		outliers = rep(alpha,n)
+		outliers = rep(alpha,times=n)
 		pi = c(1/3,1/3,1/3) # Class probabilities
 		shapes1 = c(10,80,80) 
 		shapes2 = c(80,80,10)
@@ -99,12 +111,12 @@ call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
 			invisible(NULL)
 		}
 
-		loglik = rep(NA_real_,maxiter)
+		loglik = rep(NA_real_,times=maxiter)
 		loglik[1] = e_step()
 
 		i = 2; gain=Inf;
 
-		while(i<maxiter & gain>1e-4){
+		while(i<maxiter & gain>1e-4){ # stop if maxiter reached or improvement is below threshold
 			m_step()
 			loglik[i] = e_step()
 			gain = loglik[i]-loglik[i-1]
@@ -117,7 +129,7 @@ call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
 	
 	## Re-insert missing values
 	if(length(NAs)!=0){
-		tmp = rep(NA,length(snpmatrix))
+		tmp = rep(NA_real_,times=length(snpmatrix))
 		tmp[-NAs] = outliers
 		outliers = tmp
 	}
@@ -127,7 +139,7 @@ call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
 	gamma = lapply(1:3,function(k){
 
 		if(length(NAs)!=0){
-			tmp = rep(NA,length(snpmatrix))
+			tmp = rep(NA_real_,times=length(snpmatrix))
 			tmp[-NAs] = gamma[,k]
 		}else{
 			tmp = gamma[,k]
@@ -174,6 +186,7 @@ snp_outliers = function(genotypes){
 
  	if(!"outliers"%in%names(genotypes)) stop('Invalid argument')
 
+ 	# Average log odds of beta-values being outliers across all SNP probes
  	log_odds = genotypes$outliers / (1-genotypes$outliers)
  	log_odds = colMeans(log2(log_odds),na.rm=TRUE)
  	log_odds
@@ -183,6 +196,7 @@ snp_outliers = function(genotypes){
 #'
 eBeta = function(x,w){
 	
+	# Beta distribution parameter estimation
 	n = length(w)
 	w = n*w/sum(w)
 	sample.mean =  mean(w*x)

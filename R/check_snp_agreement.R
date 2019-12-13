@@ -16,18 +16,19 @@
 check_snp_agreement = function(genotypes,donor_ids,sample_ids){
 
 	J = ncol(genotypes$snps)
-	weights = 1-genotypes$outliers
+	weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
 	gamma = genotypes$gamma
 
-	stopifnot(anyDuplicated(sample_ids)==0)
+	stopifnot(anyDuplicated(sample_ids)==0) # stop if there aren't >1 samples for at least 1 donor
 	stopifnot(length(sample_ids) == J)
 
-	sample_ids = as.character(sample_ids)
-
+	## cross product of all samples
 	conflicts = cbind(CJ(donor_ids,donor_ids,sorted=FALSE),CJ(sample_ids,sample_ids,sorted=FALSE))
 	setcolorder(conflicts,c(1,3,2,4))
 	setnames(conflicts,1:4,c('donor1','sample1','donor2','sample2'))
 
+	## Compute the agreement between all sample pairs
+	# (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
 	d = matrix(NA_real_,nrow=J,ncol=J)
 	for(j in 1:J){
 		tmp = 
@@ -39,19 +40,21 @@ check_snp_agreement = function(genotypes,donor_ids,sample_ids){
 
 	}
 
-	# first drop the duplicate entries and the diagonal
+	## first drop the duplicate entries and the diagonal
 	d[upper.tri(d,diag=TRUE)] = NA_real_
 	conflicts$agreement = as.numeric(d)
 	rm(tmp,d)
 	conflicts = conflicts[!is.na(agreement)]
 	
-	# drop cases of no interest
+	## drop cases of no interest
+	# (same donor and high agreeement or different donors and low agreement is expected)
 	conflicts = conflicts[!(donor1!=donor2 & agreement<0.90)]
 	conflicts = conflicts[!(donor1==donor2 & agreement>0.90)]
 
 	if(nrow(conflicts)==0) return(NULL)
 	
-	### find the weakly connected components of the graph (consider conflicts as edges in a graph)
+	## find the weakly connected components of the graph
+	# (consider conflicts as edges in a graph)
 	e = rep(NA,times=2*nrow(conflicts))
 	e[c(TRUE,FALSE)] = conflicts$sample1
 	e[c(FALSE,TRUE)] = conflicts$sample2
@@ -69,17 +72,18 @@ check_snp_agreement = function(genotypes,donor_ids,sample_ids){
 agreement_ = function(genotypes,donor_ids,sample_ids,...){
 
 	J = ncol(genotypes$snps)
-	weights = 1-genotypes$outliers
+	weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
 	gamma = genotypes$gamma
 	
-	stopifnot(anyDuplicated(sample_ids)==0)
+	stopifnot(anyDuplicated(sample_ids)==0) # stop if there aren't >1 samples for at least 1 donor
 	stopifnot(length(sample_ids) == J)
 
 	conflicts = cbind(CJ(donor_ids,donor_ids,sorted=FALSE),CJ(sample_ids,sample_ids,sorted=FALSE))
 	setcolorder(conflicts,c(1,3,2,4))
 	setnames(conflicts,1:4,c('donor1','sample1','donor2','sample2'))
 
-
+	## Compute the agreement between all sample pairs
+	# (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
 	d = matrix(NA_real_,nrow=J,ncol=J)
 	for(j in 1:J){
 		tmp = 
@@ -108,12 +112,14 @@ agreement_ = function(genotypes,donor_ids,sample_ids,...){
 enumerate_sample_donors = function(genotypes){
 
 	J = ncol(genotypes$snps)
-	weights = 1-genotypes$outliers
+	weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
 	gamma = genotypes$gamma
 
 	samesame = CJ(1:J,1:J,sorted=FALSE)
 	setnames(samesame,1:2,c('sample1','sample2'))
 
+	## Compute the agreement between all sample pairs
+	# (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
 	d = matrix(NA_real_,nrow=J,ncol=J)
 	for(j in 1:J){
 		tmp = 
@@ -131,12 +137,13 @@ enumerate_sample_donors = function(genotypes){
 	rm(tmp,d)
 	samesame = samesame[!is.na(agreement)]
 	
-	# drop cases of no interest
-	samesame = samesame[agreement>0.85]
+	## Select sample pairs with the same fingerprint/high agreement
+	samesame = samesame[agreement>0.90]
 
+	# if there are none, than every donor is represented only once
 	if(nrow(samesame)==0) return(1:J)
 
-	### find the strongly connected components of the graph (consider samesame as edges in a graph)
+	## find the strongly connected components of the graph (consider samesame as edges in a graph)
 	e = rep(NA,times=2*nrow(samesame))
 	e[c(TRUE,FALSE)] = samesame$sample1
 	e[c(FALSE,TRUE)] = samesame$sample2

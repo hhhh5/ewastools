@@ -27,6 +27,7 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     J = length(idat_files)
 
+    ## illuminaio can handle gzipped .idats
     zipped = !file.exists(paste0(idat_files,"_Grn.idat"))
     suffix = rep(".idat",times=J)
     suffix[zipped] = ".idat.gz"
@@ -34,11 +35,14 @@ read_idats <- function(idat_files,quiet=FALSE){
     ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
     if(!all(ex)) stop("Some .idat files are missing")
 
-    # read itensities
+    ## How many different features/bead types are there?
+    # (Consider that Type I probes have each two different beads)
     P = illuminaio::readIDAT(paste0(idat_files[1],"_Grn",suffix[1]))$nSNPsRead
     print(P)
 
-    # create annotation
+    ## Pick appropriate manifest
+    # (numbers are possible #features I have encountered in the wild so far)
+    # We assume that all .idats use the same platform they can differ in #features, though
     if(P %in% c(1051815,1051943,1052641))
     {
         platform="EPIC"
@@ -100,45 +104,47 @@ read_idats <- function(idat_files,quiet=FALSE){
         setindexv(manifest,"channel")
         manifest["Both",Mi:=Ui,on="channel"]
 
-        ### Type I Red probes
+        ## Type I Red probes
         i = manifest["Red",on="channel"]
 
         U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
         T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
         V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
     
-        M[ i$index,j ] = red$Quants[ i$Mi,1 ]
-        S[ i$index,j ] = red$Quants[ i$Mi,2 ]
-        N[ i$index,j ] = red$Quants[ i$Mi,3 ]
+        M[ i$index,j ] = red$Quants[ i$Mi,1 ] # Mean
+        S[ i$index,j ] = red$Quants[ i$Mi,2 ] # SD
+        N[ i$index,j ] = red$Quants[ i$Mi,3 ] # NBeads
 
         oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
         oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
 
-        ### Type I Green probes
+        ## Type I Green probes
         i = manifest["Grn",on="channel"]
 
-        U[ i$index,j ] = grn$Quants[ i$Ui,1 ]
-        T[ i$index,j ] = grn$Quants[ i$Ui,2 ]
-        V[ i$index,j ] = grn$Quants[ i$Ui,3 ]
+        U[ i$index,j ] = grn$Quants[ i$Ui,1 ] # Mean
+        T[ i$index,j ] = grn$Quants[ i$Ui,2 ] # SD
+        V[ i$index,j ] = grn$Quants[ i$Ui,3 ] # NBeads
 
-        M[ i$index,j ] = grn$Quants[ i$Mi,1 ]
-        S[ i$index,j ] = grn$Quants[ i$Mi,2 ]
-        N[ i$index,j ] = grn$Quants[ i$Mi,3 ]
+        M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
+        S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
+        N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
 
         oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
         oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
         
-        ### Type II probes
+        ## Type II probes
         i = manifest["Both",on="channel"]
 
-        U[ i$index,j ] = red$Quants[ i$Ui,1 ]
-        T[ i$index,j ] = red$Quants[ i$Ui,2 ]
-        V[ i$index,j ] = red$Quants[ i$Ui,3 ]
+        U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
+        T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
+        V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
 
-        M[ i$index,j ] = grn$Quants[ i$Mi,1 ]
-        S[ i$index,j ] = grn$Quants[ i$Mi,2 ]
-        N[ i$index,j ] = grn$Quants[ i$Mi,3 ]
+        M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
+        S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
+        N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
 
+        ## Control probes
+        # Not keeping the SD for control probes ATM
         ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
         ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
         ctrlN[ controls$index,j ] = red$Quants[ controls$i,3 ]
@@ -149,6 +155,8 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     if(!quiet) close(pb)
 
+    # Probes with zero beads on the chip (result of random chip assembly)
+    # are set to intensity zero in the .idat files. Mark them as missing.
     M[N==0] = NA
     U[V==0] = NA
 
