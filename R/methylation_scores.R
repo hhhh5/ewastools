@@ -1,7 +1,7 @@
 #' Various methylation scores
 #' 
 #' 
-#' @rdname "Methylation scores"
+#' @rdname MethylationScores
 #' @param beta matrix of beta values
 #' @param model Name of the model, i.e., one of `maternal_smoking`, `gestational_age`, or `horvath_clock`
 #' 
