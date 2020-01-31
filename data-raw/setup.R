@@ -48,10 +48,18 @@ pheno1 = minfi::pData(FlowSorted.CordBloodCombined.450k)
 pheno1 %<>% as.data.table
 J = nrow(pheno1)
 
-pheno1[,cell_type:=factor(CellType,levels=c("Bcell","CD4T","CD8T","Gran","Mono","NK","nRBC","WBC"),labels=c("B","CD4","CD8","GR","MO","NK","nRBC","WBC"))]
-pheno1[,sex:=factor(Sex,levels=c("M","F"),labels=c("m","f"))]
+pheno1[,cell_type:=fct_recode(CellType,`B`="Bcell",`CD4`="CD4T",`CD8`="CD8T",`GR`="Gran",`MO`="Mono",`NK`="NK",`WBC`="WBC")]
+pheno1[,sex:=fct_recode(Sex,`m`="M",`f`="F")]
+pheno1[,sample_id:=paste0(Slide,"_",Array)]
 
-pheno1 = pheno1[,.(donor=SampleID,sex,cell_type,study=Study,barcode=Slide,position=Array)]
+pheno1 = pheno1[,.(
+     sample_id
+    ,donor=SampleID
+    ,sex
+    ,cell_type
+    ,tissue="Blood"
+    ,study=Study
+    )]
 
 r = minfi::getRed  (FlowSorted.CordBloodCombined.450k)
 g = minfi::getGreen(FlowSorted.CordBloodCombined.450k)
@@ -115,11 +123,18 @@ meth$ctrlR = ctrlR
 meth$ctrlG = ctrlG
 meth$oobR = oobR
 meth$oobG = oobG
-meth$meta = copy(pheno1[,.(sample_id=paste0(barcode,"_",position))])
+meth$meta = copy(pheno1[,.(sample_id)])
 
 rm(M,U,oobG,oobR,controls,ctrlR,ctrlG,manifest,r,g,i2,i1g,i1r,idat_order,FlowSorted.CordBloodCombined.450k)
 
-beta1 = dont_normalize(correct_dye_bias(ewastools::mask(detectionP.neg(meth),-2)))
+beta1 =
+    meth %>%
+    ewastools::detectionP.neg(.) %>%
+    ewastools::mask(-2) %>%
+    correct_dye_bias %>%
+    dont_normalize
+
+rm(meth)
 
 #----------------------------------------------------
 # Reinius https://doi.org/10.1371/journal.pone.004136
@@ -130,24 +145,32 @@ reinius = fread("reinius/sample_sheet_IDAT.csv")
 reinius[,donor:=stri_sub(Sample,-3,-1)]
 reinius[,`Chip Row Pos`:=stri_replace_all_fixed(`Chip Row Pos`,"O","0")] 
 reinius[,`Chip CO position`:=stri_replace_all_fixed(`Chip CO position`,"O","0")] 
-reinius[,file:=paste0("reinius/",`Chip#ID`,"_",`Chip Row Pos`,`Chip CO position`)] 
+reinius[,sample_id:=paste0(`Chip#ID`,"_",`Chip Row Pos`,`Chip CO position`)] 
 reinius$cell_type = fct_recode(reinius$Type,MO="CD14+ Monocytes",NK="CD56+ NK-cells",CD8="CD8+ T-cells",CD4="CD4+ T-cells",GR="Granulocytes",B="CD19+ B-cells",WB="Whole blood",EO="Eosinophils",NE="Neutrophils")
 reinius$sex = "m"
-reinius = reinius[,list(study="Reinius",cell_type,donor,sex,file)]
+reinius = reinius[,.(sample_id,donor,sex,cell_type,tissue="Blood",study="Reinius")]
 reinius = reinius[cell_type %in% c("MO","NK","CD8","GR","CD4","B")]
 reinius = reinius[donor != "105"]
 reinius = reinius[! (donor=="160" & cell_type %in% c("CD8","CD4"))]
 reinius = reinius[! (donor=="261" & cell_type %in% c("NK","B"))]
 reinius = reinius[! (donor=="218" & cell_type=="NK")]
 
-beta2 = dont_normalize(correct_dye_bias(ewastools::mask(detectionP.neg(read_idats(reinius$file)),-2)))
+reinius[,file:=paste0("reinius/",sample_id)]
+
+beta2 =
+    reinius$file %>%
+    ewastools::read_idats(.) %>%
+    ewastools::detectionP.neg(.) %>%
+    ewastools::mask(-2) %>%
+    correct_dye_bias %>%
+    dont_normalize
 
 #----------------------------------------------------
 
 ### EPIC datasets
 
 # https://doi.org/10.1186/s13059-018-1448-7
-# dir.create("GSE110554")
+if(!dir.exists("GSE110554")) dir.create("GSE110554")
 
 ### Select datasets by GSE accession 
 salas = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE110554&targ=gsm&form=text&view=brief"
@@ -175,21 +198,27 @@ rm(ch)
 salas[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
 salas[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
 
-salas[,variable:=fct_recode(variable,B="bcell",CD4="cd4t",CD8="cd8t",NE="neu",MO="mono",NK="nk")]
 salas = dcast(salas,gsm ~ variable,fill=NA)
-salas = salas[,list(gsm,B,CD4,CD8,MO,NE,NK,purity,cell_type=`cell type`,red,grn)]
-
-salas[,cell_type:=fct_recode(cell_type,B="Bcell",CD4="CD4T",CD8="CD8T",NE="Neu",MO="Mono",NK="NK")]
-salas[,file:=paste0("GSE110554","/",gsm)]
-salas$study = "Salas"
+salas = salas[,.(
+     sample_id=gsm
+    ,sex=factor(Sex,levels=c("M","F"),labels=c("m","f"))
+    ,cell_type = fct_recode(`cell type`,B="Bcell",CD4="CD4T",CD8="CD8T",GR="Neu",MO="Mono",NK="NK")
+    ,tissue = "Blood"
+    ,study = "Salas"
+    ,red,grn
+    )]
 
 # map2(salas$red, salas$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 # map2(salas$grn, salas$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 
-salas = salas[cell_type!="MIX",.(cell_type,study,file)]
+salas$red = NULL
+salas$grn = NULL
+
+salas[,file:=paste0("GSE110554","/",sample_id)]
+salas = salas[cell_type!="MIX"]
 
 # --------------------------------
-# dir.create("GSE103541")
+if(!dir.exists("GSE103541")) dir.create("GSE103541")
 
 ### Select datasets by GSE accession 
 mill = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE103541&targ=gsm&form=text&view=brief"
@@ -217,42 +246,45 @@ rm(ch)
 mill[variable == "!Sample_supplementary_file" & value %like% "_Red\\.idat",variable:="red"]
 mill[variable == "!Sample_supplementary_file" & value %like% "_Grn\\.idat",variable:="grn"]
 
-mill = mill[value!="blood"]
+mill = mill[value!="blood"] # variable `cell type` appears twice
 mill = dcast(mill,gsm ~ variable,fill=NA)
-mill[,cell_type:=fct_recode(`cell type`,B="B-cells",CD4="CD4 T-cells",CD8="CD8 T-cells",GR="Granulocytes",MO="Monocytes")]
-mill = mill[,list(gsm,study="Mill",cell_type,red,grn)]
 
-
-# drop problematic samples
-mill = mill[!gsm %in% c("GSM2773348","GSM2773349","GSM2773350")]
-mill[,file:=paste0("GSE103541/",gsm)]
+mill = mill[,.(
+     sample_id = gsm
+    ,donor = `patient number`
+    ,cell_type = fct_recode(`cell type`,B="B-cells",CD4="CD4 T-cells",CD8="CD8 T-cells",GR="Granulocytes",MO="Monocytes")
+    ,tissue = "Blood"
+    ,study = "Mill"
+    ,red,grn
+    )]
 
 # map2(mill$red, mill$file %s+% "_Red.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 # map2(mill$grn, mill$file %s+% "_Grn.idat.gz", ~ download.file(.x,.y) ) %>% invisible
 
-mill = mill[,.(cell_type,file,study)]
+mill$red = NULL
+mill$grn = NULL
 
-pheno3 = rbind(salas,mill,use.names=TRUE,fill=TRUE)
+# drop problematic samples
+mill = mill[!sample_id %in% c("GSM2773348","GSM2773349","GSM2773350")]
+mill[,file:=paste0("GSE103541/",sample_id)]
 
-beta3 = dont_normalize(correct_dye_bias(ewastools::mask(detectionP.neg(read_idats(pheno3$file)),-2)))
+#--------------------------------------
 
+pheno3 = rbind(salas,mill,use.names=TRUE,fill=TRUE); rm(salas,mill)
+
+beta3 =
+    pheno3$file %>%
+    ewastools::read_idats(.) %>%
+    ewastools::detectionP.neg(.) %>%
+    ewastools::mask(-2) %>%
+    correct_dye_bias %>%
+    dont_normalize
 
 #--------------------------------------
 ### MERGER
 
-detach("package:minfi")
-detach("package:bumphunter")
-detach("package:SummarizedExperiment")
-detach("package:GenomicRanges")
-detach("package:Biostrings")
-detach("package:XVector")
-detach("package:DelayedArray")
-detach("package:GenomeInfoDb")
-detach("package:IRanges")
-
-
 common = paste0("beta",1:3) %>% map(get) %>% map(rownames) %>% reduce(intersect)
-common = intersect(common,ewastools:::manifest_450K[!chr%in%c("X","Y") & probe_type=="cg"]$probe_id)
+common = intersect(common,ewastools:::manifest_450K[!chr%in%c("X","Y")]$probe_id)
 
 beta = cbind(
      beta1[ match(common,rownames(beta1)) ,]
@@ -260,19 +292,16 @@ beta = cbind(
     ,beta3[ match(common,rownames(beta3)) ,]
     )
 
-beta = beta[common,]
 rm(beta1,beta2,beta3)
 
-pheno = rbindlist(list(pheno1,reinius,pheno3),use.names=TRUE,fill=TRUE)
-rm(mill,common,i,J,meth,pheno1,pheno3,reinius,salas)
-pheno[study=="Salas" & cell_type=="NE",cell_type:="GR"]
+pheno = rbind(pheno1,reinius,pheno3,use.names=TRUE,fill=TRUE)
+rm(common,i,J,pheno1,reinius,pheno3)
+
 
 j = pheno[cell_type!="WBC",which=TRUE]
-
 beta = beta[,j]
 pheno = pheno[j]
 pheno[,j:=1:.N]
-
 pheno %<>% droplevels
 
 
@@ -334,6 +363,6 @@ combinations = c(as.list(studies),combinations)
 names(combinations) = NULL
 
 mclapply(combinations,function(combo){
-    train = copy(pheno[study %in% combo])
+    train = copy(pheno[study %in% combo & tissue=="Blood"])
     train_model(train,output = paste0(paste0(combo,collapse="+"),".txt"))
 },mc.cores=length(combinations))
