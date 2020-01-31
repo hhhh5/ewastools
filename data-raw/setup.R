@@ -6,41 +6,37 @@ library(forcats)
 library(ewastools)
 library(purrr)
 
-correct_dye_bias = function (raw) 
-{
-    if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% 
-        names(raw))) 
-        stop("Invalid argument")
-    i1g = raw$manifest[channel == "Grn", ]
-    i2 = raw$manifest[channel == "Both", ]
-    Ai = raw$controls[group == "NORM_A"][order(name)]$index
-    Ai = raw$ctrlR[Ai, ]
-    Gi = raw$controls[group == "NORM_G"][order(name)]$index
-    Gi = raw$ctrlG[Gi, ]
-    Ti = raw$controls[group == "NORM_T"][order(name)]$index
-    Ti = raw$ctrlR[Ti, ]
-    Ci = raw$controls[group == "NORM_C"][order(name)]$index
-    Ci = raw$ctrlG[Ci, ]
+correct_dye_bias = function(raw){
+    
+    if(!all(c("manifest","M","U","controls","ctrlG","ctrlR")%in%names(raw))) stop("Invalid argument")
+    
+    i1g = raw$manifest[channel=="Grn" ,]
+    i2  = raw$manifest[channel=="Both",]
+
+    Ai = raw$controls[group=="NORM_A"][order(name)]$index
+    Ti = raw$controls[group=="NORM_T"][order(name)]$index
+    Ci = raw$controls[group=="NORM_C"][order(name)]$index
+    Gi = raw$controls[group=="NORM_G"][order(name)]$index
+
     J = ncol(raw$M)
-    for (j in 1:J) {
-        x = log(Gi[, j])
-        y = log(Ai[, j])
+
+    for(j in 1:J){
+        x = log(raw$ctrlG[c(Gi,Ci),j])
+        y = log(raw$ctrlR[c(Ai,Ti),j])
+
         keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
-        x = x[keep]
-        y = y[keep]
-        m = mblm::mblm(y ~ x, repeated = FALSE)
+        x = x[keep]; y = y[keep]
+
+        m = mblm::mblm(y~x,repeated=FALSE)
+
         i = i2$index
-        raw$M[i, j] = exp(coef(m)[1] + log(raw$M[i, j]) * coef(m)[2])
-        x = log(Ci[, j])
-        y = log(Ti[, j])
-        keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
-        x = x[keep]
-        y = y[keep]
-        m = mblm::mblm(y ~ x, repeated = FALSE)
+        raw$M[i,j] = exp(coef(m)[1] + log(raw$M[i,j]) * coef(m)[2])
+
         i = i1g$index
-        raw$U[i, j] = exp(coef(m)[1] + log(raw$U[i, j]) * coef(m)[2])
-        raw$M[i, j] = exp(coef(m)[1] + log(raw$M[i, j]) * coef(m)[2])
+        raw$M[i,j] = exp(coef(m)[1] + log(raw$M[i,j]) * coef(m)[2])
+        raw$U[i,j] = exp(coef(m)[1] + log(raw$U[i,j]) * coef(m)[2])
     }
+
     return(raw)
 }
 
