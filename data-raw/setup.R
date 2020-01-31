@@ -269,8 +269,12 @@ mill = mill[!sample_id %in% c("GSM2773348","GSM2773349","GSM2773350")]
 mill[,file:=paste0("GSE103541/",sample_id)]
 
 #--------------------------------------
+# Saliva (Kelly Bakulski)
 
-pheno3 = rbind(salas,mill,use.names=TRUE,fill=TRUE); rm(salas,mill)
+bakulski = fread("saliva/clean_saliva_samples.csv")
+bakulski = bakulski[cell_type%in%c("Leukocytes","Epithelial cells")]
+
+pheno3 = rbind(salas,mill,bakulski,use.names=TRUE,fill=TRUE); rm(salas,mill,bakulski)
 
 beta3 =
     pheno3$file %>%
@@ -307,14 +311,14 @@ pheno %<>% droplevels
 
 table(pheno[,.(study,cell_type)])
 #           cell_type
-# study       B CD4 CD8 GR MO NK nRBC
-#   Bakulski 11   9   2 11 14 14    4
-#   deGoede   7   7   6  7 12  6    7
-#   Gervin   11  11  11 11  8 11    0
-#   Lin      13  14  14 14 14 14    0
-#   Mill     28  28  28 29 29  0    0
-#   Reinius   4   4   4  5  5  3    0
-#   Salas     6   7   6  6  6  6    0
+# study       B CD4 CD8 GR MO NK nRBC Leukocytes Epithelial cells
+#   Bakulski 11   9   2 11 14 14    4         18               22
+#   deGoede   7   7   6  7 12  6    7          0                0
+#   Gervin   11  11  11 11  8 11    0          0                0
+#   Lin      13  14  14 14 14 14    0          0                0
+#   Mill     28  28  28 29 29  0    0          0                0
+#   Reinius   4   4   4  5  5  3    0          0                0
+#   Salas     6   7   6  6  6  6    0          0                0
 
 
 train_model = function(train,output){
@@ -366,3 +370,6 @@ mclapply(combinations,function(combo){
     train = copy(pheno[study %in% combo & tissue=="Blood"])
     train_model(train,output = paste0(paste0(combo,collapse="+"),".txt"))
 },mc.cores=length(combinations))
+
+train = copy(pheno[study=="Bakulski" & tissue=="Saliva"])
+train_model(train,output="saliva.txt")
