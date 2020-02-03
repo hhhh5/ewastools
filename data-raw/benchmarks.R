@@ -58,7 +58,7 @@ estimateLC = function (meth,ref)
 		tmp = meth[markers, j]
 		i = !is.na(tmp)
 		quadprog::solve.QP(t(coefs[i, ]) %*% coefs[i, ], t(coefs[i, 
-																														 ]) %*% tmp[i], diag(n_celltypes), rep(0, n_celltypes))$sol
+		 ]) %*% tmp[i], diag(n_celltypes), rep(0, n_celltypes))$sol
 	})
 	EST = t(EST)
 	colnames(EST) = colnames(coefs)
