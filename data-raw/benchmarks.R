@@ -86,8 +86,8 @@ avg_r2 = function(ref){
 	
 }
 
-training = list.files("data")
-training = stri_sub(training,1,-5)
+training = list.files(path="../data",pattern="\\.txt$",full.names=TRUE)
+training = setdiff(training,c("../data/blood_norm.txt","../data/hkcpgs.txt","../data/saliva.txt"))
 
 # ---------------------------------------------------------------------------
 # test set (GSE77797)  https://doi.org/10.1186/s12859-016-0943-7
@@ -117,32 +117,70 @@ R5  = mclapply(training,avg_r2,mc.cores=length(training)) %>% unlist
 
 round(cbind(R2,R3,R4,R5),3)
 
-#                      R2    R3    R4    R5; +nRBC    R2    R3    R4    R5
-# Bakulski+deGoede  0.284 0.187 0.266 0.146; +nRBC 0.293 0.285 0.449 0.229
-# Bakulski+Gervin   0.291 0.177 0.250 0.128; +nRBC 0.308 0.292 0.455 0.225
-# Bakulski+Lin      0.288 0.178 0.257 0.139; +nRBC 0.308 0.290 0.450 0.231
-# Bakulski+Mill     0.278 0.180 0.279 0.106; +nRBC 0.285 0.304 0.469 0.226
-# Bakulski+Reinius  0.303 0.182 0.265 0.143; +nRBC 0.322 0.298 0.463 0.233
-# Bakulski+Salas    0.310 0.180 0.281 0.135; +nRBC 0.317 0.303 0.489 0.233
-# Bakulski          0.293 0.230 0.299 0.134; +nRBC 0.316 0.286 0.453 0.233
-# deGoede+Lin       0.283 0.162 0.265 0.129; +nRBC 0.297 0.285 0.457 0.229
-# deGoede+Mill      0.268 0.182 0.320 0.117; +nRBC 0.272 0.286 0.468 0.226
-# deGoede+Reinius   0.280 0.166 0.235 0.124; +nRBC 0.297 0.293 0.465 0.227
-# deGoede+Salas     0.287 0.173 0.265 0.120; +nRBC 0.269 0.289 0.481 0.233
-# deGoede           0.282 0.178 0.254 0.117; +nRBC 0.283 0.282 0.464 0.228
-# Gervin+deGoede    0.287 0.168 0.248 0.119; +nRBC 0.287 0.288 0.449 0.226
-# Gervin+Lin        0.286 0.168 0.258 0.118;
-# Gervin+Mill       0.271 0.178 0.291 0.117;
-# Gervin+Reinius    0.288 0.172 0.240 0.129;
-# Gervin+Salas      0.286 0.167 0.251 0.121;
-# Gervin            0.281 0.183 0.246 0.121;
-# Lin+Mill          0.273 0.178 0.290 0.134;
-# Lin+Reinius       0.290 0.172 0.245 0.131;
-# Lin+Salas         0.286 0.172 0.258 0.118;
-# Lin               0.281 0.164 0.258 0.131;
-# Mill              0.260 0.149 0.221 0.118;
-# Reinius+Mill      0.261 0.191 0.298 0.132;
-# Reinius+Salas     0.287 0.168 0.260 0.121;
-# Reinius           0.281 0.210 0.312 0.137;
-# Salas+Mill        0.268 0.170 0.293 0.143;
-# Salas             0.279 0.172 0.255 0.107;
+#                            R2    R3    R4    R5
+# "Bakulski.txt"          0.313 0.287 0.444 0.236
+# "Bakulski+deGoede.txt"  0.291 0.283 0.452 0.229
+# "Bakulski+Gervin.txt"   0.301 0.291 0.446 0.225
+# "Bakulski+Lin.txt"      0.303 0.288 0.450 0.232
+# "Bakulski+Mill.txt"     0.284 0.301 0.462 0.226
+# "Bakulski+Reinius.txt"  0.324 0.298 0.457 0.234
+# "Bakulski+Salas.txt"    0.298 0.298 0.487 0.233
+# "deGoede.txt"           0.270 0.280 0.478 0.229
+# "deGoede+Lin.txt"       0.278 0.281 0.471 0.229
+# "deGoede+Mill.txt"      0.260 0.280 0.473 0.225
+# "deGoede+Reinius.txt"   0.285 0.288 0.465 0.226
+# "deGoede+Salas.txt"     0.286 0.273 0.505 0.232
+# "Gervin.txt"            0.277 0.175 0.244 0.125
+# "Gervin+deGoede.txt"    0.281 0.286 0.461 0.225
+# "Gervin+Lin.txt"        0.284 0.162 0.245 0.128
+# "Gervin+Mill.txt"       0.273 0.176 0.288 0.131
+# "Gervin+Reinius.txt"    0.289 0.168 0.235 0.127
+# "Gervin+Salas.txt"      0.287 0.167 0.249 0.130
+# "Lin.txt"               0.278 0.159 0.255 0.129
+# "Lin+Mill.txt"          0.274 0.173 0.284 0.137
+# "Lin+Reinius.txt"       0.288 0.165 0.230 0.125
+# "Lin+Salas.txt"         0.284 0.166 0.242 0.126
+# "Mill.txt"              0.257 0.147 0.216 0.122
+# "Reinius.txt"           0.283 0.210 0.307 0.122
+# "Reinius+Mill.txt"      0.261 0.187 0.294 0.125
+# "Reinius+Salas.txt"     0.285 0.159 0.245 0.122
+# "Salas.txt"             0.278 0.165 0.245 0.104
+# "Salas+Mill.txt"        0.268 0.165 0.289 0.146
+# "Lolipop.txt"           0.270 0.108 0.314 0.156
+
+
+bakulski = fread("saliva/clean_saliva_samples.csv")
+bakulski = bakulski[cell_type=="Whole"]
+
+meth = bakulski %$% file %>% read_idats %>% correct_dye_bias %>% dont_normalize
+
+estimateLC(meth,"../data/saliva.txt")
+estimateLC(meth,"../data/Bakulski.txt")
+
+avg_r2("../data/saliva.txt")
+# 0.2507195
+avg_r2("../data/bakulski.txt")
+# 0.371119
+
+## Comparison to EpiDISH
+library(EpiDISH)
+  
+LC = epidish(beta.m=meth,ref.m=centEpiFibIC.m,method="RPC")$estF
+LC %<>% data.table
+LC = LC[,.(Epi,IC)]
+
+frml = paste(c("meth~1",names(LC)),collapse="+")
+LC[,meth:=runif(.N)]
+m = lm(frml,data=LC)
+mm = model.matrix(m)
+
+f = function(meth_i)
+{
+	m[1:8] = lm.fit(mm,meth_i)
+	summary(m)$adj.r.squared
+}
+f = possibly(f,otherwise=NA)
+
+rr = apply(meth,1,f)
+mean(rr,na.rm=TRUE)
+# 0.2137797
