@@ -50,7 +50,7 @@ samples = split(samples,by="gse")
 estimateLC = function (meth,ref) 
 {
 	J = ncol(meth)
-	coefs = read.table(paste0("data/", ref, ".txt"))
+	coefs = read.table(ref)
 	coefs = as.matrix(coefs)
 	n_celltypes = ncol(coefs)
 	markers = match(rownames(coefs), rownames(meth))
