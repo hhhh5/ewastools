@@ -1,19 +1,26 @@
-#' Estimate leukcoyte composition
-#' 
-#' @export
+#' Cell composition
+#'
+#' Estimation of cell proportions for blood and saliva using the Houseman algorithm
+#'
+#' @rdname cell_composition
+#'
 #' @param meth Matrix of beta values
 #' @param ref Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`).
-#' @return Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types. 
-#' @references{Houseman EA, Accomando WP, Koestler DC, Christensen BC, Marsit CJ, Nelson HH, Wiencke JK, Kelsey KT. DNA methylation arrays as surrogate measures of cell mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.}
-#' @references{Reinius LE, Acevedo N, Joerink M, Pershagen G, Dahlén SE, Greco D, Söderhäll C, Scheynius A, Kere J. Differential DNA methylation in purified human blood cells: implications for cell lineage and studies on disease susceptibility. PloS one. 2012 Jul 25;7(7):e41361.}
-#' @references{Bakulski KM, Feinberg JI, Andrews SV, Yang J, Brown S, L. McKenney S, Witter F, Walston J, Feinberg AP, Fallin MD. DNA methylation of cord blood cell types: applications for mixed cell birth studies. Epigenetics. 2016 May 3;11(5):354-62.}
-#' @references{de Goede OM, Razzaghian HR, Price EM, Jones MJ, Kobor MS, Robinson WP, Lavoie PM. Nucleated red blood cells impact DNA methylation and expression analyses of cord blood hematopoietic cells. Clinical epigenetics. 2015 Dec;7(1):95.}
-#' @references{Gervin K, Page CM, Aass HC, Jansen MA, Fjeldstad HE, Andreassen BK, Duijts L, van Meurs JB, van Zelm MC, Jaddoe VW, Nordeng H. Cell type specific DNA methylation in cord blood: A 450K-reference data set and cell count-based validation of estimated cell type composition. Epigenetics. 2016 Sep 1;11(9):690-8}
-#' @references{Gervin K, Salas LA, Bakulski KM,van Zelm MC, Koestler DC, Wiencke JK, Duijts L, Moll HA, Kelsey KT, Kobor MS, Lyle R, Christensen BC, Felix J, Jones MJ. Systematic evaluation and validation of reference and library selection methods for deconvolution of cord blood DNA methylation data. bioRxiv. 2019 March; DOI:10.1101/570457}
-#' @references{Salas LA, Koestler DC, Butler RA, Hansen HM, Wiencke JK, Kelsey KT, Christensen BC. An optimized library for reference-based deconvolution of whole-blood biospecimens assayed using the Illumina HumanMethylationEPIC BeadArray. Genome biology. 2018 Dec;19(1):64.}
-#' @references{Heiss JA, Breitling LP, Lehne B, Kooner JS, Chambers JC, Brenner H. Training a model for estimating leukocyte composition using whole-blood DNA methylation and cell counts as reference. Epigenomics. 2017 Jan;9(1):13-20.}
-#' 
-estimateLC <- function(meth,ref){
+#''
+#' @return Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
+#'
+#' @references{Houseman EA, et al. DNA methylation arrays as surrogate measures of cell mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.}
+#' @references{Reinius LE, et al. Differential DNA methylation in purified human blood cells: implications for cell lineage and studies on disease susceptibility. PloS one. 2012 Jul 25;7(7):e41361.}
+#' @references{Bakulski KM, et al. DNA methylation of cord blood cell types: applications for mixed cell birth studies. Epigenetics. 2016 May 3;11(5):354-62.}
+#' @references{de Goede OM, et al. Nucleated red blood cells impact DNA methylation and expression analyses of cord blood hematopoietic cells. Clinical epigenetics. 2015 Dec;7(1):95.}
+#' @references{Gervin K, et al. Cell type specific DNA methylation in cord blood: A 450K-reference data set and cell count-based validation of estimated cell type composition. Epigenetics. 2016 Sep 1;11(9):690-8}
+#' @references{Gervin K, et al. Systematic evaluation and validation of reference and library selection methods for deconvolution of cord blood DNA methylation data. bioRxiv. 2019 March; DOI:10.1101/570457}
+#' @references{Salas LA, et al. An optimized library for reference-based deconvolution of whole-blood biospecimens assayed using the Illumina HumanMethylationEPIC BeadArray. Genome biology. 2018 Dec;19(1):64.}
+#' @references{Heiss JA, et al. Training a model for estimating leukocyte composition using whole-blood DNA methylation and cell counts as reference. Epigenomics. 2017 Jan;9(1):13-20.}
+#'
+#' @export
+#'
+estimateLC = function(meth,ref){
     
     J = ncol(meth)
 
