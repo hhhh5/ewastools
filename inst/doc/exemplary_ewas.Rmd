@@ -19,6 +19,7 @@ code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
 is_check <- ("CheckExEnv" %in% search()) || any(c("_R_CHECK_TIMINGS_",
              "_R_CHECK_LICENSE_") %in% names(Sys.getenv()))
 knitr::opts_chunk$set(eval = !is_check,fig.align="center",collapse=TRUE)
+knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
 ```
 
 ```{r libraries, include=FALSE}

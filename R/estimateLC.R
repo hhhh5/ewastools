@@ -5,7 +5,7 @@
 #' @rdname cell_composition
 #'
 #' @param meth Matrix of beta values
-#' @param ref Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`).
+#' @param ref Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`). Furthermore, the option `saliva` is available [9].
 #''
 #' @return Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
 #'
@@ -17,6 +17,7 @@
 #' @references{Gervin K, et al. Systematic evaluation and validation of reference and library selection methods for deconvolution of cord blood DNA methylation data. bioRxiv. 2019 March; DOI:10.1101/570457}
 #' @references{Salas LA, et al. An optimized library for reference-based deconvolution of whole-blood biospecimens assayed using the Illumina HumanMethylationEPIC BeadArray. Genome biology. 2018 Dec;19(1):64.}
 #' @references{Heiss JA, et al. Training a model for estimating leukocyte composition using whole-blood DNA methylation and cell counts as reference. Epigenomics. 2017 Jan;9(1):13-20.}
+#' @references{Middleton LYM, et al. Saliva cell type DNA methylation reference panel for epidemiology studies in children. 2020 Sep;}
 #'
 #' @export
 #'

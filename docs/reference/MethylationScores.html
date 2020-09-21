@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Detection p-values — summits • ewastools</title>
+<title>Various methylation scores — methylation_score • ewastools</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Detection p-values — summits" />
-<meta property="og:description" content="Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or the U (M) intensities observed for completely methylated (unmethylated) probes, respectively (Heiss and Just, 2019). detP_threshold generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, mask is masking all probes with detection p-values below the specified threshold. detectionP.minfi provides an implementation for RGChannelSet objects as used in the minfi package." />
+<meta property="og:title" content="Various methylation scores — methylation_score" />
+<meta property="og:description" content="Various methylation scores" />
 
 
 
@@ -118,59 +118,30 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Detection p-values</h1>
+    <h1>Various methylation scores</h1>
     
-    <div class="hidden name"><code>detectionP.Rd</code></div>
+    <div class="hidden name"><code>MethylationScores.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or the U (M) intensities observed for completely methylated (unmethylated) probes, respectively (Heiss and Just, 2019). <code>detP_threshold</code> generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, <code>mask</code> is masking all probes with detection p-values below the specified threshold. <code>detectionP.minfi</code> provides an implementation for <code>RGChannelSet</code> objects as used in the <code>minfi</code> package.</p>
+    <p>Various methylation scores</p>
     </div>
 
-    <pre class="usage"><span class='fu'>summits</span>(<span class='kw'>beta</span>)
-
-<span class='fu'>detectionP</span>(<span class='kw'>raw</span>)
-
-<span class='fu'>detectionP.neg</span>(<span class='kw'>raw</span>)
-
-<span class='fu'>mask</span>(<span class='kw'>raw</span>, <span class='kw'>threshold</span>)
-
-<span class='fu'>eval_detP_cutoffs</span>(<span class='kw'>raw</span>, males = <span class='kw'>NULL</span>, females = <span class='kw'>NULL</span>)
-
-<span class='fu'>detectionP.minfi</span>(<span class='kw'>rgSet</span>)</pre>
+    <pre class="usage"><span class='fu'>methylation_score</span>(<span class='kw'>beta</span>, <span class='kw'>model</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>raw</th>
-      <td><p>Output of calling <code><a href='read_idats.html'>read_idats</a></code>, must include component <code>detP</code> for <code>mask</code> and <code>detP_threshold</code>.</p></td>
+      <th>beta</th>
+      <td><p>matrix of beta values</p></td>
     </tr>
     <tr>
-      <th>threshold</th>
-      <td><p>p-value threshold (arithmetic scale) above which oberservations are set to NA.</p></td>
-    </tr>
-    <tr>
-      <th>rgSet</th>
-      <td><p>minfi rgSet object</p></td>
-    </tr>
-    <tr>
-      <th>male/female</th>
-      <td><p>Indices of male and female subjects</p></td>
+      <th>model</th>
+      <td><p>Name of the model, i.e., one of `maternal_smoking`, `gestational_age`, or `horvath_clock`</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>For <code>detectionP</code> and <code>detectionP.neg</code> a modified <code>raw</code> object with a <code>detP</code> component, a matrix of detection p-values, added. <code>detectionP</code> computes p-values on the linear scale, whereas <code>detectionP.neg</code> returns p-values on the log10 scale.</p>
-<p>For <code>detectionP.minfi</code> a matrix of detection p-values.</p>
-<p>For <code>mask</code>, a modified <code>raw</code> object, with undetected probes set to <code>NA</code>.</p>
-    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
-
-    <p>Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection p values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15</p>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
-
-    <p>Jonathan A. Heiss</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

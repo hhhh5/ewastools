@@ -1,7 +1,7 @@
 Package: ewastools
 Type: Package
 Title: EWAS Tools
-Version: 1.6
+Version: 1.7
 Date: 2018-09-25
 Authors: Allan C. Just, Jonathan Alexander Heiss
 Maintainer: Jonathan Alexander Heiss <hhhh5@posteo.de>
@@ -16,4 +16,4 @@ Suggests:
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
