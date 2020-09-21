@@ -9,7 +9,7 @@ estimateLC(meth, ref)
 \arguments{
 \item{meth}{Matrix of beta values}
 
-\item{ref}{Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`).
+\item{ref}{Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`). Furthermore, the option `saliva` is available [9].
 '}
 }
 \value{
@@ -34,4 +34,6 @@ Estimation of cell proportions for blood and saliva using the Houseman algorithm
 {Salas LA, et al. An optimized library for reference-based deconvolution of whole-blood biospecimens assayed using the Illumina HumanMethylationEPIC BeadArray. Genome biology. 2018 Dec;19(1):64.}
 
 {Heiss JA, et al. Training a model for estimating leukocyte composition using whole-blood DNA methylation and cell counts as reference. Epigenomics. 2017 Jan;9(1):13-20.}
+
+{Middleton LYM, et al. Saliva cell type DNA methylation reference panel for epidemiology studies in children. 2020 Sep;}
 }

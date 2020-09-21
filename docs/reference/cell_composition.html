@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Detection p-values — summits • ewastools</title>
+<title>Cell composition — estimateLC • ewastools</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Detection p-values — summits" />
-<meta property="og:description" content="Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or the U (M) intensities observed for completely methylated (unmethylated) probes, respectively (Heiss and Just, 2019). detP_threshold generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, mask is masking all probes with detection p-values below the specified threshold. detectionP.minfi provides an implementation for RGChannelSet objects as used in the minfi package." />
+<meta property="og:title" content="Cell composition — estimateLC" />
+<meta property="og:description" content="Estimation of cell proportions for blood and saliva using the Houseman algorithm" />
 
 
 
@@ -118,59 +118,45 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Detection p-values</h1>
+    <h1>Cell composition</h1>
     
-    <div class="hidden name"><code>detectionP.Rd</code></div>
+    <div class="hidden name"><code>cell_composition.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or the U (M) intensities observed for completely methylated (unmethylated) probes, respectively (Heiss and Just, 2019). <code>detP_threshold</code> generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, <code>mask</code> is masking all probes with detection p-values below the specified threshold. <code>detectionP.minfi</code> provides an implementation for <code>RGChannelSet</code> objects as used in the <code>minfi</code> package.</p>
+    <p>Estimation of cell proportions for blood and saliva using the Houseman algorithm</p>
     </div>
 
-    <pre class="usage"><span class='fu'>summits</span>(<span class='kw'>beta</span>)
-
-<span class='fu'>detectionP</span>(<span class='kw'>raw</span>)
-
-<span class='fu'>detectionP.neg</span>(<span class='kw'>raw</span>)
-
-<span class='fu'>mask</span>(<span class='kw'>raw</span>, <span class='kw'>threshold</span>)
-
-<span class='fu'>eval_detP_cutoffs</span>(<span class='kw'>raw</span>, males = <span class='kw'>NULL</span>, females = <span class='kw'>NULL</span>)
-
-<span class='fu'>detectionP.minfi</span>(<span class='kw'>rgSet</span>)</pre>
+    <pre class="usage"><span class='fu'>estimateLC</span>(<span class='kw'>meth</span>, <span class='kw'>ref</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>raw</th>
-      <td><p>Output of calling <code><a href='read_idats.html'>read_idats</a></code>, must include component <code>detP</code> for <code>mask</code> and <code>detP_threshold</code>.</p></td>
+      <th>meth</th>
+      <td><p>Matrix of beta values</p></td>
     </tr>
     <tr>
-      <th>threshold</th>
-      <td><p>p-value threshold (arithmetic scale) above which oberservations are set to NA.</p></td>
-    </tr>
-    <tr>
-      <th>rgSet</th>
-      <td><p>minfi rgSet object</p></td>
-    </tr>
-    <tr>
-      <th>male/female</th>
-      <td><p>Indices of male and female subjects</p></td>
+      <th>ref</th>
+      <td><p>Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`). Furthermore, the option `saliva` is available [9].
+'</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>For <code>detectionP</code> and <code>detectionP.neg</code> a modified <code>raw</code> object with a <code>detP</code> component, a matrix of detection p-values, added. <code>detectionP</code> computes p-values on the linear scale, whereas <code>detectionP.neg</code> returns p-values on the log10 scale.</p>
-<p>For <code>detectionP.minfi</code> a matrix of detection p-values.</p>
-<p>For <code>mask</code>, a modified <code>raw</code> object, with undetected probes set to <code>NA</code>.</p>
+    <p>Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.</p>
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
 
-    <p>Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection p values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15</p>
-    <h2 class="hasAnchor" id="author"><a class="anchor" href="#author"></a>Author</h2>
-
-    <p>Jonathan A. Heiss</p>
+    <p>Houseman EA, et al. DNA methylation arrays as surrogate measures of cell mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.</p>
+<p>Reinius LE, et al. Differential DNA methylation in purified human blood cells: implications for cell lineage and studies on disease susceptibility. PloS one. 2012 Jul 25;7(7):e41361.</p>
+<p>Bakulski KM, et al. DNA methylation of cord blood cell types: applications for mixed cell birth studies. Epigenetics. 2016 May 3;11(5):354-62.</p>
+<p>de Goede OM, et al. Nucleated red blood cells impact DNA methylation and expression analyses of cord blood hematopoietic cells. Clinical epigenetics. 2015 Dec;7(1):95.</p>
+<p>Gervin K, et al. Cell type specific DNA methylation in cord blood: A 450K-reference data set and cell count-based validation of estimated cell type composition. Epigenetics. 2016 Sep 1;11(9):690-8</p>
+<p>Gervin K, et al. Systematic evaluation and validation of reference and library selection methods for deconvolution of cord blood DNA methylation data. bioRxiv. 2019 March; DOI:10.1101/570457</p>
+<p>Salas LA, et al. An optimized library for reference-based deconvolution of whole-blood biospecimens assayed using the Illumina HumanMethylationEPIC BeadArray. Genome biology. 2018 Dec;19(1):64.</p>
+<p>Heiss JA, et al. Training a model for estimating leukocyte composition using whole-blood DNA methylation and cell counts as reference. Epigenomics. 2017 Jan;9(1):13-20.</p>
+<p>Middleton LYM, et al. Saliva cell type DNA methylation reference panel for epidemiology studies in children. 2020 Sep;</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

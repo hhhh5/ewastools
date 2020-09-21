@@ -1,6 +1,7 @@
-pandoc: 1.19.2.1
-pkgdown: 1.4.1
+pandoc: '2.5'
+pkgdown: 1.6.1
 pkgdown_sha: ~
 articles:
-  exemplary_ewas: ../../../../../../../../J:/PM/Just_Lab/projects/ewastools/ewastools/vignettes/exemplary_ewas.html
+  exemplary_ewas: exemplary_ewas.html
+last_built: 2020-09-21T14:03Z
 
