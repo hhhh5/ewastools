@@ -66,9 +66,55 @@ estimateLC = function (meth,ref)
 	return(EST)
 }
 
+estimateLC2 = function (meth,ref) 
+{
+	J = ncol(meth)
+	coefs = read.table(ref)
+	coefs = as.matrix(coefs)
+	n_celltypes = ncol(coefs)
+	markers = match(rownames(coefs), rownames(meth))
+	EST = sapply(1:J, function(j) {
+		tmp = meth[markers, j]
+		i = !is.na(tmp)
+		quadprog::solve.QP(
+			t(coefs[i, ]) %*% coefs[i, ], t(coefs[i,]) %*% tmp[i],
+			cbind(rep(1,n_celltypes),diag(n_celltypes)),
+			c(1,rep(0, n_celltypes)),
+			meq=1
+		)$sol
+	})
+	EST = t(EST)
+	colnames(EST) = colnames(coefs)
+	EST = data.table(EST)
+	return(EST)
+}
+
+
 avg_r2 = function(ref){
 	
 	LC = estimateLC(meth,ref=ref)
+	frml = paste(c("meth~1",names(LC)),collapse="+")
+	LC[,meth:=runif(.N)]
+	m = lm(frml,data=LC)
+	mm = model.matrix(m)
+	
+	f = function(meth_i)
+	{
+		m[1:8] = lm.fit(mm,meth_i)
+		summary(m)$adj.r.squared
+	}
+	f = possibly(f,otherwise=NA)
+	
+	rr = apply(meth,1,f)
+	mean(rr,na.rm=TRUE)
+	
+}
+
+avg_r3 = function(ref){
+	
+	LC = estimateLC(meth,ref=ref)
+	x = rowSums(as.matrix(LC))
+	for(c in names(LC)){ LC[[c]] = LC[[c]]/x}
 	frml = paste(c("meth~1",names(LC)),collapse="+")
 	LC[,meth:=runif(.N)]
 	m = lm(frml,data=LC)
@@ -157,10 +203,17 @@ meth = bakulski %$% file %>% read_idats %>% correct_dye_bias %>% dont_normalize
 estimateLC(meth,"../data/saliva.txt")
 estimateLC(meth,"../data/Bakulski.txt")
 
+estimateLC2(meth,"../data/saliva.txt")
+estimateLC2(meth,"../data/Bakulski.txt")
+
 avg_r2("../data/saliva.txt")
 # 0.2507195
+avg_r3("../data/saliva.txt")
+
 avg_r2("../data/bakulski.txt")
 # 0.371119
+avg_r3("../data/bakulski.txt")
+
 
 ## Comparison to EpiDISH
 library(EpiDISH)

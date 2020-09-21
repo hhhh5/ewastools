@@ -1,3 +1,8 @@
+# ewastools 1.7
+ * Saliva cell composition prediction
+ * Test `detectionP.minfi` for compatibility
+ * Drop `normalize`
+
  # ewastools 1.6
 
  * `read_idats`: extract Sentrix barcode and position from .idat files, stored in `meta` data.table (92eb8df289a473fa0c06471be197db1953e39efd0)

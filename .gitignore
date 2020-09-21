@@ -18,3 +18,11 @@ data-raw/benchmarks
 data-raw/saliva
 
 data-raw/fundus\.R
+
+data-raw/FlowSorted.CordBloodCombined.450k.rda
+
+data-raw/lin/FlowSorted.CordTissueAndBlood.EPIC.rda
+
+data-raw/lin/FlowSorted.CordTissueAndBlood.EPIC_1.0.1.tar.gz
+
+data-raw/bakulski/cleaned_pheno_combined.csv
