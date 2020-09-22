@@ -4,7 +4,7 @@ The following functionality is offered for the 450K and EPIC chips:
 
 - Screen for problematic samples, e.g. failed assays, mislabeled or contaminated samples (`control_metrics, check_sex, snp_outliers`).
 - Compute detection p-values and mask respective data points (`detectionP, mask`).
-- Preprocess the data (`correct_dye_bias, normalize, dont_normalize`).
+- Preprocess the data (`correct_dye_bias, dont_normalize`).
 - Estimate leukocyte composition in case of blood samples (`estimateLC`)
 
 **Read the vignette on the recommended QC workflow at <https://hhhh5.github.io/ewastools/articles/exemplary_ewas.html>.**
