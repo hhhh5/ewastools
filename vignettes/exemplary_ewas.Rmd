@@ -120,11 +120,11 @@ write.csv(pheno,file="pheno.csv",row.names=FALSE)
 This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository, the phenotype data is stored in a file named `pheno.csv`
 
 ```
-devtools::install_github("hhhh5/ewastools@master")
+#devtools::install_github("hhhh5/ewastools@master")
 library(ewastools)
 library(stringi)
 library(data.table)
-library(magrittr)	
+library(magrittr)
 library(purrr)
 library(svd)
 ```

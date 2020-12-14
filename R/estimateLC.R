@@ -6,7 +6,8 @@
 #'
 #' @param meth Matrix of beta values
 #' @param ref Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`). Furthermore, the option `saliva` is available [9].
-#''
+#' @param constrained Force that all cell proportions sum up to 1.
+#'
 #' @return Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
 #'
 #' @references{Houseman EA, et al. DNA methylation arrays as surrogate measures of cell mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.}
@@ -21,7 +22,7 @@
 #'
 #' @export
 #'
-estimateLC = function(meth,ref){
+estimateLC = function(meth,ref,constrained=FALSE){
     
     J = ncol(meth)
 
@@ -33,12 +34,25 @@ estimateLC = function(meth,ref){
     EST = sapply(1:J,function(j){
         tmp = meth[markers,j]
         i = !is.na(tmp)
-        quadprog::solve.QP(
-             t(coefs[i,]) %*% coefs[i,]
-            ,t(coefs[i,]) %*% tmp[i]
-            ,diag(n_celltypes)
-            ,rep(0,n_celltypes)
-        )$sol
+
+        if(constrained == FALSE){
+            return(
+                quadprog::solve.QP(
+                 t(coefs[i,]) %*% coefs[i,]
+                ,t(coefs[i,]) %*% tmp[i]
+                ,diag(n_celltypes)
+                ,rep(0,n_celltypes)
+            )$sol)
+        }else{
+            return(
+                quadprog::solve.QP(
+                 t(coefs[i,]) %*% coefs[i,]
+                ,t(coefs[i,]) %*% tmp[i]
+                ,cbind(1,diag(n_celltypes))
+                ,c(1,rep(0,n_celltypes))
+                ,meq=1
+            )$sol)
+        }
         })
     EST = t(EST)
     colnames(EST) = colnames(coefs)
