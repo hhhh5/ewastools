@@ -25,6 +25,7 @@
 #'
 #' @export
 #'
+
 estimateLC = function(meth,ref,constrained=FALSE){
     
     J = ncol(meth)
