@@ -120,11 +120,11 @@ write.csv(pheno,file="pheno.csv",row.names=FALSE)
 This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository, the phenotype data is stored in a file named `pheno.csv`
 
 ```
-devtools::install_github("hhhh5/ewastools@master")
+#devtools::install_github("hhhh5/ewastools@master")
 library(ewastools)
 library(stringi)
 library(data.table)
-library(magrittr)	
+library(magrittr)
 library(purrr)
 library(svd)
 ```
@@ -294,7 +294,7 @@ The one sample failing this check is the same sample that did not belong to eith
 
 Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets.
 
-[Note] *When calling `check_snp_aggreement()` I recommend to run the function on all samples with and outlier metric below -2, i.e., greater than the cut-off of -4 used to exclude contaminated samples, but still small enough to guarantee that the SNP calls are accurate.*
+[Note] *When calling `check_snp_agreement()` I recommend to run the function on all samples with and outlier metric below -2, i.e., greater than the cut-off of -4 used to exclude contaminated samples, but still small enough to guarantee that the SNP calls are accurate.*
 
 ```{r}
 pheno$donor_id = enumerate_sample_donors(genotypes)

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Jonathan Heiss" />
 
-<meta name="date" content="2020-09-21" />
+<meta name="date" content="2020-12-13" />
 
 <title>Recommended Work Flow</title>
 
@@ -301,7 +301,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Recommended Work Flow</h1>
 <h4 class="author">Jonathan Heiss</h4>
-<h4 class="date">2020-09-21</h4>
+<h4 class="date">2020-12-13</h4>
 
 
 
@@ -311,11 +311,11 @@ img{ border: 0px;}
 code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
 </style>
 <p>This vignette exemplifies how to use the <code>ewastools</code> package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the <a href="https://www.ncbi.nlm.nih.gov/geo/">Gene Expression Omnibus</a> repository, the phenotype data is stored in a file named <code>pheno.csv</code></p>
-<pre><code>devtools::install_github(&quot;hhhh5/ewastools@master&quot;)
+<pre><code>#devtools::install_github(&quot;hhhh5/ewastools@master&quot;)
 library(ewastools)
 library(stringi)
 library(data.table)
-library(magrittr)   
+library(magrittr)
 library(purrr)
 library(svd)</code></pre>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1">pheno =<span class="st"> </span><span class="kw">fread</span>(<span class="st">&quot;pheno.csv&quot;</span>)</a>
@@ -586,7 +586,7 @@ library(svd)</code></pre>
 <a class="sourceLine" id="cb21-5" title="5">pheno[outlier <span class="op">&gt;</span><span class="st"> </span><span class="dv">-4</span>,exclude<span class="op">:</span><span class="er">=</span><span class="ot">TRUE</span>] <span class="co"># flag sample</span></a></code></pre></div>
 <p>The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).</p>
 <p>Other useful functions to be mentioned are <code>check_snp_agreement()</code> and <code>enumerate_sample_donors()</code>. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets.</p>
-<p>[Note] <em>When calling <code>check_snp_aggreement()</code> I recommend to run the function on all samples with and outlier metric below -2, i.e., greater than the cut-off of -4 used to exclude contaminated samples, but still small enough to guarantee that the SNP calls are accurate.</em></p>
+<p>[Note] <em>When calling <code>check_snp_agreement()</code> I recommend to run the function on all samples with and outlier metric below -2, i.e., greater than the cut-off of -4 used to exclude contaminated samples, but still small enough to guarantee that the SNP calls are accurate.</em></p>
 <div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" title="1">pheno<span class="op">$</span>donor_id =<span class="st"> </span><span class="kw">enumerate_sample_donors</span>(genotypes)</a>
 <a class="sourceLine" id="cb22-2" title="2"></a>
 <a class="sourceLine" id="cb22-3" title="3"><span class="co"># List duplicates</span></a>
