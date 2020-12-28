@@ -5,7 +5,10 @@
 #' @rdname cell_composition
 #'
 #' @param meth Matrix of beta values
-#' @param ref Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or combinations of them (concatenated by `+`, e.g. `Reinius+Lin`). Furthermore, the option `saliva` is available [9].
+#' @param ref Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3],
+#' `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or
+#' combinations of them, concatenated by `+`, e.g. `Reinius+Lin` (you might have to flip first and
+#' second name)). Furthermore, the option `saliva` and `salivaEPIC` are available [9].
 #' @param constrained Force that all cell proportions sum up to 1.
 #'
 #' @return Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
