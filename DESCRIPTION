@@ -1,13 +1,13 @@
 Package: ewastools
 Type: Package
 Title: EWAS Tools
-Version: 1.7
-Date: 2018-09-25
-Authors: Allan C. Just, Jonathan Alexander Heiss
-Maintainer: Jonathan Alexander Heiss <hhhh5@posteo.de>
+Version: 1.7.1
+Date: 2022-09-14
+Author: Allan C. Just, Jonathan Alexander Heiss
+Maintainer: Jonathan Alexander Heiss <heiss.jonathan@gmail.com>
 Description: Collection of useful functions for working with DNA methylation micro-array data.
 Depends: R (>= 3.3)
-Imports: illuminaio, mblm, data.table, igraph
+Imports: illuminaio, mblm, data.table, igraph, quadprog
 Suggests: 
     knitr,
     rmarkdown,
@@ -16,4 +16,4 @@ Suggests:
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
-RoxygenNote: 7.1.0
+RoxygenNote: 7.2.1

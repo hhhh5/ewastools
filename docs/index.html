@@ -19,6 +19,8 @@
 <![endif]-->
 </head>
 <body data-spy="scroll" data-target="#toc">
+    
+
     <div class="container template-home">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -31,23 +33,17 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">ewastools</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">1.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.7.1</span>
       </span>
     </div>
 
     <div id="navbar" class="navbar-collapse collapse">
       <ul class="nav navbar-nav">
 <li>
-  <a href="index.html">
-    <span class="fas fa fas fa-home fa-lg"></span>
-     
-  </a>
-</li>
-<li>
   <a href="reference/index.html">Reference</a>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Articles
      
     <span class="caret"></span>
@@ -74,47 +70,62 @@
 
       </header><div class="row">
   <div class="contents col-md-9">
-<div id="ewas_tools-a-quality-control-toolset-for-the-illumina-infinium-dna-methylation-platforms" class="section level1">
-<div class="page-header"><h1 class="hasAnchor">
-<a href="#ewas_tools-a-quality-control-toolset-for-the-illumina-infinium-dna-methylation-platforms" class="anchor"></a>ewas_tools: a quality control toolset for the Illumina Infinium DNA methylation platforms</h1></div>
+<div class="section level1">
+<div class="page-header"><h1 id="ewas_tools-a-quality-control-toolset-for-the-illumina-infinium-dna-methylation-platforms">ewas_tools: a quality control toolset for the Illumina Infinium DNA methylation platforms<a class="anchor" aria-label="anchor" href="#ewas_tools-a-quality-control-toolset-for-the-illumina-infinium-dna-methylation-platforms"></a>
+</h1></div>
 <p>The following functionality is offered for the 450K and EPIC chips:</p>
 <ul>
 <li>Screen for problematic samples, e.g. failed assays, mislabeled or contaminated samples (<code>control_metrics, check_sex, snp_outliers</code>).</li>
 <li>Compute detection p-values and mask respective data points (<code>detectionP, mask</code>).</li>
-<li>Preprocess the data (<code>correct_dye_bias, normalize, dont_normalize</code>).</li>
+<li>Preprocess the data (<code>correct_dye_bias, dont_normalize</code>).</li>
 <li>Estimate leukocyte composition in case of blood samples (<code>estimateLC</code>)</li>
 </ul>
-<p>Package documentation is available at <a href="https://hhhh5.github.io/ewastools/" class="uri">https://hhhh5.github.io/ewastools/</a>.</p>
-<p>An open access paper describing the quality checks implemented in this package in detail is available at <a href="http://doi.org/10.1186/s13148-018-0504-1" class="uri">http://doi.org/10.1186/s13148-018-0504-1</a>. A vignette demonstrating the application of quality control checks on a public dataset is provided as well.</p>
-<p>A second paper (open access) describing the improved detection p-values implemented in <code>ewastools</code> can be found at <a href="https://doi.org/10.1186/s13148-019-0615-3" class="uri">https://doi.org/10.1186/s13148-019-0615-3</a>.</p>
-<p><strong>For installation please run <code><a href="https://devtools.r-lib.org//reference/remote-reexports.html">devtools::install_github("hhhh5/ewastools")</a></code></strong></p>
+<p><strong>Read the vignette on the recommended QC workflow at <a href="https://hhhh5.github.io/ewastools/articles/exemplary_ewas.html" class="external-link uri">https://hhhh5.github.io/ewastools/articles/exemplary_ewas.html</a>.</strong></p>
+<p>Package documentation is available at <a href="https://hhhh5.github.io/ewastools/" class="external-link uri">https://hhhh5.github.io/ewastools/</a>.</p>
+<p>An open access paper describing the quality checks implemented in this package in detail is available at <a href="http://doi.org/10.1186/s13148-018-0504-1" class="external-link uri">http://doi.org/10.1186/s13148-018-0504-1</a>. A vignette demonstrating the application of quality control checks on a public dataset is provided as well.</p>
+<p>A second paper (open access) describing the improved detection p-values implemented in <code>ewastools</code> can be found at <a href="https://doi.org/10.1186/s13148-019-0615-3" class="external-link uri">https://doi.org/10.1186/s13148-019-0615-3</a>.</p>
+<p><strong>For installation please run <code>devtools::install_github("hhhh5/ewastools")</code></strong></p>
 </div>
   </div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <div class="license">
-<h2>License</h2>
+<h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
-<li>Unlimited</li>
+<li><a href="LICENSE.html">Full license</a></li>
+<li><small>Unlimited</small></li>
 </ul>
 </div>
+
+
+<div class="citation">
+<h2 data-toc-skip>Citation</h2>
+<ul class="list-unstyled">
+<li><a href="authors.html#citation">Citing ewastools</a></li>
+</ul>
+</div>
+
 <div class="developers">
-<h2>Developers</h2>
+<h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Jonathan Alexander Heiss <br><small class="roles"> Maintainer </small>  </li>
 </ul>
 </div>
+
+
 
   </div>
 </div>
 
 
       <footer><div class="copyright">
-  <p>Developed by Jonathan Alexander Heiss.</p>
+  <p></p>
+<p>Developed by Jonathan Alexander Heiss.</p>
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.6.1.</p>
+  <p></p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.6.</p>
 </div>
 
       </footer>
@@ -122,6 +133,8 @@
 
   
 
+
+  
 
   </body>
 </html>
