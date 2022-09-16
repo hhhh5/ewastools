@@ -9,7 +9,7 @@ estimateLC(meth, ref, constrained = FALSE)
 \arguments{
 \item{meth}{Matrix of beta values}
 
-\item{ref}{Choice of reference dataset: available options are `Reinius` [2]`, Bakulski` [3],
+\item{ref}{Choice of reference dataset: available options are `HRS` (Health and Retirement Study), `Reinius` [2]`, Bakulski` [3],
 `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541], `Salas` [7], `Lolipop` [8] or
 combinations of them, concatenated by `+`, e.g. `Reinius+Lin` (you might have to flip first and
 second name)). Furthermore, the option `saliva` and `salivaEPIC` are available [9].}

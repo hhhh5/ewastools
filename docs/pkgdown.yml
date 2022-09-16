@@ -1,7 +1,7 @@
-pandoc: '2.5'
-pkgdown: 1.6.1
+pandoc: 2.9.2.1
+pkgdown: 2.0.6
 pkgdown_sha: ~
 articles:
   exemplary_ewas: exemplary_ewas.html
-last_built: 2020-09-21T14:03Z
+last_built: 2022-09-15T03:55Z
 
