@@ -1,4 +1,6 @@
-# ewas_tools: a quality control toolset for the Illumina Infinium DNA methylation platforms
+# ewas_tools: a quality control toolset for the Illumina Infinium DNA methylation platforms [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7329019.svg)](https://doi.org/10.5281/zenodo.7329019)
+
+
 
 The following functionality is offered for the 450K and EPIC chips:
 
