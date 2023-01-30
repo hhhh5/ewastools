@@ -1,5 +1,35 @@
 library(data.table)
 
+# -------------------------------- EPIC V2 chip manifest
+
+### NEW EPIC array added by Costanza L. Vallerga
+### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 937055)
+
+manifest_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip="IlmnID",header=TRUE,nrows=937055,integer64="character",sep=",",sep2=";")
+
+manifest_epic_v2 = manifest_epic_v2[,list(
+     probe_id=IlmnID
+    ,addressU=as.integer(AddressA_ID)
+    ,addressM=as.integer(AddressB_ID)
+    ,channel=Color_Channel
+    ,next_base=Next_Base
+    ,chr=CHR
+    ,mapinfo=MAPINFO
+    ,strand=factor(Strand_FR)
+)]
+
+manifest_epic_v2[                          ,probe_type:="cg"]
+manifest_epic_v2[substr(probe_id,1,2)=="ch",probe_type:="ch"]
+manifest_epic_v2[substr(probe_id,1,2)=="nv",probe_type:="nv"]
+manifest_epic_v2[substr(probe_id,1,2)=="rs",probe_type:="rs"]
+
+manifest_epic_v2[channel=="",channel:="Both"]
+
+controls_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip=937056,header=FALSE)
+controls_epic_v2 = controls_epic_v2[,1:4]
+names(controls_epic_v2) = c("address","group","channel","name")
+
+
 # -------------------------------- EPIC chip manifest
 
 ### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865927)
