@@ -11,21 +11,24 @@ check_sex = function(raw){
 
 	with(raw,{
 
-		# select allosomal probes
-		chrX = manifest[chr=='X',index]
-		chrY = manifest[chr=='Y',index]
+		# select allosomal and autosomal probes
+		chrX = manifest[chr=='X', index]
+		chrY = manifest[chr=='Y', index]
+    	auto = manifest[!chr%in%c("X","Y"), index]
 
 		# compute the total intensities
-		chrX = colMeans(M[chrX,,drop=FALSE]+U[chrX,,drop=FALSE],na.rm=TRUE)
-		chrY = colMeans(M[chrY,,drop=FALSE]+U[chrY,,drop=FALSE],na.rm=TRUE)
+		chrX = M[chrX,,drop=FALSE] + U[chrX,,drop=FALSE]
+		chrY = M[chrY,,drop=FALSE] + U[chrY,,drop=FALSE]
+		auto = M[auto,,drop=FALSE] + U[auto,,drop=FALSE]
 
-		# compute the average total intensity across all autosomal probes
-    	autosomes = manifest[!chr%in%c("X","Y"),index]
-		autosomes = colMeans(M[autosomes,,drop=FALSE]+U[autosomes,,drop=FALSE],na.rm=TRUE)
+		# compute per-sample average
+		chrX = colMeans(chrX, na.rm=TRUE)
+		chrY = colMeans(chrY, na.rm=TRUE)
+		auto = colMeans(auto, na.rm=TRUE)
 
-		# normalize total intensities
-		chrX = chrX/autosomes
-		chrY = chrY/autosomes
+		# normalize allosomal intensities
+		chrX = chrX/auto
+		chrY = chrY/auto
 
 		return(list(X=chrX,Y=chrY))
 	})
@@ -46,9 +49,11 @@ predict_sex = function(X,Y,male,female){
 	cutY = outer(Y[male],Y[female],"+")
 	cutY = median(cutY)/2
 
-	# Prediction based on in which quadrant (cutX/cutY) samples fall
+	# Prediction is based the quadrant (cutX/cutY) in which a sample falls
+	# Samples in the upper right and lower left quadrant are assigned NA
+	# (though there could be Klinefelter samples or similar)
 	prediction = rep(NA,times=length(X))
-	prediction[X>=cutX & Y<=cutY] =  "f"
-	prediction[X<=cutX & Y>=cutY] =  "m"
+	prediction[X >= cutX & Y <= cutY] =  "f"
+	prediction[X <= cutX & Y >= cutY] =  "m"
 	factor(prediction,levels=c("m","f"),labels=c("m","f"))
 }
