@@ -29,12 +29,12 @@ controls_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip=937056,header=FALSE)
 controls_epic_v2 = controls_epic_v2[,1:4]
 names(controls_epic_v2) = c("address","group","channel","name")
 
-# -------------------------------- EPIC chip manifest
+# -------------------------------- EPIC chip manifest b5
 
-### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865927)
+### Added the latest version of the EPIC v1 (b5)
+### CSV contains both 'normal' and control probes. Create two separate tables for them (split at line 865918) --> 635 controls
 
-manifest_epic = fread("MethylationEPIC_v-1-0_B3.csv"
-    ,skip="IlmnID",header=TRUE,nrows=865918,integer64="character",sep=",",sep2=";")
+manifest_epic = fread("infinium-methylationepic-v-1-0-b5-manifest-file.csv",skip="IlmnID",header=TRUE,nrows=865918,integer64="character",sep=",",sep2=";")
 
 manifest_epic = manifest_epic[,list(
      probe_id=IlmnID
@@ -53,7 +53,7 @@ manifest_epic[substr(probe_id,1,2)=="rs",probe_type:="rs"]
 
 manifest_epic[channel=="",channel:="Both"]
 
-controls_epic = fread("MethylationEPIC_v-1-0_B3.csv",skip=865927,header=FALSE)
+controls_epic = fread("infinium-methylationepic-v-1-0-b5-manifest-file.csv",skip=865927,header=FALSE,fill=TRUE)
 controls_epic = controls_epic[,1:4]
 names(controls_epic) = c("address","group","channel","name")
 
