@@ -8,7 +8,7 @@ library(data.table)
 manifest_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip="IlmnID",header=TRUE,nrows=937055,integer64="character",sep=",",sep2=";")
 
 manifest_epic_v2 = manifest_epic_v2[,list(
-     probe_id=IlmnID
+     probe_id=Name
     ,addressU=as.integer(AddressA_ID)
     ,addressM=as.integer(AddressB_ID)
     ,channel=Color_Channel
