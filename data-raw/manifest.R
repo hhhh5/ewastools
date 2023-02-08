@@ -13,6 +13,7 @@ manifest_epic_v2 = manifest_epic_v2[,list(
     ,addressM=as.integer(AddressB_ID)
     ,channel=Color_Channel
     ,next_base=Next_Base
+    ,probe_type=Probe_Type
     ,chr=CHR
     ,mapinfo=MAPINFO
     ,strand=factor(Strand_FR)
