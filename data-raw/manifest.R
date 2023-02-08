@@ -18,10 +18,6 @@ manifest_epic_v2 = manifest_epic_v2[,list(
     ,strand=factor(Strand_FR)
 )]
 
-manifest_epic_v2[                          ,probe_type:="cg"]
-manifest_epic_v2[substr(probe_id,1,2)=="ch",probe_type:="ch"]
-manifest_epic_v2[substr(probe_id,1,2)=="nv",probe_type:="nv"]
-manifest_epic_v2[substr(probe_id,1,2)=="rs",probe_type:="rs"]
 
 manifest_epic_v2[channel=="",channel:="Both"]
 
