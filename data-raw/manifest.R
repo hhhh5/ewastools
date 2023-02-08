@@ -25,7 +25,7 @@ manifest_epic_v2[substr(probe_id,1,2)=="rs",probe_type:="rs"]
 
 manifest_epic_v2[channel=="",channel:="Both"]
 
-controls_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip=937056,header=FALSE)
+controls_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip=937064,header=FALSE)
 controls_epic_v2 = controls_epic_v2[,1:4]
 names(controls_epic_v2) = c("address","group","channel","name")
 
