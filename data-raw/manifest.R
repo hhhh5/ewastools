@@ -82,4 +82,8 @@ controls_450K = fread("HumanMethylation450_15017482_v1-2.csv",skip=485586,header
 controls_450K = controls_450K[,1:4]
 names(controls_450K) = c("address","group","channel","name")
 
-save(manifest_epic,controls_epic,manifest_450K,controls_450K,file="../R/sysdata.rda",compress="xz")
+save(
+    manifest_450K, controls_450K,
+    manifest_epic, controls_epic,
+    manifest_epic_v2, controls_epic_v2,
+    file="../R/sysdata.rda",compress="xz")
