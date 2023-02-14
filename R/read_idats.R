@@ -49,6 +49,12 @@ read_idats <- function(idat_files,quiet=FALSE){
         manifest = data.table::copy(ewastools:::manifest_epic)
         controls = data.table::copy(ewastools:::controls_epic)
     }
+    else if(P==1105209)
+    {
+        platform="EPIC_v2"
+        manifest = data.table::copy(ewastools:::manifest_epic_v2)
+        controls = data.table::copy(ewastools:::controls_epic_v2)
+     }
     else if(P==622399)
     { 
         platform="450K"

@@ -12,6 +12,12 @@
 #'
 #' @references{Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection p values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
 
+#' Return peaks of beta-value distribution
+#'
+#' Return the locations of the two peaks (completly methylated and unmethylated CpG sites)
+#' of the beta-value distribution.
+#' 
+#' @return Vector of length two
 #' @rdname detectionP
 #'
 summits = function (beta)
