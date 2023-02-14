@@ -1,3 +1,6 @@
+# ewastools 1.7.2
+* Added support for EPICv2 chip
+
 # ewastools 1.7.1
 * Added HRS cell composition model
 
