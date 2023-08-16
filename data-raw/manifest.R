@@ -19,8 +19,9 @@ manifest_epic_v2 = manifest_epic_v2[,list(
     ,strand=factor(Strand_FR)
 )]
 
-
+# Harmonize manifests
 manifest_epic_v2[channel=="",channel:="Both"]
+manifest_epic_v2[chr %like% '^chr', chr := substr(chr, 4, 10)]
 
 controls_epic_v2 = fread("EPIC-8v2-0_A1.csv",skip=937064,header=FALSE)
 controls_epic_v2 = controls_epic_v2[,1:4]
