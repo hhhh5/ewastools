@@ -191,46 +191,60 @@ detectionP.minfi <- function(rgSet){
     iR = as.data.table(as.data.frame(iR))
     iG = as.data.table(as.data.frame(iG))
 
-    for(j in 1:ncol(rgSet)){
+    betas   = minfi::getBeta(rgSet)
+    betasIr = betas[iR$Name,]
+    betasIg = betas[iG$Name,]
+    rm(betas)
 
-        beta = minfi::getBeta(rgSet[,j])
-        r = minfi::getRed  (rgSet[,j])
-        g = minfi::getGreen(rgSet[,j])
+    reds   = minfi::getRed(rgSet)
+    greens = minfi::getGreen(rgSet)
+    rm(rgSet)
 
-        sR = summits(beta[iR$Name,1])
-        sG = summits(beta[iG$Name,1])
+    muUR = muMR = muUG = muMG = numeric(ncol(detP))
+    sdUR = sdMR = sdUG = sdMG = numeric(ncol(detP))
+
+    for(j in 1:ncol(detP)){
+
+        sR = summits(betasIr[,j])
+        sG = summits(betasIg[,j])
 
         # Red channel
-        bkgU = head(order(abs(beta[iR$Name,1]-sR[2])),n=1000)
-        bkgM = head(order(abs(beta[iR$Name,1]-sR[1])),n=1000)
+        bkgU = order(abs(betasIr[,j]-sR[2]))[1:1000]
+        bkgM = order(abs(betasIr[,j]-sR[1]))[1:1000]
 
-        bkgU = iR[bkgU]$AddressA
-        bkgM = iR[bkgM]$AddressB
+        bkgU = iR$AddressA[bkgU]
+        bkgM = iR$AddressB[bkgM]
 
-        muUR = median(r[bkgU,1],na.rm=TRUE)
-        muMR = median(r[bkgM,1],na.rm=TRUE)
+        bkgU = reds[bkgU,j]
+        bkgM = reds[bkgM,j]
 
-        sdUR = mad(r[bkgU,1],na.rm=TRUE)
-        sdMR = mad(r[bkgM,1],na.rm=TRUE)
+        muUR[j] = median(bkgU,na.rm=TRUE)
+        muMR[j] = median(bkgM,na.rm=TRUE)
+
+        sdUR[j] = mad(bkgU,na.rm=TRUE)
+        sdMR[j] = mad(bkgM,na.rm=TRUE)
 
         # Green channel
-        bkgU = head(order(abs(beta[iG$Name,1]-sG[2])),n=1000)
-        bkgM = head(order(abs(beta[iG$Name,1]-sG[1])),n=1000)
+        bkgU = order(abs(betasIg[,j]-sG[2]))[1:1000]
+        bkgM = order(abs(betasIg[,j]-sG[1]))[1:1000]
 
-        bkgU = iG[bkgU]$AddressA
-        bkgM = iG[bkgM]$AddressB
+        bkgU = iG$AddressA[bkgU]
+        bkgM = iG$AddressB[bkgM]
 
-        muUG = median(g[bkgU,1],na.rm=TRUE)
-        muMG = median(g[bkgM,1],na.rm=TRUE)
+        bkgU = greens[bkgU,j]
+        bkgM = greens[bkgM,j]
 
-        sdUG = mad(g[bkgU,1],na.rm=TRUE)
-        sdMG = mad(g[bkgM,1],na.rm=TRUE)
+        muUG[j] = median(bkgU,na.rm=TRUE)
+        muMG[j] = median(bkgM,na.rm=TRUE)
 
+        sdUG[j] = mad(bkgU,na.rm=TRUE)
+        sdMG[j] = mad(bkgM,na.rm=TRUE)
 
-        detP[iR$Name,j] = pnorm(r[iR$AddressA,1]+r[iR$AddressB,1],mean=muUR+muMR,sd=sqrt(sdUR^2+sdMR^2),lower.tail=FALSE)
-        detP[iG$Name,j] = pnorm(g[iG$AddressA,1]+g[iG$AddressB,1],mean=muUG+muMG,sd=sqrt(sdUG^2+sdMG^2),lower.tail=FALSE)
-        detP[i2$Name,j] = pnorm(r[i2$AddressA,1]+g[i2$AddressA,1],mean=muUR+muMG,sd=sqrt(sdUR^2+sdMG^2),lower.tail=FALSE)
     }
+
+    detP[iR$Name,] = pnorm(reds[iR$AddressA,]+reds[iR$AddressB,],     mean=rep(muUR+muMR,each=nrow(iR)), sd=rep(sqrt(sdUR^2+sdMR^2),each=nrow(iR)), lower.tail=FALSE)
+    detP[iG$Name,] = pnorm(greens[iG$AddressA,]+greens[iG$AddressB,], mean=rep(muUG+muMG,each=nrow(iG)), sd=rep(sqrt(sdUG^2+sdMG^2),each=nrow(iG)), lower.tail=FALSE)
+    detP[i2$Name,] = pnorm(reds[i2$AddressA,]+greens[i2$AddressA,],   mean=rep(muUR+muMG,each=nrow(i2)), sd=rep(sqrt(sdUR^2+sdMG^2),each=nrow(i2)), lower.tail=FALSE)
 
     detP
 }
