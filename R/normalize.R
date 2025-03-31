@@ -20,17 +20,18 @@ NULL
 #' 
 correct_dye_bias <- function(raw){
     
-    if(!all(c('manifest','M','U','controls','ctrlG','ctrlR')%in%names(raw))) stop('Invalid argument')
+    if(!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))
+        stop("Invalid argument")
     
-    i1g = raw$manifest[channel=='Grn' ,]
-    i2  = raw$manifest[channel=='Both',]
+    i1g = raw$manifest[channel == "Grn" ,]
+    i2  = raw$manifest[channel == "Both",]
 
     ## Normalization control probes
     # They are paired (G with A, C with T)
-    Ai = raw$controls[group=='NORM_A'][order(name)]$index
-    Ti = raw$controls[group=='NORM_T'][order(name)]$index
-    Ci = raw$controls[group=='NORM_C'][order(name)]$index
-    Gi = raw$controls[group=='NORM_G'][order(name)]$index
+    Ai = raw$controls[group == "NORM_A"][order(name)]$index
+    Ti = raw$controls[group == "NORM_T"][order(name)]$index
+    Ci = raw$controls[group == "NORM_C"][order(name)]$index
+    Gi = raw$controls[group == "NORM_G"][order(name)]$index
 
     J = ncol(raw$M)
 
@@ -66,10 +67,11 @@ correct_dye_bias2 = function (raw)
 {
     # Experimental version of dye-bias correction. I found that red~green differs for 
     # ... G~A and C~T. They are however not independent. I have not understood this relation yet.
-    if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))  stop("Invalid argument")
+    if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))
+        stop("Invalid argument")
 
     i1g = raw$manifest[channel == "Grn", ]
-    i2 = raw$manifest[channel == "Both", ]
+    i2  = raw$manifest[channel == "Both",]
 
     Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai,]
     Gi = raw$controls[group == "NORM_G"][order(name)]$index; Gi = raw$ctrlG[Gi,]
@@ -111,14 +113,14 @@ correct_dye_bias2 = function (raw)
 #'
 dont_normalize <- function(raw){
 
-    if(!all(c('manifest','M','U','meta')%in%names(raw))) stop('Invalid argument')
+    if(!all(c("manifest", "M", "U", "meta") %in% names(raw))) stop('Invalid argument')
 
     with(raw,{
 
-        M[M<1] = 1
-        U[U<1] = 1
+        M[M < 1] = 1
+        U[U < 1] = 1
         
-        meth = M/(M+U)
+        meth = M / (M+U)
         
         rownames(meth) = manifest$probe_id
         colnames(meth) = meta$sample_id
