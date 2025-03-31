@@ -6,13 +6,14 @@ Date: 2022-09-14
 Author: Allan C. Just, Jonathan Alexander Heiss
 Maintainer: Jonathan Alexander Heiss <heiss.jonathan@gmail.com>
 Description: Collection of useful functions for working with DNA methylation micro-array data.
-Depends: R (>= 3.3)
+Depends: R (>= 3.5.0)
 Imports: illuminaio, mblm, data.table, igraph, quadprog
 Suggests: 
     knitr,
     rmarkdown,
     minfi,
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    tidyverse
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no

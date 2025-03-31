@@ -23,7 +23,7 @@ NULL
 #' read_idats('9976861004_R01C01')
 #' }
 #'
-read_idats <- function(idat_files,quiet=FALSE){
+read_idats <- function(idat_files, quiet=FALSE){
 
     J = length(idat_files)
 
@@ -43,59 +43,68 @@ read_idats <- function(idat_files,quiet=FALSE){
     ## Pick appropriate manifest
     # (numbers are possible #features I have encountered in the wild so far)
     # We assume that all .idats use the same platform they can differ in #features, though
-    if(P %in% c(1051815,1051943,1052641))
-    {
-        platform="EPIC"
-        manifest = data.table::copy(ewastools:::manifest_epic)
-        controls = data.table::copy(ewastools:::controls_epic)
-    }
-    else if(P==1105209)
-    {
-        platform="EPIC_v2"
-        manifest = data.table::copy(ewastools:::manifest_epic_v2)
-        controls = data.table::copy(ewastools:::controls_epic_v2)
-     }
-    else if(P==622399)
-    { 
-        platform="450K"
-        manifest = data.table::copy(ewastools:::manifest_450K)
-        controls = data.table::copy(ewastools:::controls_450K)
-    }
-    else
-    {
+    if(P == 622399) { 
+        platform = "450K"
+        chr      = "chr38"
+        mapinfo  = "mapinfo38"
+    } else if(P %in% c(1051815, 1051943, 1052641)) {
+        platform = "EPICv1"
+         chr     = "chr38"
+         mapinfo = "mapinfo38"
+    } else if(P == 1105209) {
+        platform = "EPICv2"
+        chr      = "chr38"
+        mapinfo  = "mapinfo38"
+    } else {
         stop("Unknown platform")
-        platform="UNK"
     }
 
-    setkeyv(manifest,c("chr","mapinfo"))
-    manifest[,index:=1L:.N]
-    controls[,index:=1L:.N]
+    manifest = ewastools:::MANIFESTS[[ platform ]]
+    controls = ewastools:::CONTROLS [[ platform ]]
 
-    manifest[channel=="Grn",OOBi:=1:.N]
-    manifest[channel=="Red",OOBi:=1:.N]
+    setDT(manifest)
+    setDT(controls)
 
-    M = U = matrix(NA_real_   ,nrow=nrow(manifest),ncol=J) # methylated (M) and unmethylated (U) signal intensities
-    S = T = matrix(NA_integer_,nrow=nrow(manifest),ncol=J) # standard deviations
-    N = V = matrix(NA_integer_,nrow=nrow(manifest),ncol=J) # number of beads underlying methylated (N) and unmethylated (V) signal intensities
-    ctrlG = ctrlR = matrix(NA_real_,nrow=nrow(controls),ncol=J) # signal intensities of control probes
-    ctrlN = matrix(NA_integer_,nrow=nrow(controls),ncol=J)
-    oobG = list(M=matrix(NA_real_,nrow=manifest[channel=="Red",.N],ncol=J),U=matrix(NA_real_,nrow=manifest[channel=="Red",.N],ncol=J))
-    oobR = list(M=matrix(NA_real_,nrow=manifest[channel=="Grn",.N],ncol=J),U=matrix(NA_real_,nrow=manifest[channel=="Grn",.N],ncol=J))
+    setnames(manifest, c(chr, mapinfo), c("chr", "mapinfo"))
+
+    manifest[, index := 1L:.N]
+    controls[, index := 1L:.N]
+
+    manifest[channel == "Grn", OOBi := 1:.N]
+    manifest[channel == "Red", OOBi := 1:.N]
+
+    # Methylated (M) and unmethylated (U) signal intensities
+    M = U = matrix(NA_real_   ,nrow = nrow(manifest), ncol = J)
+    # Standard deviations
+    S = T = matrix(NA_integer_,nrow = nrow(manifest), ncol = J)
+    # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
+    N = V = matrix(NA_integer_,nrow = nrow(manifest), ncol = J)
+
+    # Signal intensities of control probes
+    ctrlG = ctrlR = matrix(NA_real_, nrow = nrow(controls), ncol = J)
+    ctrlN = matrix(NA_integer_, nrow = nrow(controls), ncol = J)
+    oobG = list(
+        M = matrix(NA_real_, nrow = manifest[channel == "Red", .N], ncol = J),
+        U = matrix(NA_real_, nrow = manifest[channel == "Red", .N], ncol = J))
+
+    oobR = list(
+        M = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J),
+        U = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J))
 
 
-    if(!quiet) pb <- txtProgressBar(min=0,max=J,style=3)
+    if(!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
 
-    barcodes  = rep(NA_character_,J)
-    positions = rep(NA_character_,J)
-    dates     = rep(NA_character_,J)
+    barcodes  = rep(NA_character_, J)
+    positions = rep(NA_character_, J)
+    dates     = rep(NA_character_, J)
 
     for(j in 1:J){
 
-        red = illuminaio::readIDAT(paste0(idat_files[j],"_Red",suffix[j]))
-        grn = illuminaio::readIDAT(paste0(idat_files[j],"_Grn",suffix[j]))
+        red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
+        grn = illuminaio::readIDAT(paste0(idat_files[j], "_Grn", suffix[j]))
 
         idat_order = red$MidBlock
-        if(!identical(idat_order,grn$MidBlock)) stop("Red and green .idat files do not agree!")
+        if(!identical(idat_order, grn$MidBlock)) stop("Red and green .idat files do not agree!")
 
         barcodes [j] = red$Barcode
         positions[j] = red$Unknowns$MostlyA
@@ -103,29 +112,29 @@ read_idats <- function(idat_files,quiet=FALSE){
         # This information is sometimes not recorded
         if(nrow(red$RunInfo)>1) dates[j] = red$RunInfo[2,1]
 
-        manifest[,Ui:=match(addressU,idat_order)]
-        manifest[,Mi:=match(addressM,idat_order)]
-        controls[, i:=match(address ,idat_order)]
+        manifest[,Ui := match(addressU, idat_order)]
+        manifest[,Mi := match(addressM, idat_order)]
+        controls[, i := match(address , idat_order)]
 
         setindexv(manifest,"channel")
-        manifest["Both",Mi:=Ui,on="channel"]
+        manifest["Both", Mi := Ui, on = "channel"]
 
         ## Type I Red probes
-        i = manifest["Red",on="channel"]
+        i = manifest["Red", on = "channel"]
 
-        U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
-        T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
-        V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
+        U[ i$index,j ] = red$Quants[ i$Ui, 1] # Mean
+        T[ i$index,j ] = red$Quants[ i$Ui, 2] # SD
+        V[ i$index,j ] = red$Quants[ i$Ui, 3] # NBeads
     
-        M[ i$index,j ] = red$Quants[ i$Mi,1 ] # Mean
-        S[ i$index,j ] = red$Quants[ i$Mi,2 ] # SD
-        N[ i$index,j ] = red$Quants[ i$Mi,3 ] # NBeads
+        M[ i$index,j ] = red$Quants[ i$Mi, 1] # Mean
+        S[ i$index,j ] = red$Quants[ i$Mi, 2] # SD
+        N[ i$index,j ] = red$Quants[ i$Mi, 3] # NBeads
 
         oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
         oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
 
         ## Type I Green probes
-        i = manifest["Grn",on="channel"]
+        i = manifest["Grn", on = "channel"]
 
         U[ i$index,j ] = grn$Quants[ i$Ui,1 ] # Mean
         T[ i$index,j ] = grn$Quants[ i$Ui,2 ] # SD
@@ -139,7 +148,7 @@ read_idats <- function(idat_files,quiet=FALSE){
         oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
         
         ## Type II probes
-        i = manifest["Both",on="channel"]
+        i = manifest["Both", on = "channel"]
 
         U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
         T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
@@ -163,19 +172,19 @@ read_idats <- function(idat_files,quiet=FALSE){
 
     # Probes with zero beads on the chip (result of random chip assembly)
     # are set to intensity zero in the .idat files. Mark them as missing.
-    M[N==0] = NA
-    U[V==0] = NA
+    M[N == 0] = NA
+    U[V == 0] = NA
 
-    S[N==0 | N==1] = NA
-    T[V==0 | V==1] = NA
+    S[N == 0 | N == 1] = NA
+    T[V == 0 | V == 1] = NA
 
-    ctrlG[ctrlN==0] = NA
-    ctrlR[ctrlN==0] = NA
+    ctrlG[ctrlN == 0] = NA
+    ctrlR[ctrlN == 0] = NA
 
-    sample_ids = strsplit(x=idat_files,split="/")
-    sample_ids = sapply(sample_ids,tail,n=1L)
+    sample_ids = strsplit(x = idat_files, split = "/")
+    sample_ids = sapply(sample_ids, tail, n = 1L)
 
-    meta = data.table(
+    meta = tibble::tibble(
          sample_id = sample_ids
         ,date = as.IDate(dates,"%m/%d/%Y %r")
         ,time = as.ITime(dates,"%m/%d/%Y %r")
@@ -184,14 +193,14 @@ read_idats <- function(idat_files,quiet=FALSE){
         )
 
     raw = list(
-         platform=platform
-        ,manifest=manifest
-        ,U=U,T=T,V=V
-        ,M=M,S=S,N=N
-        ,controls=controls
-        ,ctrlG=ctrlG,ctrlR=ctrlR,ctrlN=ctrlN
-        ,oobG=oobG,oobR=oobR
-        ,meta=meta
+         platform = platform
+        ,manifest = manifest
+        ,U = U, T = T, V = V
+        ,M = M, S = S, N = N
+        ,controls = controls
+        ,ctrlG = ctrlG, ctrlR = ctrlR, ctrlN = ctrlN
+        ,oobG = oobG, oobR = oobR
+        ,meta = meta
     )
 
     return(raw)
@@ -207,29 +216,29 @@ read_idats <- function(idat_files,quiet=FALSE){
 #'
 #' @return A modified \code{raw} object
 #'
-drop_samples <- function(raw,j=NULL){
+drop_samples <- function(raw, j = NULL){
 
-    raw$U = raw$U[,-j,drop=FALSE]
-    raw$M = raw$M[,-j,drop=FALSE]
+    raw$U = raw$U[, -j, drop = FALSE]
+    raw$M = raw$M[, -j, drop = FALSE]
 
-    raw$T = raw$T[,-j,drop=FALSE]
-    raw$S = raw$S[,-j,drop=FALSE]
+    raw$T = raw$T[, -j, drop = FALSE]
+    raw$S = raw$S[, -j, drop = FALSE]
 
-    raw$V = raw$V[,-j,drop=FALSE]
-    raw$N = raw$N[,-j,drop=FALSE]
+    raw$V = raw$V[, -j, drop = FALSE]
+    raw$N = raw$N[, -j, drop = FALSE]
 
-    raw$ctrlG = raw$ctrlG[,-j,drop=FALSE]
-    raw$ctrlR = raw$ctrlR[,-j,drop=FALSE]
+    raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
+    raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
 
-    raw$oobG$M = raw$oobG$M[,-j,drop=FALSE]
-    raw$oobG$U = raw$oobG$U[,-j,drop=FALSE]
-    raw$oobR$M = raw$oobR$M[,-j,drop=FALSE]
-    raw$oobR$U = raw$oobR$U[,-j,drop=FALSE]
+    raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
+    raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
+    raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
+    raw$oobR$U = raw$oobR$U[, -j, drop = FALSE]
 
-    raw$meta = raw$meta[-j,,drop=FALSE]
+    raw$meta = raw$meta[-j,, drop = FALSE]
 
-    if("detP"%in%names(raw)){
-        raw$detP = raw$detP[,-j,drop=FALSE]
+    if("detP" %in% names(raw)){
+        raw$detP = raw$detP[, -j, drop = FALSE]
     }
 
     return(raw)
