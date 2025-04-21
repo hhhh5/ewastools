@@ -1,4 +1,10 @@
-#' These function check the agreement of genetic fingerprints between samples (after genotype calling with \code{call_genotypes}). In case of \code{check_snp_agreement}, the user supplies for each sample the assumed donor ID and the function returns all conflicts (i.d., either samples that are supposed to come from the same donor but have distinct genetic fingerprints or samples from supposedly different donors with the same fingerprints). \code{check_snp_agreement} on the other hand is inferring donor IDs in case they are unknown (useful for example to detect technical replicates in a public dataset).
+#' These function check the agreement of genetic fingerprints between samples
+#' (after genotype calling with \code{call_genotypes}). In case of \code{check_snp_agreement},
+#' the user supplies for each sample the assumed donor ID and the function returns all conflicts,
+#' meaning either samples that are supposed to come from the same donor but have distinct genetic
+#' fingerprints, or samples from supposedly different donors with the same fingerprint.
+#' \code{enumerate_sample_donors} on the other hand is inferring donor IDs in case they are unknown
+#' (useful for example to detect technical replicates in a public dataset).
 #' 
 #' @author Jonathan A. Heiss
 #' 
@@ -10,26 +16,30 @@
 #' @param donor_ids Vector of donor IDs, should include duplicates
 #' @param sample_ids Vector of unique sample IDs
 #' 
-#' @return \code{check_snp_agreement} returns all conflicts found between user-supplied donor IDs and those derived from the genetic fingerprint. Either \code{NULL} if not conflicts were found, or a list of \code{data.table}s, each representing one connected component of the conflict graph.
+#' @return \code{check_snp_agreement} returns all conflicts found between user-supplied donor IDs
+#' and those derived from the genetic fingerprint. Either \code{NULL} if not conflicts were found,
+#' or a list of \code{data.table}s, each representing one connected component of the conflict graph.
 #' @return \code{enumerate_sample_donors} returns for each sample the donor IDs.
 #' 
-check_snp_agreement = function(genotypes,donor_ids,sample_ids){
+check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 
 	J = ncol(genotypes$snps)
 	weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
 	gamma = genotypes$gamma
 
-	stopifnot(anyDuplicated(sample_ids)==0) # stop if there aren't >1 samples for at least 1 donor
+	stopifnot(anyDuplicated(sample_ids) == 0) # stop if there aren't >1 samples for at least 1 donor
 	stopifnot(length(sample_ids) == J)
 
 	## cross product of all samples
-	conflicts = cbind(CJ(donor_ids,donor_ids,sorted=FALSE),CJ(sample_ids,sample_ids,sorted=FALSE))
-	setcolorder(conflicts,c(1,3,2,4))
-	setnames(conflicts,1:4,c('donor1','sample1','donor2','sample2'))
+	conflicts = cbind(
+		CJ(donor_ids,  donor_ids,  sorted = FALSE),
+		CJ(sample_ids, sample_ids, sorted = FALSE))
+	setcolorder(conflicts, c(1, 3, 2, 4)) # Rearrange columns
+	setnames(conflicts, 1:4, c('donor1','sample1','donor2','sample2'))
 
 	## Compute the agreement between all sample pairs
 	# (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
-	d = matrix(NA_real_,nrow=J,ncol=J)
+	d = matrix(NA_real_,nrow = J,ncol = J)
 	for(j in 1:J){
 		tmp = 
 		(weights * gamma[[1]]) * (weights[,j] * gamma[[1]][,j]) +
@@ -78,9 +88,11 @@ agreement_ = function(genotypes,donor_ids,sample_ids,...){
 	stopifnot(anyDuplicated(sample_ids)==0) # stop if there aren't >1 samples for at least 1 donor
 	stopifnot(length(sample_ids) == J)
 
-	conflicts = cbind(CJ(donor_ids,donor_ids,sorted=FALSE),CJ(sample_ids,sample_ids,sorted=FALSE))
-	setcolorder(conflicts,c(1,3,2,4))
-	setnames(conflicts,1:4,c('donor1','sample1','donor2','sample2'))
+	conflicts = cbind(
+		CJ(donor_ids,  donor_ids,  sorted = FALSE),
+		CJ(sample_ids, sample_ids, sorted = FALSE))
+	setcolorder(conflicts, c(1,3,2,4))
+	setnames(conflicts, 1:4, c('donor1','sample1','donor2','sample2'))
 
 	## Compute the agreement between all sample pairs
 	# (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)

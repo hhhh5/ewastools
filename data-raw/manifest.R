@@ -10,13 +10,18 @@ lvls_base = c("A", "G", "C", "T")
 MANIFESTS = list()
 CONTROLS  = list()
 
+fp_manifest = list(
+    `450K` = "humanmethylation450_15017482_v1-2.csv",
+    EPICv1 = "infinium-methylationepic-v-1-0-b5-manifest-file.csv",
+    EPICv2 = "EPIC-8v2-0_A2.csv")
+
 # -------------------------------- EPIC V2 chip manifest
 # Added by Costanza L. Vallerga
 # Use version A2 of manifest
 # CSV contains both 'normal' and control probes. Create two separate tables for them.
 
 MANIFESTS$EPICv2 =
-    "EPIC-8v2-0_A2.csv" |>
+    fp_manifest$EPICv2 |>
     readr::read_csv(
         skip = 7, # Column names are at line 8
         col_names = TRUE,
@@ -82,7 +87,7 @@ MANIFESTS$EPICv2 =
         chr37 = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
         chr38 = stringr::str_c("chr", chr38), # Don't use paste0() as it doesn't handle NA
         # ensure proper order of levels
-        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37), 
+        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
         chr38 = forcats::fct_relevel(chr38, !!!lvls_chr38),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
         channel = dplyr::if_else(probe_design == "II", "Both", channel),
@@ -94,7 +99,7 @@ MANIFESTS$EPICv2 =
     pointblank::row_count_match(937055)
 
 CONTROLS$EPICv2 =
-    "EPIC-8v2-0_A1.csv" |>
+    fp_manifest$EPICv2 |>
     readr::read_csv(
         skip = 7 + 937055 + 2, #
         col_names = c("address", "group", "channel", "name"),
@@ -107,7 +112,7 @@ CONTROLS$EPICv2 =
 # CSV contains both 'normal' and control probes. Create two separate tables for them.
 
 MANIFESTS$EPICv1 =
-    "infinium-methylationepic-v-1-0-b5-manifest-file.csv" |>
+    fp_manifest$EPICv1 |>
     readr::read_csv(
         skip = 7, # Column names are at line 8
         col_names = TRUE,
@@ -176,7 +181,7 @@ MANIFESTS$EPICv1 =
         chr37 = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
         # chr38 has already the "chr" prefix
         # ensure proper order of levels
-        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37), 
+        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
         chr38 = forcats::fct_relevel(chr38, !!!lvls_chr38),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
         channel = dplyr::if_else(probe_design == "II", "Both", channel),
@@ -188,7 +193,7 @@ MANIFESTS$EPICv1 =
     pointblank::row_count_match(865918)
 
 CONTROLS$EPICv1 =
-    "infinium-methylationepic-v-1-0-b5-manifest-file.csv" |>
+    fp_manifest$EPICv1 |>
     readr::read_csv(
         skip = 7 + 865918 + 2, # initial lines + loci + 2 headers
         col_names = c("address", "group", "channel", "name"),
@@ -201,45 +206,45 @@ CONTROLS$EPICv1 =
 # CSV contains both 'normal' and control probes. Create two separate tables for them.
 
 MANIFESTS$`450K` =
-    "humanmethylation450_15017482_v1-2.csv" |>
+    fp_manifest$`450K` |>
     readr::read_csv(
         skip = 7, # Column names are at line 8
         col_names = TRUE,
         col_types = "ccicicfffcfficfifcccccccccccccccc",
-        col_select = c(                                                      
-            # IlmnID                             # cg00035864                                                                                                                  
-            probe_id = Name,                     # cg00035864                                                                                                                  
-            addressU = AddressA_ID,              # 31729416                                                                                                                    
-            # AlleleA_ProbeSeq                   # AAAACACTAACAATC...                                                                          
-            addressM = AddressB_ID,              # NA                                                                                                                            
-            # AlleleB_ProbeSeq                   # NA                                                                                                                            
-            probe_design = Infinium_Design_Type, # II                                                                                                                          
-            next_base = Next_Base,               # NA                                                                                                                            
-            channel = Color_Channel,             # NA                                                                                                                            
+        col_select = c(
+            # IlmnID                             # cg00035864
+            probe_id = Name,                     # cg00035864
+            addressU = AddressA_ID,              # 31729416
+            # AlleleA_ProbeSeq                   # AAAACACTAACAATC...
+            addressM = AddressB_ID,              # NA
+            # AlleleB_ProbeSeq                   # NA
+            probe_design = Infinium_Design_Type, # II
+            next_base = Next_Base,               # NA
+            channel = Color_Channel,             # NA
             # Forward_Sequence                   # AATCCAA...AAC[CG]AA...
-            # Genome_Build                       # 37                                                                                                                          
-            chr37 = CHR,                         # Y                                                                                                                           
-            mapinfo37 = MAPINFO                  # 8553009                                                                                                                     
-            # SourceSeq                          # AGACATTCG...                                                                          
-            # Chromosome_36                      # Y                                                                                                                           
-            # Coordinate_36                      # 8613009                                                                                                                    
-            # Strand                             # F                                                                                                                           
-            # Probe_SNPs                         # NA                                                                                                                            
-            # Probe_SNPs_10                      # NA                                                                                                                            
-            # Random_Loci                        # NA                                                                                                                            
-            # Methyl27_Loci                      # NA                                                                                                                            
-            # UCSC_RefGene_Name                  # TTTY18                                                                                                                      
-            # UCSC_RefGene_Accession             # NR_001550                                                                                                                 
-            # UCSC_RefGene_Group                 # TSS1500                                                                                                                     
-            # UCSC_CpG_Islands_Name              # NA                                                                                                                            
-            # Relation_to_UCSC_CpG_Island        # NA                                                                                                                            
-            # Phantom                            # NA                                                                                                                            
-            # DMR                                # NA                                                                                                                            
-            # Enhancer                           # NA                                                                                                                            
-            # HMM_Island                         # NA                                                                                                                            
-            # Regulatory_Feature_Name            # NA                                                                                                                            
-            # Regulatory_Feature_Group           # NA                                                                                                                            
-            # DHS                                # NA  
+            # Genome_Build                       # 37
+            chr37 = CHR,                         # Y
+            mapinfo37 = MAPINFO                  # 8553009
+            # SourceSeq                          # AGACATTCG...
+            # Chromosome_36                      # Y
+            # Coordinate_36                      # 8613009
+            # Strand                             # F
+            # Probe_SNPs                         # NA
+            # Probe_SNPs_10                      # NA
+            # Random_Loci                        # NA
+            # Methyl27_Loci                      # NA
+            # UCSC_RefGene_Name                  # TTTY18
+            # UCSC_RefGene_Accession             # NR_001550
+            # UCSC_RefGene_Group                 # TSS1500
+            # UCSC_CpG_Islands_Name              # NA
+            # Relation_to_UCSC_CpG_Island        # NA
+            # Phantom                            # NA
+            # DMR                                # NA
+            # Enhancer                           # NA
+            # HMM_Island                         # NA
+            # Regulatory_Feature_Name            # NA
+            # Regulatory_Feature_Group           # NA
+            # DHS                                # NA
         ),
         n_max = 485553 + 24) # The number mentioned in lines 6 of the manifest deviates
             # from the actual count by 24
@@ -251,7 +256,7 @@ MANIFESTS$`450K` =
         probe_type = substr(probe_id, 1L, 2L), # Column not in original manifest
         chr37 = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
         # ensure proper order of levels
-        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37), 
+        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
         channel = dplyr::if_else(probe_design == "II", "Both", channel),
         channel = forcats::fct_relevel(channel, "Red", "Green", "Both"),
@@ -261,12 +266,13 @@ MANIFESTS$`450K` =
     pointblank::row_count_match(485553 + 24)
 
 CONTROLS$`450K` =
-    "humanmethylation450_15017482_v1-2.csv" |>
+    fp_manifest$`450K` |>
     readr::read_csv(
-        skip = 7 + 485553 + 24 + 2, #
+        skip = 7 + 485553 + 24 + 2, # initial lines + loci + deviation + 2 headers
         col_names = c("address", "group", "channel", "name"),
         col_types = "iccc",
         col_select = 1:4) |>
     pointblank::row_count_match(850)
 
 save(MANIFESTS, CONTROLS, file="../R/sysdata.rda",compress="xz")
+

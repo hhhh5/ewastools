@@ -20,8 +20,7 @@ NULL
 #' 
 correct_dye_bias <- function(raw){
     
-    if(!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))
-        stop("Invalid argument")
+    stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
     
     i1g = raw$manifest[channel == "Grn" ,]
     i2  = raw$manifest[channel == "Both",]
@@ -38,14 +37,14 @@ correct_dye_bias <- function(raw){
     for(j in 1:J){
         # Regress intensities in the red color channel on those in the green color channel
         # Relation is linear on the log scale
-        x = log(raw$ctrlG[c(Gi,Ci),j])
-        y = log(raw$ctrlR[c(Ai,Ti),j])
+        x = log(raw$ctrlG[c(Gi, Ci), j])
+        y = log(raw$ctrlR[c(Ai, Ti), j])
 
         keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
         x = x[keep]; y = y[keep]
 
         # Theil Sen robust linear regression (simple regression/single predictor only)
-        m = mblm::mblm(y~x,repeated=FALSE)
+        m = mblm::mblm(y~x, repeated = FALSE)
 
         i = i2$index
         raw$M[i,j] = exp(stats::coef(m)[1] + log(raw$M[i,j]) * stats::coef(m)[2])
@@ -67,8 +66,7 @@ correct_dye_bias2 = function (raw)
 {
     # Experimental version of dye-bias correction. I found that red~green differs for 
     # ... G~A and C~T. They are however not independent. I have not understood this relation yet.
-    if (!all(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw)))
-        stop("Invalid argument")
+    stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
 
     i1g = raw$manifest[channel == "Grn", ]
     i2  = raw$manifest[channel == "Both",]
@@ -82,8 +80,8 @@ correct_dye_bias2 = function (raw)
 
     for(j in 1:J){
     
-        x = log(Gi[,j])
-        y = log(Ai[,j])
+        x = log(Gi[, j])
+        y = log(Ai[, j])
         keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
         x = x[keep]
         y = y[keep]
@@ -92,8 +90,8 @@ correct_dye_bias2 = function (raw)
         i = i2$index
         raw$M[i, j] = exp(stats::coef(m)[1] + log(raw$M[i, j]) * stats::coef(m)[2])
     
-        x = log(Ci[,j])
-        y = log(Ti[,j])
+        x = log(Ci[, j])
+        y = log(Ti[, j])
         keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
         x = x[keep]
         y = y[keep]
@@ -111,9 +109,9 @@ correct_dye_bias2 = function (raw)
 #' @rdname Preprocessing
 #' @export
 #'
-dont_normalize <- function(raw){
+dont_normalize = function(raw){
 
-    if(!all(c("manifest", "M", "U", "meta") %in% names(raw))) stop('Invalid argument')
+    stopifnot(c("manifest", "M", "U", "meta") %in% names(raw))
 
     with(raw,{
 

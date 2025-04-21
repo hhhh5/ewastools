@@ -47,7 +47,7 @@ estimateLC = function(meth,ref,constrained=FALSE){
                 ,diag(n_celltypes)
                 ,rep(0,n_celltypes)
             )$sol)
-        }else{
+        } else {
             return(
                 quadprog::solve.QP(
                  t(coefs[i,]) %*% coefs[i,]

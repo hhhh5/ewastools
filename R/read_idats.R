@@ -5,7 +5,10 @@ NULL
 #' 
 #' @export
 #' 
-#' @param idat_files Character vector of relative or absolute filepaths, but without the suffixes '_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".
+#' @param idat_files Character vector of relative or absolute filepaths, but without the suffixes
+#' _Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be
+#' stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and
+#' 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".
 #' @param quiet If TRUE, suppresses the progress bar (useful for RMarkdown scripts).
 #' 
 #' @return A list containing
@@ -23,13 +26,13 @@ NULL
 #' read_idats('9976861004_R01C01')
 #' }
 #'
-read_idats <- function(idat_files, quiet=FALSE){
+read_idats = function(idat_files, quiet = FALSE){
 
     J = length(idat_files)
 
     ## illuminaio can handle gzipped .idats
-    zipped = !file.exists(paste0(idat_files,"_Grn.idat"))
-    suffix = rep(".idat",times=J)
+    zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
+    suffix = rep(".idat", times=J)
     suffix[zipped] = ".idat.gz"
 
     ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
@@ -37,7 +40,7 @@ read_idats <- function(idat_files, quiet=FALSE){
 
     ## How many different features/bead types are there?
     # (Consider that Type I probes have each two different beads)
-    P = illuminaio::readIDAT(paste0(idat_files[1],"_Grn",suffix[1]))$nSNPsRead
+    P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
     print(P)
 
     ## Pick appropriate manifest
@@ -186,8 +189,8 @@ read_idats <- function(idat_files, quiet=FALSE){
 
     meta = tibble::tibble(
          sample_id = sample_ids
-        ,date = as.IDate(dates,"%m/%d/%Y %r")
-        ,time = as.ITime(dates,"%m/%d/%Y %r")
+        ,date = as.IDate(dates, "%m/%d/%Y %r")
+        ,time = as.ITime(dates, "%m/%d/%Y %r")
         ,barcode = barcodes
         ,position = positions
         )
@@ -216,7 +219,7 @@ read_idats <- function(idat_files, quiet=FALSE){
 #'
 #' @return A modified \code{raw} object
 #'
-drop_samples <- function(raw, j = NULL){
+drop_samples = function(raw, j = NULL){
 
     raw$U = raw$U[, -j, drop = FALSE]
     raw$M = raw$M[, -j, drop = FALSE]

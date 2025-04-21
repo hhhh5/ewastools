@@ -1,16 +1,26 @@
 #' @title  Detection p-values
-#' @description Compute detection p-values. p-values are based on the distribution of the intensities of the negative control probes or the U (M) intensities observed for completely methylated (unmethylated) probes, respectively (Heiss and Just, 2019). \code{detP_threshold} generates a plot showing the number of undetected Y chromosome probes among male and female subjects for various p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking all probes with detection p-values below the specified threshold. \code{detectionP.minfi} provides an implementation for \code{RGChannelSet} objects as used in the \code{minfi} package.
+#' @description Compute detection p-values. p-values are based on the distribution of the intensities
+#' of the negative control probes or the U (M) intensities observed for completely methylated
+#' (unmethylated) probes, respectively (Heiss and Just, 2019). \code{detP_threshold} generates a plot\
+#' showing the number of undetected Y chromosome probes among male and female subjects for various
+#' p-value thresholds, in order to empirically choose a threshold. Finally, \code{mask} is masking
+#" all probes with detection p-values below the specified threshold. \code{detectionP.minfi} provides
+#' an implementation for \code{RGChannelSet} objects as used in the \code{minfi} package.
 #' @author Jonathan A. Heiss
-#' @param raw Output of calling \code{\link{read_idats}}, must include component \code{detP} for \code{mask} and \code{detP_threshold}.
+#' @param raw Output of calling \code{\link{read_idats}}, must include component \code{detP} for
+#' \code{mask} and \code{detP_threshold}.
 #' @param threshold p-value threshold (arithmetic scale) above which oberservations are set to NA.
 #' @param male/female Indices of male and female subjects
 #' @param rgSet minfi rgSet object 
 #' 
-#' @return For \code{detectionP} and \code{detectionP.neg} a modified \code{raw} object with a \code{detP} component, a matrix of detection p-values, added. \code{detectionP} computes p-values on the linear scale, whereas \code{detectionP.neg} returns p-values on the log10 scale.
+#' @return For \code{detectionP} and \code{detectionP.neg} a modified \code{raw} object with a
+#' \code{detP} component, a matrix of detection p-values, added. \code{detectionP} computes p-values
+#' on the linear scale, whereas \code{detectionP.neg} returns p-values on the log10 scale.
 #' @return For \code{detectionP.minfi} a matrix of detection p-values.
 #' @return For \code{mask}, a modified \code{raw} object, with undetected probes set to \code{NA}.
 #'
-#' @references{Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection p values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
+#' @references{Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection
+#' p-values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
 
 #' Return peaks of beta-value distribution
 #'
@@ -22,7 +32,7 @@
 #'
 summits = function (beta)
 {
-    d <- density(beta, bw = 0.01, na.rm = TRUE)
+    d = density(beta, bw = 0.01, na.rm = TRUE)
 
     l = which(d$x < 0.4)
     u = which(d$x > 0.6)
@@ -36,9 +46,9 @@ summits = function (beta)
 #' @rdname detectionP
 #' @export
 #'
-detectionP <- function(raw){
+detectionP = function(raw){
 
-    if(!all(c("manifest", "M", "U") %in% names(raw))) stop("Invalid argument")
+    stopifnot(c("manifest", "M", "U") %in% names(raw))
 
     with(raw,{
 
@@ -101,7 +111,7 @@ detectionP <- function(raw){
 #' @rdname detectionP
 #' @export
 #'
-detectionP.neg <- function(raw){
+detectionP.neg = function(raw){
   
   with(raw,{
 
@@ -140,7 +150,7 @@ detectionP.neg <- function(raw){
 #' @rdname detectionP
 #' @export
 #'
-mask <- function(raw,threshold){
+mask = function(raw,threshold){
 
     if(!all(c("M", "U", "detP") %in% names(raw))) stop("Invalid argument")
         
@@ -177,7 +187,7 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
 #' @rdname detectionP
 #' @export
 #'
-detectionP.minfi <- function(rgSet){
+detectionP.minfi = function(rgSet){
     minfi:::.isRGOrStop(rgSet)
 
     locusNames = getManifestInfo(rgSet, "locusNames")
