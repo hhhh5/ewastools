@@ -360,16 +360,5 @@ train_model = function(train,output){
     write.table(coefs,file=output,row.names=TRUE) 
 }
 
-studies = unique(pheno$study)
-combinations = combn(studies,2)
-combinations %<>% split(col(combinations))
-combinations = c(as.list(studies),combinations)
-names(combinations) = NULL
-
-mclapply(combinations,function(combo){
-    train = copy(pheno[study %in% combo & tissue=="Blood"])
-    train_model(train,output = paste0(paste0(combo,collapse="+"),".txt"))
-},mc.cores=length(combinations))
-
 train = copy(pheno[study=="Bakulski" & tissue=="Saliva"])
 train_model(train,output="saliva.txt")
