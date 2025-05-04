@@ -34,7 +34,7 @@ estimateLC = function(meth,ref,constrained=FALSE){
     coefs = as.matrix(coefs)
     n_celltypes = ncol(coefs)
 
-    markers = match(rownames(coefs),rownames(meth))
+    markers = find_matching_rows(rownames(coefs),rownames(meth))
     EST = sapply(1:J,function(j){
         tmp = meth[markers,j]
         i = !is.na(tmp)

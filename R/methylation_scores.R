@@ -15,7 +15,7 @@ methylation_score = function(beta, model){
 			,coef = c(-0.191,2.706,1.786,14.027,2.318,6.210,-10.909,1.142,-6.330,-4.963,3.847,1.514,-0.963,-6.304,6.361,5.050,2.286,-2.912,5.245,-0.773,-0.254,0.011,-3.903,-46.991,-0.246,0.836)
 			)
 
-		i = match(markers$probe_id, rownames(beta))
+		i = find_matching_rows(markers$probe_id, rownames(beta))
 		y = beta[i,]
 		y = y * markers$coef
 		y = colSums(y, na.rm = TRUE)
@@ -29,7 +29,7 @@ methylation_score = function(beta, model){
 		setnames(markers, 1:2, c("probe_id","coef"))
 		markers = markers[-1]
 
-		i = match(markers$probe_id, rownames(beta))
+		i = find_matching_rows(markers$probe_id, rownames(beta))
 		y = beta[i,]
 		y = y * markers$coef
 		y = colSums(y, na.rm = TRUE)
@@ -44,7 +44,7 @@ methylation_score = function(beta, model){
 		setnames(markers, 1:2, c("probe_id", "coef"))
 		markers = markers[-1]
 
-		i = match(markers$probe_id, rownames(beta))
+		i = find_matching_rows(markers$probe_id, rownames(beta))
 		y = beta[i,]
 		y = y * markers$coef
 		y = colSums(y, na.rm = TRUE)
@@ -56,7 +56,7 @@ methylation_score = function(beta, model){
 		### model based on https://doi.org/10.1186/gb-2013-14-10-r115
 		markers = system.file("data/horvath_clock.csv", package="ewastools")
 		markers = fread(markers, header=TRUE)
-		i = match(markers$probe_id, rownames(beta))
+		i = find_matching_rows(markers$probe_id, rownames(beta))
 		y = beta[i,]
 		y = y * markers$coef
 		y = colSums(y, na.rm = TRUE)

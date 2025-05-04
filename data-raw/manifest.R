@@ -27,7 +27,7 @@ MANIFESTS$EPICv2 =
         col_names = TRUE,
         col_types = "ccicicfffffffffficfcccicccccccccccccccccccccclcicfi",
         col_select = c(
-            # IlmnID                             # cg25324105_BC11
+            ilmn_id = IlmnID,                    # cg25324105_BC11
             probe_id = Name,                     # cg25324105
             addressU = AddressA_ID,              # 1754126
             # AlleleA_ProbeSeq                   # ATTTATAAAC...
@@ -118,7 +118,7 @@ MANIFESTS$EPICv1 =
         col_names = TRUE,
         col_types = "ccicicfffcfficfccccccccccccccccccccccccllficid?lfiif",
         col_select = c(
-            # IlmnID                              # cg07881041
+            ilmn_id = IlmnID,                     # cg07881041
             probe_id = Name,                      # cg07881041
             addressU = AddressA_ID,               # 0085713262
             # AlleleA_ProbeSeq                    # CTACAAATA...
@@ -212,7 +212,7 @@ MANIFESTS$`450K` =
         col_names = TRUE,
         col_types = "ccicicfffcfficfifcccccccccccccccc",
         col_select = c(
-            # IlmnID                             # cg00035864
+            ilmn_id = IlmnID,                    # cg00035864
             probe_id = Name,                     # cg00035864
             addressU = AddressA_ID,              # 31729416
             # AlleleA_ProbeSeq                   # AAAACACTAACAATC...

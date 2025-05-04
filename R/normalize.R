@@ -120,9 +120,47 @@ dont_normalize = function(raw){
         
         meth = M / (M+U)
         
-        rownames(meth) = manifest$probe_id
+        rownames(meth) = paste0(manifest$ilmn_id)
         colnames(meth) = meta$sample_id
 
         return(meth)
     })
+}
+
+
+find_matching_rows = function(query, rownames) {
+
+    legacy_regex = stringr::regex("^cg\\d{8,8}$|^rs\\d+$|^ch\\.\\w+\\.\\d+[FR]$")
+    epicv2_regex = stringr::regex("^[cg|ch|rs|nv].*_[TB][CO]\\d+$")
+
+    if(all(stringr::str_detect(query, pattern = legacy_regex))) {
+        query_type = "legacy"
+    } else if (all(stringr::str_detect(query, pattern = epicv2_regex))) {
+        query_type = "epicv2"
+    } else {
+        stop("Query is (partly) invalid!")
+    }
+
+    if(all(stringr::str_detect(rownames, pattern = legacy_regex))) {
+        row_type = "legacy"
+    } else if (all(stringr::str_detect(rownames, pattern = epicv2_regex))) {
+        row_type = "epicv2"
+    } else {
+        stop("(Some) row names are invalid!")
+    }
+
+    if(query_type == row_type) {
+        return(match(query, rownames))
+    } else if (query_type == "legacy" & row_type == "epicv2") {
+        # Find for each user-provided `ilmn_id` the `probe_id` with `probe_rep` == 1
+        df_map = data.table(MANIFESTS$EPICv2[,c("ilmn_id", "probe_id", "probe_rep")])
+        df_map = df_map[probe_rep == 1L]
+        setkey(df_map, probe_id)
+        query = df_map[query]$ilmn_id
+        return(match(query, rownames))
+    } else if (query_type == "epicv2" & row_type == "legacy") {
+        stop("Query contains EPICv2 probe IDs but dataset is of legacy type")
+    } else {
+            stop("This should be a dead branch")
+    }
 }
