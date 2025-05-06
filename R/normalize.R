@@ -153,10 +153,9 @@ find_matching_rows = function(query, rownames) {
         return(match(query, rownames))
     } else if (query_type == "legacy" & row_type == "epicv2") {
         # Find for each user-provided `ilmn_id` the `probe_id` with `probe_rep` == 1
-        df_map = data.table(MANIFESTS$EPICv2[,c("ilmn_id", "probe_id", "probe_rep")])
-        df_map = df_map[probe_rep == 1L]
+        df_map = data.table(ewastools:::MANIFESTS$EPICv2[,c("ilmn_id", "probe_id")])
         setkey(df_map, probe_id)
-        query = df_map[query]$ilmn_id
+        query = df_map[query, nomatch = NA, mult = "first"]$ilmn_id
         return(match(query, rownames))
     } else if (query_type == "epicv2" & row_type == "legacy") {
         stop("Query contains EPICv2 probe IDs but dataset is of legacy type")
