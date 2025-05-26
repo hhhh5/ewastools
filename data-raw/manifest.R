@@ -1,7 +1,7 @@
 lvls_chr37 = GenomeInfoDb::getChromInfoFromUCSC("hg19") $ chrom
 lvls_chr38 = GenomeInfoDb::getChromInfoFromUCSC("hg38") $ chrom
 
-# Add msytery chromosome "chr0"
+# Add mystery chromosome "chr0"
 lvls_chr37 = c(lvls_chr37, "chr0")
 lvls_chr38 = c(lvls_chr38, "chr0")
 
