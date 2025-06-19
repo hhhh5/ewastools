@@ -1,25 +1,30 @@
 #' @title Genotype calling
 #' @description Detect SNP probes which do not fit into on of the three categories (AA,AB,BB).
-#' A mixture model (3 Beta distributions, 1 uniform distribution for outliers) is fitted to all SNP probes.
-#' After learning the model parameters via EM algorithm, the probability of being an outlier is computed for each SNP.
+#' A mixture model (3 Beta distributions, 1 uniform distribution for outliers) is fitted to all SNP
+#' probes. After learning the model parameters via EM algorithm, the probability of being an outlier
+#' is computed for each SNP.
 #'
 #' @author Jonathan A. Heiss
 #' @rdname call_genotypes
 #'
-#' @param snpmatrix Matrix of beta-values for SNP probes. Provide SNPs probes as rows and samples as columns. 
+#' @param snpmatrix Matrix of beta-values for SNP probes. Provide SNPs probes as rows and samples as
+#' columns. 
 #' @param genotypes Output of \code{call_genotypes}
-#' @param maxiter Maximal number of iterations of the Expectation-Maximization algorithm learning the mixture model
+#' @param maxiter Maximal number of iterations of the Expectation-Maximization algorithm learning
+#' the mixture model
 #' 
 #' @return  For \code{call_genotypes}, a list containing
 #' \item{par}{Parameters of the mixture model}
 #' \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
 #' \item{outliers}{A-posteriori probability of SNP being an outlier}
 #' \item{gamma}{A-posteriori probabilities for each of the three genotypes}
-#' @return For \code{snp_outliers}, a metric assessing the outlierness of the SNP beta-values. High values may indicate either contaminated or failed samples.
-#' @return For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with the density function of the mixture model overlaid.
+#' @return For \code{snp_outliers}, a metric assessing the outlierness of the SNP beta-values.
+#' High values may indicate either contaminated or failed samples.
+#' @return For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with
+#' the density function of the mixture model overlaid.
 #' @export
 #'
-call_genotypes <- function(snpmatrix,learn=FALSE,maxiter=50){
+call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50){
 
 	snps = snpmatrix
 	dim(snps) = NULL
@@ -184,11 +189,11 @@ mxm_ = function(genotypes){
 #'
 snp_outliers = function(genotypes){
 
- 	if(!"outliers"%in%names(genotypes)) stop('Invalid argument')
+ 	stopifnot("outliers" %in% names(genotypes))
 
  	# Average log odds of beta-values being outliers across all SNP probes
  	log_odds = genotypes$outliers / (1-genotypes$outliers)
- 	log_odds = colMeans(log2(log_odds),na.rm=TRUE)
+ 	log_odds = colMeans(log2(log_odds), na.rm = TRUE) # NAs stem from missing observations
  	log_odds
 }
 
