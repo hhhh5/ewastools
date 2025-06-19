@@ -48,8 +48,8 @@ read_idats = function(idat_files, quiet = FALSE){
     # We assume that all .idats use the same platform they can differ in #features, though
     if(P == 622399) { 
         platform = "450K"
-        chr      = "chr38"
-        mapinfo  = "mapinfo38"
+        chr      = "chr37"
+        mapinfo  = "mapinfo37"
     } else if(P %in% c(1051815, 1051943, 1052641)) {
         platform = "EPICv1"
          chr     = "chr38"
