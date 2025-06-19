@@ -108,7 +108,7 @@ pheno$red = NULL; pheno$grn = NULL
 
 # Import the methylation data
 meth = read_idats(pheno$gsm)
-pheno[,c("X","Y"):=check_sex(meth)]
+pheno[,c("X","Y") := check_sex(meth)]
 pheno[,sex:=ifelse(X>1.,"f","m")]
 
 pheno = pheno[,.(gsm,sex,smoker)]
@@ -317,16 +317,16 @@ We will drop the X and Y chromosome as we would like to find important drivers o
 
 ```{r}
 set.seed(982278)
-chrXY = meth$manifest[chr%in%c("X","Y") & probe_type!="rs",index]
-pcs = beta[-chrXY,]
+chrXY = meth$manifest[chr %in% c("chrX","chrY") & probe_type != "rs", index]
+pcs = beta[-chrXY, ]
 pcs = pcs - rowMeans(pcs)
 pcs = na.omit(pcs)
 pcs = t(pcs)
 pcs = trlan.svd(pcs,neig=2) # compute the first two principal components
 pcs = pcs$u
 
-pheno$pc1 = pcs[,1]
-pheno$pc2 = pcs[,2]
+pheno$pc1 = pcs[, 1]
+pheno$pc2 = pcs[, 2]
 ```
 
 ```{r fig.width=6,fig.height=6}
