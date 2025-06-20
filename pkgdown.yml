@@ -1,0 +1,9 @@
+pandoc: 3.1.11
+pkgdown: 2.1.3
+pkgdown_sha: ~
+articles:
+  exemplary_ewas: exemplary_ewas.html
+last_built: 2025-06-20T04:03Z
+urls:
+  reference: https://hhhh5.github.io/ewastools/reference
+  article: https://hhhh5.github.io/ewastools/articles
