@@ -11,9 +11,9 @@ Imports: illuminaio, mblm, data.table, igraph, quadprog
 Suggests: 
     knitr,
     rmarkdown,
-    minfi,
     testthat (>= 2.1.0),
     tidyverse
+    svd
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
