@@ -1,3 +1,8 @@
+# ewastools 1.8.0
+* Removed deconvolution models based on combinations of two datasets
+* Improved support for EPICv2 chip, adding a function to handle new probe IDs
+* Refactored parsing of manifests files
+
 # ewastools 1.7.2
 * Added support for EPICv2 chip
 
