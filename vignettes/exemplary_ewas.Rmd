@@ -4,7 +4,7 @@ author: "Jonathan Heiss"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Recommended work flow}
+  %\VignetteIndexEntry{Recommended Work Flow}
   %\VignetteEngine{knitr::rmarkdown_notangle}
   \usepackage[utf8]{inputenc}
 ---
@@ -24,7 +24,7 @@ knitr::opts_chunk$set(dev = "png", dev.args = list(type = "cairo-png"))
 
 ```{r libraries, include=FALSE}
 library(ewastools)
-library(stringi)
+library(tidyverse)
 library(data.table)
 library(magrittr)
 library(purrr)
@@ -40,7 +40,7 @@ pheno = readLines(pheno)
 pheno = split(pheno,cumsum(pheno %like% "^\\^SAMPLE = GSM"))
 
 # Extract GSM accessions
-names(pheno) = map(pheno,1) %>% stri_match_first(regex="GSM\\d+")
+names(pheno) = map(pheno,1) %>% str_match(pattern = "GSM\\d+")
 
 # Parse pheno data
 imap(pheno,function(s,acc){
@@ -53,7 +53,7 @@ pheno = rbindlist(pheno)
 # Keep only information on sample characteristics and supplementary files
 pheno = pheno[variable %chin% c("!Sample_characteristics_ch1","!Sample_supplementary_file")]
 i = pheno[variable == "!Sample_characteristics_ch1",which=TRUE]
-ch = pheno$value[i] %>% stri_split(fixed=": ")
+ch = pheno$value[i] %>% str_split(fixed(": "))
 pheno$variable[i] = map_chr(ch,1)
 pheno$value   [i] = map_chr(ch,2)
 rm(ch)
@@ -102,14 +102,14 @@ pheno = pheno[c(
 )]
 
 # Download .idat files
-map2(pheno$red,pheno$gsm %s+% "_Red.idat.gz", ~ download.file(.x,.y) )
-map2(pheno$grn,pheno$gsm %s+% "_Grn.idat.gz", ~ download.file(.x,.y) )
+map2(pheno$red,paste0(pheno$gsm, "_Red.idat.gz"), ~ download.file(.x,.y) )
+map2(pheno$grn,paste0(pheno$gsm, "_Grn.idat.gz"), ~ download.file(.x,.y) )
 pheno$red = NULL; pheno$grn = NULL
 
 # Import the methylation data
 meth = read_idats(pheno$gsm)
 pheno[,c("X","Y") := check_sex(meth)]
-pheno[,sex:=ifelse(X>1.,"f","m")]
+pheno[,sex:=ifelse(X > 1., "f", "m")]
 
 pheno = pheno[,.(gsm,sex,smoker)]
 pheno[gsm=="GSM2260573",sex:="f"]
@@ -119,15 +119,6 @@ write.csv(pheno,file="pheno.csv",row.names=FALSE)
 
 This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository, the phenotype data is stored in a file named `pheno.csv`
 
-```
-#devtools::install_github("hhhh5/ewastools@master")
-library(ewastools)
-library(stringi)
-library(data.table)
-library(magrittr)
-library(purrr)
-library(svd)
-```
 ```{r}
 pheno = fread("pheno.csv")
 head(pheno)
@@ -161,7 +152,7 @@ P.neg = meth %>% detectionP.neg %$% detP
 We can see the improved accuracy by counting the number of Y chromosome probes that are called detected for a male and a female samples.
 
 ```{r fig.width=6,fig.height=4}
-chrY = meth$manifest[chr=='Y',index]
+chrY = meth$manifest[chr=='chrY',index]
 
   male = which(pheno$sex=="m")[1]
 female = which(pheno$sex=="f")[1]
@@ -183,6 +174,7 @@ P.neg
 ```
 
 Using the improved method gives a much more accurate result with all 416 Y chromosome probes classified as detected for the male sample, but only  `r P.neg["female"]` probes classified as detected for the female sample. More information can be found in [Heiss and Just, 2019](https://doi.org/10.1186/s13148-019-0615-3).
+
 ```{r}
 P.new
 ```
@@ -362,21 +354,21 @@ round(head(LC),3)
 A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting `GR` this sample can easily be spotted.
 
 ```{r fig.width=6,fig.height=4}
-plot(pheno$GR*100,ylab="Granulocyte fraction (%)")
+plot(pheno$NE*100,ylab="Neutrophil fraction (%)")
 ```
 
 It is the third to last sample, GSM1185585.
 
 ```{r}
-pheno[which.max(GR),.(gsm,GR)]
-pheno[which.max(GR),exclude:=TRUE]
+pheno[which.max(NE), .(gsm, NE)]
+pheno[which.max(NE), exclude := TRUE]
 ```
 
 The lung sample is also prominent, with an estimated proportion of `GR` of (not exactly because of numerical issues) zero.
 
 ```{r}
-pheno[which.min(GR),.(gsm,GR)]
-pheno[which.min(GR),exclude:=TRUE]
+pheno[which.min(NE), .(gsm, NE)]
+pheno[which.min(NE), exclude := TRUE]
 ```
 
 We drop the problematic samples
@@ -398,7 +390,7 @@ pheno = pheno[,.(
 	 gsm
 	,sex = factor(sex,levels=c("m","f")) # first level is the reference
 	,smoker = factor(smoker,levels=c("non-smoker","smoker"))
-	,GR,MO,B,CD4,CD8,NK,nRBC
+	,NE, MO, B, EO, BA, NK
 )]
 ```
 
@@ -406,7 +398,7 @@ We want test all CpG sites for their association with smoking. Unfortunately, th
 
 ```{r}
 f = function(meth){
-	m = lm(meth~1+sex+smoker+GR+MO+B+CD4+CD8+NK+nRBC,data=pheno)
+	m = lm(meth ~ 1 + sex + smoker + NE + MO + B + EO + BA + NK, data=pheno)
 	coef(summary(m))["smokersmoker",4] # extract the p-value for the smoking
 }
 
