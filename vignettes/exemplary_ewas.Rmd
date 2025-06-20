@@ -101,6 +101,9 @@ pheno = pheno[c(
 ,"GSM2260573" # sample for which we'll change sex
 )]
 
+pheno$red %<>% stringr::str_replace("ftp:", "http:")
+pheno$grn %<>% stringr::str_replace("ftp:", "http:")
+
 # Download .idat files
 map2(pheno$red,paste0(pheno$gsm, "_Red.idat.gz"), ~ download.file(.x,.y) )
 map2(pheno$grn,paste0(pheno$gsm, "_Grn.idat.gz"), ~ download.file(.x,.y) )
