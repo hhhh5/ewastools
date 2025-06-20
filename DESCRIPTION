@@ -12,7 +12,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 2.1.0),
-    tidyverse
+    tidyverse,
     svd
 License: Unlimited
 VignetteBuilder: knitr
