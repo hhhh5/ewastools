@@ -209,7 +209,8 @@ stripchart(ctrls$`Bisulfite Conversion II`,method="jitter",pch=4,xlab='Bisulfite
 abline(v=1,col=2,lty=3)
 ```
 
-A logical vector of passed/failed is returned by `sample_failure()` which compares all 17 metrics against the thresholds recommended by Illumina. In this case all samples passed (i.e., `failed==FALSE`).
+A logical vector of passed/failed is returned by `sample_failure()` which compares all 21 metrics against the thresholds recommended by Illumina. In this case several samples fail..
+
 ```{r}
 pheno$failed = sample_failure(ctrls)
 table(pheno$failed)
@@ -351,10 +352,10 @@ round(head(LC),3)
 
 `LC` contains estimated proportions for seven cell types (dependent on the chosen reference dataset).
 
-A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting `GR` this sample can easily be spotted.
+A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting `NE` + `EO` + `BA` this sample can easily be spotted.
 
 ```{r fig.width=6,fig.height=4}
-plot(pheno$NE*100,ylab="Neutrophil fraction (%)")
+plot(pheno[,NE+EO+BA]*100,ylab="Granulocyte fraction (%)")
 ```
 
 It is the third to last sample, GSM1185585.
@@ -417,7 +418,7 @@ SMK = SMK[qval<0.05]
 print(SMK)
 ```
 
-Two of the significant CpGs are known biomarkers overlapping genes (ALPPL2, AHRR) for which the association with smoking has been validated in several cohorts [(Zeilinger et. al., 2013)](https://dx.doi.org/10.1371%2Fjournal.pone.0063812).
+Two of the significant CpGs (cg01940273, cg05575921) are known biomarkers overlapping genes (ALPPL2, AHRR) for which the association with smoking has been validated in several cohorts [(Zeilinger et. al., 2013)](https://dx.doi.org/10.1371%2Fjournal.pone.0063812).
 
 ## Final comments
 
