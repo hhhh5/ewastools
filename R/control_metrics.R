@@ -71,27 +71,35 @@ control_metrics = function(raw){
 		metrics$`Bisulfite Conversion I Green` = apply(ctrlG[ii,,drop=FALSE],2,min) / apply(ctrlG[bkg,,drop=FALSE],2,max)
 		attr(metrics$`Bisulfite Conversion I Green`,'threshold') <- 1
 		
+		# Background/(U1, U2, or U3) [manual doesn't specify highest/lowest. I chose `max` mirroring the calculation for red]
+		# Green channel-bkg = Extension Green highest AT
 		ii  = controls[name%like%'I-U[12]',index]
 		metrics$`Bisulfite Conversion I Green (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
 		attr(metrics$`Bisulfite Conversion I Green (Bkg)`,'threshold') <- 1
 
-		ii  = controls[name%like%'I-C[45]',index]
-		bkg = controls[name%like%'I-U[45]',index] 
+		# Lowest value of C4,5, or 6 / Highest value of U4, 5, or 6
+		ii  = controls[name%like%'I-C[456]',index]
+		bkg = controls[name%like%'I-U[456]',index] 
 		metrics$`Bisulfite Conversion I Red` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlR[bkg,,drop=FALSE],2,max)
 		attr(metrics$`Bisulfite Conversion I Red`,'threshold') <- 1
 
-		ii  = controls[name%like%'I-U[45]',index]
+		# Background /(Highest value of U4, U5, or U6)
+		# Red Channel-bkg = Extension Red highest CG
+		ii  = controls[name%like%'I-U[456]',index]
 		metrics$`Bisulfite Conversion I Red (Bkg)` = (apply(ctrlR[cg,,drop=FALSE],2,max)+3000) / apply(ctrlR[ii,,drop=FALSE],2,max)
 		attr(metrics$`Bisulfite Conversion I Red (Bkg)`,'threshold') <- 1
 
 		# Bisulfite conversion II
+		# (Lowest of red C1, 2, 3, or 4) / (Highest of green C1, 2, 3, or 4)
 		ii  = controls[group=='BISULFITE CONVERSION II',index]
 		metrics$`Bisulfite Conversion II` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlG[ii,,drop=FALSE],2,max)
 		attr(metrics$`Bisulfite Conversion II`,'threshold') <- 1
 
 		# Bisulfite conversion II (Bkg)
+		# Green channel-bkg = Extension Green highest AT
+		# Background/(Highest C1, C2, C3, or C4 green).
 		at = controls[name%like%'Extension \\([AT]\\)',index]
-		ii  = controls[group=='BISULFITE CONVERSION II',index]
+		ii = controls[group=='BISULFITE CONVERSION II',index]
 		metrics$`Bisulfite Conversion II (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
 		attr(metrics$`Bisulfite Conversion II (Bkg)`,'threshold') <- 1
 
@@ -106,11 +114,14 @@ control_metrics = function(raw){
 		attr(metrics$`Specificity I Red`,'threshold') <- 1
 
 		# Specificity II
+		# (Lowest intensity of S1, S2, or S3 red) / (Highest intensity of S1, S2, or S3 green)
 		ii  = controls[group=='SPECIFICITY II',index]
 		metrics$`Specificity II` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlG[ii,,drop=FALSE],2,max)
 		attr(metrics$`Specificity II`,'threshold') <- 1
 
 		# Specificity II (Bkg)
+		# Background/(Highest intensity S1, S2, S3, or S4 green)
+		# bkg = Extension Green highest A or T intensity
 		metrics$`Specificity II (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
 		attr(metrics$`Specificity II (Bkg)`,'threshold') <- 1
 
