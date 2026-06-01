@@ -1,3 +1,7 @@
+# ewastools 1.8.1
+* Added `on_disk` option to `read_idats()`. Uses `ff` package to store methylation data on disk instead
+  memory. While slower, should enable analyses of large datasets on small machines.
+
 # ewastools 1.8.0
 * Removed deconvolution models based on combinations of two datasets
 * Improved support for EPICv2 chip, adding a function to handle new probe IDs
