@@ -4,25 +4,32 @@
 \alias{Preprocessing}
 \alias{correct_dye_bias}
 \alias{correct_dye_bias2}
-\alias{dont_normalize}
+\alias{beta_values}
 \title{Functions for preprocessing}
 \usage{
 correct_dye_bias(raw)
 
 correct_dye_bias2(raw)
 
-dont_normalize(raw)
+beta_values(raw)
 }
 \arguments{
 \item{raw}{Output of calling \code{\link{read_idats}}}
 
-\item{tissue}{Optional. If set to "blood", predefined reference values are used for normalization. Recommened when cell proportions are to be estimated.}
+\item{tissue}{Optional. If set to "blood", predefined reference values are used for normalization.
+Recommened when cell proportions are to be estimated.}
 }
 \value{
-A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}. A matrix of beta-values, either normalized (for \code{normalize}) or not (for \code{dont_normalize}).
+A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}.
+   A matrix of beta-values, either normalized (for \code{normalize}) or not (for \code{dont_normalize}).
+
+A matrix of beta-values.
+  If IDATs were imported with option \code{on_disk = TRUE}, a \{code{ff} object.
 }
 \description{
 Functions for preprocessing
+
+Convert fluorescence intensities to beta-values
 }
 \references{
 {Xu Z, Langie SA, De Boever P, Taylor JA, Niu L. RELIC: a novel dye-bias correction method for Illumina Methylation BeadChip. BMC Genomics. 2017 Jan 3;18(1):4.}

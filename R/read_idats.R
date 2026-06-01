@@ -9,7 +9,9 @@ NULL
 #' _Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be
 #' stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and
 #' 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".
-#' @param quiet If TRUE, suppresses the progress bar (useful for RMarkdown scripts).
+#' @param quiet If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).
+#' @param on_disk If \code{TRUE}, data will be stored on disk using the ff package.
+#'    This will be slower but enables processing datasets larger than memory.
 #' 
 #' @return A list containing
 #' \item{manifest}{A data.table describing the probes}
@@ -26,7 +28,11 @@ NULL
 #' read_idats('9976861004_R01C01')
 #' }
 #'
-read_idats = function(idat_files, quiet = FALSE){
+read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE){
+
+    if(on_disk){
+        if(!requireNamespace("ff", quietly = TRUE)) stop("Package 'ff' is required but not installed.")
+    }
 
     J = length(idat_files)
 
@@ -76,23 +82,48 @@ read_idats = function(idat_files, quiet = FALSE){
     manifest[channel == "Grn", OOBi := 1:.N]
     manifest[channel == "Red", OOBi := 1:.N]
 
-    # Methylated (M) and unmethylated (U) signal intensities
-    M = U = matrix(NA_real_   ,nrow = nrow(manifest), ncol = J)
-    # Standard deviations
-    S = T = matrix(NA_integer_,nrow = nrow(manifest), ncol = J)
-    # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
-    N = V = matrix(NA_integer_,nrow = nrow(manifest), ncol = J)
+    I = nrow(manifest)
+
+   if(on_disk){
+
+      #  Methylated (M) and unmethylated (U) signal intensities
+      M = ff::ff(vmode = "double", dim = c(I, J))
+      U = ff::ff(vmode = "double", dim = c(I, J))
+      # Standard deviations
+      S = ff::ff(vmode = "integer", dim = c(I, J))
+      T = ff::ff(vmode = "integer", dim = c(I, J))
+      # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
+      N = ff::ff(vmode = "integer", dim = c(I, J))
+      V = ff::ff(vmode = "integer", dim = c(I, J))
+
+      oobG = list(
+         M = ff::ff(vmode = "double", dim = c(manifest[channel == "Red", .N], J)),
+         U = ff::ff(vmode = "double", dim = c(manifest[channel == "Red", .N], J)))
+
+      oobR = list(
+         M = ff::ff(vmode = "double", dim = c(manifest[channel == "Grn", .N], J)),
+         U = ff::ff(vmode = "double", dim = c(manifest[channel == "Grn", .N], J)))
+
+   } else {
+
+      M = U = matrix(NA_real_   ,nrow = I, ncol = J)
+      # Standard deviations
+      S = T = matrix(NA_integer_,nrow = I, ncol = J)
+      # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
+      N = V = matrix(NA_integer_,nrow = I, ncol = J)
+
+      oobG = list(
+         M = matrix(NA_real_, nrow = manifest[channel == "Red", .N], ncol = J),
+         U = matrix(NA_real_, nrow = manifest[channel == "Red", .N], ncol = J))
+
+      oobR = list(
+         M = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J),
+         U = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J))
+   }
 
     # Signal intensities of control probes
     ctrlG = ctrlR = matrix(NA_real_, nrow = nrow(controls), ncol = J)
     ctrlN = matrix(NA_integer_, nrow = nrow(controls), ncol = J)
-    oobG = list(
-        M = matrix(NA_real_, nrow = manifest[channel == "Red", .N], ncol = J),
-        U = matrix(NA_real_, nrow = manifest[channel == "Red", .N], ncol = J))
-
-    oobR = list(
-        M = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J),
-        U = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J))
 
 
     if(!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
@@ -175,11 +206,14 @@ read_idats = function(idat_files, quiet = FALSE){
 
     # Probes with zero beads on the chip (result of random chip assembly)
     # are set to intensity zero in the .idat files. Mark them as missing.
-    M[N == 0] = NA
-    U[V == 0] = NA
-
-    S[N == 0 | N == 1] = NA
-    T[V == 0 | V == 1] = NA
+   for (j in 1:J) {
+      U[V[, j] == 0, j] = NA
+      M[N[, j] == 0, j] = NA
+      
+      # Need at least two data points to calculate a standard deviation
+      T[V[, j] < 2, j] = NA
+      S[N[, j] < 2, j] = NA
+   }
 
     ctrlG[ctrlN == 0] = NA
     ctrlR[ctrlN == 0] = NA
@@ -221,28 +255,66 @@ read_idats = function(idat_files, quiet = FALSE){
 #'
 drop_samples = function(raw, j = NULL){
 
-    raw$U = raw$U[, -j, drop = FALSE]
-    raw$M = raw$M[, -j, drop = FALSE]
+   if(is.null(j)) return(raw)
 
-    raw$T = raw$T[, -j, drop = FALSE]
-    raw$S = raw$S[, -j, drop = FALSE]
 
-    raw$V = raw$V[, -j, drop = FALSE]
-    raw$N = raw$N[, -j, drop = FALSE]
+   if (ff::is.ff(raw$M)) {
 
-    raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
-    raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
+      drop_cols = function(x, j) { # x must be an ff matrix
+         cols_to_keep = setdiff(1:ncol(x), j)
+         res = ff::ff(vmode = vmode(x), dim = c(nrow(x), length(cols_to_keep)))
+         if (length(cols_to_keep) > 0) {
+            for (k in seq_along(cols_to_keep))
+               res[, k] = x[, cols_to_keep[k]]
+         }
+         rownames(res) = rownames(x)
+         colnames(res) = colnames(x)[cols_to_keep]
+         return(res)
+      }
 
-    raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
-    raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
-    raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
-    raw$oobR$U = raw$oobR$U[, -j, drop = FALSE]
+      raw$U = drop_cols(raw$U, j)
+      raw$M = drop_cols(raw$M, j)
 
-    raw$meta = raw$meta[-j,, drop = FALSE]
+      raw$T = drop_cols(raw$T, j)
+      raw$S = drop_cols(raw$S, j)
 
-    if("detP" %in% names(raw)){
+      raw$V = drop_cols(raw$V, j)
+      raw$N = drop_cols(raw$N, j)
+
+      raw$ctrlG = drop_cols(raw$ctrlG, j)
+      raw$ctrlR = drop_cols(raw$ctrlR, j)
+
+      raw$oobG$M = drop_cols(raw$oobG$M, j)
+      raw$oobG$U = drop_cols(raw$oobG$U, j)
+      raw$oobR$M = drop_cols(raw$oobR$M, j)
+      raw$oobR$U = drop_cols(raw$oobR$U, j)
+
+      if("detP" %in% names(raw))
+         raw$detP = drop_cols(raw$detP, j)
+
+   } else {
+      raw$U = raw$U[, -j, drop = FALSE]
+      raw$M = raw$M[, -j, drop = FALSE]
+
+      raw$T = raw$T[, -j, drop = FALSE]
+      raw$S = raw$S[, -j, drop = FALSE]
+
+      raw$V = raw$V[, -j, drop = FALSE]
+      raw$N = raw$N[, -j, drop = FALSE]
+
+      raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
+      raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
+
+      raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
+      raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
+      raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
+      raw$oobR$U = raw$oobR$U[, -j, drop = FALSE]
+
+      if("detP" %in% names(raw))
         raw$detP = raw$detP[, -j, drop = FALSE]
-    }
+   }
 
-    return(raw)
+   raw$meta = raw$meta[-j,, drop = FALSE]
+   
+   return(raw)
 }

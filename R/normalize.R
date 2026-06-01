@@ -6,9 +6,11 @@ NULL
 #' @name Preprocessing
 #' @rdname Preprocessing
 #' @param raw Output of calling \code{\link{read_idats}}
-#' @param tissue Optional. If set to "blood", predefined reference values are used for normalization. Recommened when cell proportions are to be estimated.
+#' @param tissue Optional. If set to "blood", predefined reference values are used for normalization.
+#'    Recommened when cell proportions are to be estimated.
 #'
-#' @return A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}. A matrix of beta-values, either normalized (for \code{normalize}) or not (for \code{dont_normalize}).
+#' @return A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}.
+#'    A matrix of beta-values, either normalized (for \code{normalize}) or not (for \code{dont_normalize}).
 #' 
 #' @references{Xu Z, Langie SA, De Boever P, Taylor JA, Niu L. RELIC: a novel dye-bias correction method for Illumina Methylation BeadChip. BMC Genomics. 2017 Jan 3;18(1):4.}
 #' @references{Heiss JA, Brenner H. Between-array normalization for 450K data. Frontiers in Genetics. 2015;6.}
@@ -106,25 +108,35 @@ correct_dye_bias2 = function (raw)
     return(raw)
 }
 
+#' Convert fluorescence intensities to beta-values
 #' @rdname Preprocessing
+#' @return A matrix of beta-values.
+#'   If IDATs were imported with option \code{on_disk = TRUE}, a \{code{ff} object.
 #' @export
 #'
-dont_normalize = function(raw){
+beta_values = function(raw){
 
-    stopifnot(c("manifest", "M", "U", "meta") %in% names(raw))
+   stopifnot(c("manifest", "M", "U", "meta") %in% names(raw))
 
-    with(raw,{
+	I = nrow(raw$M)
+	J = ncol(raw$M)
 
-        M[M < 1] = 1
-        U[U < 1] = 1
-        
-        meth = M / (M+U)
-        
-        rownames(meth) = paste0(manifest$ilmn_id)
-        colnames(meth) = meta$sample_id
+   if (ff::is.ff(raw$M)) {
+   	meth = ff::ff(NA_real_, dim = c(I, J))
+   } else {
+   	meth = matrix(NA_real_, nrow = I, ncol = J)
+   }
 
-        return(meth)
-    })
+	for (j in 1:J) {
+      Uj = raw$U[, j]; Uj[Uj < 1] = 1
+   	Mj = raw$M[, j]; Mj[Mj < 1] = 1
+   	meth[, j] = Mj / (Uj + Mj)
+	}
+    
+   rownames(meth) = paste0(raw$manifest$ilmn_id)
+   colnames(meth) = raw$meta$sample_id
+
+   return(meth)
 }
 
 

@@ -1,7 +1,7 @@
 Package: ewastools
 Type: Package
 Title: EWAS Tools
-Version: 1.8.0
+Version: 1.8.1
 Date: 2025-05-03
 Author: Allan C. Just, Jonathan Alexander Heiss
 Maintainer: Jonathan Alexander Heiss <heiss.jonathan@gmail.com>
@@ -13,9 +13,10 @@ Suggests:
     rmarkdown,
     testthat (>= 2.1.0),
     tidyverse,
-    svd
+    svd,
+    ff
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 URL: https://hhhh5.github.io/ewastools/

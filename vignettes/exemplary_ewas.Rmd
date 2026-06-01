@@ -135,7 +135,7 @@ meth = read_idats(pheno$gsm,quiet=TRUE) # `quiet=TRUE` supresses the progress ba
 
 The entire pre-processing, including filtering by detection p-values, dye-bias correction and conversion into beta-values, can be done in one line ...
 ```
-beta = meth %>% detectionP %>% mask(0.01) %>% correct_dye_bias %>% dont_normalize
+beta = meth %>% detectionP %>% mask(0.01) %>% correct_dye_bias %>% beta_values
 ```
 ... but we will break it up in order to describe the various steps.
 
@@ -195,7 +195,7 @@ beta %<>% correct_dye_bias
 ```
 The final step is the conversion of intensities to beta-values. While `ewastools` implements the LOESS normalization [(Heiss and Brenner, 2015)](https://doi.org/10.3389/fgene.2015.00092), I advise against normalization as it does little to protect against batch effects but can result in the removal of genuine biological signal. Instead I recommended to adjust for relevant technical covariates in regression models later.
 ```{r}
-beta %<>% dont_normalize
+beta %<>% beta_values
 ```
 
 Before beginning with the actual epigenome-wide association study, it is advised to check a dataset for problematic samples.

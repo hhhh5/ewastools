@@ -9,7 +9,8 @@ methylation_score(beta, model)
 \arguments{
 \item{beta}{matrix of beta values}
 
-\item{model}{Name of the model, i.e., one of `maternal_smoking`, `gestational_age`, or `horvath_clock`}
+\item{model}{Name of the model, i.e., one of `maternal_smoking`, `gestational_age`,
+or `horvath_clock`}
 }
 \description{
 Various methylation scores
