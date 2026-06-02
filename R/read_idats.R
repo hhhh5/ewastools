@@ -262,7 +262,7 @@ drop_samples = function(raw, j = NULL){
 
       drop_cols = function(x, j) { # x must be an ff matrix
          cols_to_keep = setdiff(1:ncol(x), j)
-         res = ff::ff(vmode = vmode(x), dim = c(nrow(x), length(cols_to_keep)))
+         res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
          if (length(cols_to_keep) > 0) {
             for (k in seq_along(cols_to_keep))
                res[, k] = x[, cols_to_keep[k]]
