@@ -112,6 +112,8 @@ correct_dye_bias2 = function (raw)
 #' @rdname Preprocessing
 #' @return A matrix of beta-values.
 #'   If IDATs were imported with option \code{on_disk = TRUE}, a \{code{ff} object.
+#'   If the data was imported using \code{on_disk = TRUE}, it is recommended to transpose
+#'   the returned ff object for fast row-based access.
 #' @export
 #'
 beta_values = function(raw){
