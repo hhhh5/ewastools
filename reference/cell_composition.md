@@ -1,0 +1,71 @@
+# Cell composition
+
+Estimation of cell proportions for blood and saliva using the Houseman
+algorithm
+
+## Usage
+
+``` r
+estimateLC(meth, ref, constrained = FALSE)
+```
+
+## Arguments
+
+- meth:
+
+  Matrix of beta values
+
+- ref:
+
+  Choice of reference dataset: available options are \`HRS\` (Health and
+  Retirement Study), \`Reinius\` \[2\]\`, Bakulski\` \[3\], \`deGoede\`
+  \[4\], \`Gervin\`\[5\], \`Lin\` \[6\], \`Mill\` \[GSE103541\],
+  \`Salas\` \[7\], \`Lolipop\` \[8\]. Furthermore, the option \`saliva\`
+  and \`salivaEPIC\` are available \[9\].
+
+- constrained:
+
+  Force that all cell proportions sum up to 1.
+
+## Value
+
+Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells,
+granulocytes, monocytes, natural killer cells (and nucleated red blood
+cells) using the Houseman algorithm \[1\]. Models were trained on
+various reference datasets of purified cell types.
+
+## References
+
+Houseman EA, et al. DNA methylation arrays as surrogate measures of cell
+mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.
+
+Reinius LE, et al. Differential DNA methylation in purified human blood
+cells: implications for cell lineage and studies on disease
+susceptibility. PloS one. 2012 Jul 25;7(7):e41361.
+
+Bakulski KM, et al. DNA methylation of cord blood cell types:
+applications for mixed cell birth studies. Epigenetics. 2016 May
+3;11(5):354-62.
+
+de Goede OM, et al. Nucleated red blood cells impact DNA methylation and
+expression analyses of cord blood hematopoietic cells. Clinical
+epigenetics. 2015 Dec;7(1):95.
+
+Gervin K, et al. Cell type specific DNA methylation in cord blood: A
+450K-reference data set and cell count-based validation of estimated
+cell type composition. Epigenetics. 2016 Sep 1;11(9):690-8
+
+Gervin K, et al. Systematic evaluation and validation of reference and
+library selection methods for deconvolution of cord blood DNA
+methylation data. bioRxiv. 2019 March; DOI:10.1101/570457
+
+Salas LA, et al. An optimized library for reference-based deconvolution
+of whole-blood biospecimens assayed using the Illumina
+HumanMethylationEPIC BeadArray. Genome biology. 2018 Dec;19(1):64.
+
+Heiss JA, et al. Training a model for estimating leukocyte composition
+using whole-blood DNA methylation and cell counts as reference.
+Epigenomics. 2017 Jan;9(1):13-20.
+
+Middleton LYM, et al. Saliva cell type DNA methylation reference panel
+for epidemiology studies in children. 2020 Sep;

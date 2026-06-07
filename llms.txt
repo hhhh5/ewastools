@@ -1,0 +1,76 @@
+# ewas_tools: a quality control toolset for the Illumina Infinium DNA methylation platforms [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7329019.svg)](https://doi.org/10.5281/zenodo.7329019)
+
+The following functionality is offered for the 450K, EPIC(v1/v2) and
+Mouse (experimental) BeadChips:
+
+- Screen for problematic samples, e.g. failed assays, mislabeled or
+  contaminated samples (`control_metrics, check_sex, snp_outliers`).
+- Compute detection p-values and mask respective data points
+  (`detectionP, mask`).
+- Preprocess the data (`correct_dye_bias, beta_values`).
+- Estimate leukocyte composition in case of blood samples (`estimateLC`)
+
+**Read the vignette on the recommended QC workflow at
+<https://hhhh5.github.io/ewastools/articles/exemplary_ewas.html>.**
+
+Package documentation is available at
+<https://hhhh5.github.io/ewastools/>.
+
+An open access paper describing the quality checks implemented in this
+package in detail is available at
+<http://doi.org/10.1186/s13148-018-0504-1>. A vignette demonstrating the
+application of quality control checks on a public dataset is provided as
+well.
+
+A second paper (open access) describing the improved detection p-values
+implemented in `ewastools` can be found at
+<https://doi.org/10.1186/s13148-019-0615-3>.
+
+**For installation please run
+`devtools::install_github("hhhh5/ewastools")`**
+
+# Package index
+
+## All functions
+
+- [`methylation_score()`](https://hhhh5.github.io/ewastools/reference/MethylationScores.md)
+  : Various methylation scores
+- [`correct_dye_bias()`](https://hhhh5.github.io/ewastools/reference/Preprocessing.md)
+  [`correct_dye_bias2()`](https://hhhh5.github.io/ewastools/reference/Preprocessing.md)
+  [`beta_values()`](https://hhhh5.github.io/ewastools/reference/Preprocessing.md)
+  : Functions for preprocessing
+- [`call_genotypes()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
+  [`mxm_()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
+  [`snp_outliers()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
+  [`eBeta()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
+  : Genotype calling
+- [`estimateLC()`](https://hhhh5.github.io/ewastools/reference/cell_composition.md)
+  : Cell composition
+- [`check_sex()`](https://hhhh5.github.io/ewastools/reference/check_sex.md)
+  [`predict_sex()`](https://hhhh5.github.io/ewastools/reference/check_sex.md)
+  : Infer the sex of sample donor
+- [`check_snp_agreement()`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
+  [`agreement_()`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
+  [`enumerate_sample_donors()`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
+  : Agreement of SNPs
+- [`control_metrics()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
+  [`sample_failure()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
+  : Quality control metrics
+- [`summits()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+  [`detectionP()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+  [`detectionP.neg()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+  [`mask()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+  [`eval_detP_cutoffs()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+  [`detectionP.minfi()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+  : Detection p-values
+- [`drop_samples()`](https://hhhh5.github.io/ewastools/reference/drop_samples.md)
+  : Drop samples from raw data.
+- [`read_idats()`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
+  : Read .idat files
+
+# Articles
+
+### All vignettes
+
+- [Recommended Work
+  Flow](https://hhhh5.github.io/ewastools/articles/exemplary_ewas.md):

@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Recommended Work Flow • ewastools</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Recommended Work Flow">
 </head>
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">ewastools</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.8.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,7 @@
                         <h4 data-toc-skip class="author">Jonathan
 Heiss</h4>
             
-            <h4 data-toc-skip class="date">2025-06-20</h4>
+            <h4 data-toc-skip class="date">2026-06-07</h4>
       
 
       <div class="d-none name"><code>exemplary_ewas.Rmd</code></div>
@@ -67,11 +67,6 @@ Heiss</h4>
 
     
     
-<style type="text/css">
-body{ font-size: 12pt; text-align: justify; }
-img{ border: 0px;}
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-</style>
 <p>This vignette exemplifies how to use the <code>ewastools</code>
 package to clean and pre-process DNA methylation data. After loading the
 required packages, analysis would start with gathering the phenotype
@@ -79,16 +74,16 @@ data. In this example using a public dataset from the <a href="https://www.ncbi.
 repository, the phenotype data is stored in a file named
 <code>pheno.csv</code></p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span> <span class="op">=</span> <span class="fu">fread</span><span class="op">(</span><span class="st">"pheno.csv"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">pheno</span> <span class="op">=</span> <span class="fu">data.table</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/data.table/man/fread.html" class="external-link">fread</a></span><span class="op">(</span><span class="st">"pheno.csv"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">)</span></span>
-<span><span class="co">##           gsm    sex smoker</span></span>
-<span><span class="co">##        &lt;char&gt; &lt;char&gt; &lt;char&gt;</span></span>
-<span><span class="co">## 1: GSM2260480      m smoker</span></span>
-<span><span class="co">## 2: GSM2260482      m smoker</span></span>
-<span><span class="co">## 3: GSM2260485      m smoker</span></span>
-<span><span class="co">## 4: GSM2260486      m smoker</span></span>
-<span><span class="co">## 5: GSM2260487      f smoker</span></span>
-<span><span class="co">## 6: GSM2260488      m smoker</span></span></code></pre></div>
+<span><span class="co">##           gsm    sex smoking</span></span>
+<span><span class="co">##        &lt;char&gt; &lt;char&gt;  &lt;char&gt;</span></span>
+<span><span class="co">## 1: GSM2260480      m  smoker</span></span>
+<span><span class="co">## 2: GSM2260482      m  smoker</span></span>
+<span><span class="co">## 3: GSM2260485      m  smoker</span></span>
+<span><span class="co">## 4: GSM2260486      m  smoker</span></span>
+<span><span class="co">## 5: GSM2260487      f  smoker</span></span>
+<span><span class="co">## 6: GSM2260488      m  smoker</span></span></code></pre></div>
 <p><code>pheno</code> contains a column <code>gsm</code>, which in this
 case represents also the prefix of the .idat file names. Usually,
 however, the file names are a combination of the Sentrix barcode,
@@ -104,12 +99,14 @@ e.g. <code>C:/folder/subfolder/200379120004_R01C01</code>. Both red and
 green .idat files of a particular sample need to be in the same
 folder.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">meth</span> <span class="op">=</span> <span class="fu"><a href="../reference/read_idats.html">read_idats</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">gsm</span>,quiet<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span> <span class="co"># `quiet=TRUE` supresses the progress bar</span></span>
+<code class="sourceCode R"><span><span class="co"># `quiet=TRUE` supresses the progress bar</span></span>
+<span><span class="co"># Use `on_disk = TRUE` to store data on disk (will run slower but consume less memory)</span></span>
+<span><span class="va">meth</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/read_idats.html">read_idats</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">gsm</span>, quiet <span class="op">=</span> <span class="cn">TRUE</span>, on_disk <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
 <span><span class="co">## [1] 622399</span></span></code></pre></div>
 <p>The entire pre-processing, including filtering by detection p-values,
 dye-bias correction and conversion into beta-values, can be done in one
 line …</p>
-<pre><code><span><span class="va">beta</span> <span class="op">=</span> <span class="va">meth</span> <span class="op">%&gt;%</span> <span class="va">detectionP</span> <span class="op">%&gt;%</span> <span class="fu"><a href="../reference/detectionP.html">mask</a></span><span class="op">(</span><span class="fl">0.01</span><span class="op">)</span> <span class="op">%&gt;%</span> <span class="va">correct_dye_bias</span> <span class="op">%&gt;%</span> <span class="va">dont_normalize</span></span></code></pre>
+<pre><code><span><span class="va">beta</span> <span class="op">=</span> <span class="va">meth</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/detectionP.html">detectionP</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/detectionP.html">mask</a></span><span class="op">(</span><span class="fl">0.01</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/Preprocessing.html">correct_dye_bias</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="../reference/Preprocessing.html">beta_values</a></span><span class="op">(</span><span class="op">)</span></span></code></pre>
 <p>… but we will break it up in order to describe the various steps.</p>
 <p>The first step should be to filter out unreliable data points which
 result from low fluorescence intensities. These can be the result of
@@ -123,49 +120,51 @@ demonstrated by the fact that many probes targeting the Y chromosome are
 classified as detected. <code>ewastools</code> implements an improved
 estimation of noise levels that improves accuracy.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">meth</span> <span class="op">%&lt;&gt;%</span> <span class="va">detectionP</span></span>
+<code class="sourceCode R"><span><span class="va">meth</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/detectionP.html">detectionP</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span></span>
 <span><span class="va">P.new</span> <span class="op">=</span> <span class="va">meth</span><span class="op">$</span><span class="va">detP</span></span></code></pre></div>
 <p>For easy comparison a function <code><a href="../reference/detectionP.html">detectionP.neg()</a></code> is
 provided, which estimates background the conventional way.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">P.neg</span> <span class="op">=</span> <span class="va">meth</span> <span class="op">%&gt;%</span> <span class="va">detectionP.neg</span> <span class="op">%$%</span> <span class="va">detP</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">P.neg</span> <span class="op">=</span> <span class="va">meth</span> <span class="op">|&gt;</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/detectionP.html">detectionP.neg</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/chuck.html" class="external-link">chuck</a></span><span class="op">(</span><span class="st">"detP"</span><span class="op">)</span></span></code></pre></div>
 <p>We can see the improved accuracy by counting the number of Y
 chromosome probes that are called detected for a male and a female
 samples.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">chrY</span> <span class="op">=</span> <span class="va">meth</span><span class="op">$</span><span class="va">manifest</span><span class="op">[</span><span class="va">chr</span><span class="op">==</span><span class="st">'chrY'</span>,<span class="va">index</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">chrY</span> <span class="op">=</span> <span class="va">meth</span><span class="op">$</span><span class="va">manifest</span><span class="op">[</span><span class="va">chr</span><span class="op">==</span><span class="st">'chrY'</span>, <span class="va">index</span><span class="op">]</span></span>
 <span></span>
-<span>  <span class="va">male</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">sex</span><span class="op">==</span><span class="st">"m"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
-<span><span class="va">female</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
+<span><span class="va">P.neg</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">P.neg</span><span class="op">[</span><span class="va">chrY</span>,<span class="op">]</span> <span class="op">&lt;</span> <span class="fl">0.01</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>   <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>   <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">mean</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">P.neg</span> <span class="op">=</span> <span class="va">P.neg</span><span class="op">[</span><span class="va">chrY</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">male</span>,<span class="va">female</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">P.new</span> <span class="op">=</span> <span class="va">P.new</span><span class="op">[</span><span class="va">chrY</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">male</span>,<span class="va">female</span><span class="op">)</span><span class="op">]</span></span>
-<span></span>
-<span><span class="va">P.neg</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">P.neg</span><span class="op">&lt;</span><span class="fl">0.01</span>,na.rm<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="va">P.new</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">P.new</span><span class="op">&lt;</span><span class="fl">0.01</span>,na.rm<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">P.neg</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"male"</span>,<span class="st">"female"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">P.new</span><span class="op">)</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"male"</span>,<span class="st">"female"</span><span class="op">)</span></span></code></pre></div>
-<p>Using the conventional detection p-value, for the female sample 402 Y
-chromosome probes are called detected, a number close to all 416 Y
-chromosome probes as for the male sample.</p>
+<span><span class="va">P.new</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">P.new</span><span class="op">[</span><span class="va">chrY</span>,<span class="op">]</span> <span class="op">&lt;</span> <span class="fl">0.01</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>   <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">sex</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>   <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">mean</span><span class="op">)</span></span></code></pre></div>
+<p>Using the conventional detection p-value, for the female samples and
+average of 412 Y chromosome probes are called detected and a number
+close to all 416 Y chromosome probes as for the male sample.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">P.neg</span></span>
-<span><span class="co">##   male female </span></span>
-<span><span class="co">##    416    402</span></span></code></pre></div>
-<p>Using the improved method gives a much more accurate result with all
-416 Y chromosome probes classified as detected for the male sample, but
-only 402 probes classified as detected for the female sample. More
-information can be found in <a href="https://doi.org/10.1186/s13148-019-0615-3" class="external-link">Heiss and Just,
+<span><span class="co">## $f</span></span>
+<span><span class="co">## [1] 411.8571</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $m</span></span>
+<span><span class="co">## [1] 415.7143</span></span></code></pre></div>
+<p>Using the improved method gives a much more accurate result with an
+average of 415 Y chromosome probes classified as detected for the male
+sample, but only 85 probes classified as detected for the female sample.
+More information can be found in <a href="https://doi.org/10.1186/s13148-019-0615-3" class="external-link">Heiss and Just,
 2019</a>.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">P.new</span></span>
-<span><span class="co">##   male female </span></span>
-<span><span class="co">##    416     73</span></span></code></pre></div>
+<span><span class="co">## $f</span></span>
+<span><span class="co">## [1] 84.92857</span></span>
+<span><span class="co">## </span></span>
+<span><span class="co">## $m</span></span>
+<span><span class="co">## [1] 414.7619</span></span></code></pre></div>
 <p>We used a significance threshold of 0.01 above. Moving forward,
-probes above this threshold should be masked, i.e. set to missing.</p>
+probes above this threshold should be masked, i.e., set to missing.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">beta</span> <span class="op">=</span> <span class="va">meth</span> <span class="op">%&gt;%</span> <span class="fu"><a href="../reference/detectionP.html">mask</a></span><span class="op">(</span><span class="fl">0.01</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">meth</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/detectionP.html">mask</a></span><span class="op">(</span><span class="va">meth</span>, <span class="fl">0.01</span><span class="op">)</span></span></code></pre></div>
 <p>Infinium BeadChips use two fluorescent dyes that are linked to the
 nucleotides used in the the single-base extension step. A and T
 nucleotides use are linked with a red dye (the red color channel), G and
@@ -180,7 +179,7 @@ normalizes the red and green color channel. <code>ewastools</code>
 provides an improved version of RELIC (<a href="https://doi.org/10.1186/s12864-016-3426-3" class="external-link">Xu et al., 2017</a>)
 using robust Theil-Sen estimators.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">beta</span> <span class="op">%&lt;&gt;%</span> <span class="va">correct_dye_bias</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">meth</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/Preprocessing.html">correct_dye_bias</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span></span></code></pre></div>
 <p>The final step is the conversion of intensities to beta-values. While
 <code>ewastools</code> implements the LOESS normalization <a href="https://doi.org/10.3389/fgene.2015.00092" class="external-link">(Heiss and Brenner,
 2015)</a>, I advise against normalization as it does little to protect
@@ -188,7 +187,7 @@ against batch effects but can result in the removal of genuine
 biological signal. Instead I recommended to adjust for relevant
 technical covariates in regression models later.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">beta</span> <span class="op">%&lt;&gt;%</span> <span class="va">dont_normalize</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">beta</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/Preprocessing.html">beta_values</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span></span></code></pre></div>
 <p>Before beginning with the actual epigenome-wide association study, it
 is advised to check a dataset for problematic samples.</p>
 <div class="section level2">
@@ -204,16 +203,16 @@ below the Illumina-recommended cut-off of 1. Input for
 <code><a href="../reference/read_idats.html">read_idats()</a></code>, e.g. the object holding raw or
 dye-bias-corrected intensities.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ctrls</span> <span class="op">=</span> <span class="fu"><a href="../reference/control_metrics.html">control_metrics</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/stripchart.html" class="external-link">stripchart</a></span><span class="op">(</span><span class="va">ctrls</span><span class="op">$</span><span class="va">`Bisulfite Conversion II`</span>,method<span class="op">=</span><span class="st">"jitter"</span>,pch<span class="op">=</span><span class="fl">4</span>,xlab<span class="op">=</span><span class="st">'Bisulfite Conversion II'</span>,xlim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v<span class="op">=</span><span class="fl">1</span>,col<span class="op">=</span><span class="fl">2</span>,lty<span class="op">=</span><span class="fl">3</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-12-1.png" width="576" style="display: block; margin: auto;"></p>
+<code class="sourceCode R"><span><span class="va">ctrls</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/control_metrics.html">control_metrics</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/stripchart.html" class="external-link">stripchart</a></span><span class="op">(</span><span class="va">ctrls</span><span class="op">$</span><span class="va">`Bisulfite Conversion II`</span>, method <span class="op">=</span> <span class="st">"jitter"</span>, pch <span class="op">=</span> <span class="fl">4</span>, xlab <span class="op">=</span> <span class="st">'Bisulfite Conversion II'</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">1</span>, col <span class="op">=</span> <span class="fl">2</span>, lty <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
+<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-12-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>A logical vector of passed/failed is returned by
 <code><a href="../reference/control_metrics.html">sample_failure()</a></code> which compares all 21 metrics against the
 thresholds recommended by Illumina. In this case several samples
 fail..</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">$</span><span class="va">failed</span> <span class="op">=</span> <span class="fu"><a href="../reference/control_metrics.html">sample_failure</a></span><span class="op">(</span><span class="va">ctrls</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">$</span><span class="va">failed</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/control_metrics.html">sample_failure</a></span><span class="op">(</span><span class="va">ctrls</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">$</span><span class="va">failed</span><span class="op">)</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## FALSE  TRUE </span></span>
@@ -235,30 +234,30 @@ as this step would mask many of the Y chromosome probes used here.</p>
 <p>Plotted below are the normalized average total fluorescence
 intensities of X and Y chromosome probes.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span>,<span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"X"</span>,<span class="st">"Y"</span><span class="op">)</span> <span class="op">:=</span> <span class="fu"><a href="../reference/check_sex.html">check_sex</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">pheno</span><span class="op">[</span>,<span class="va">predicted_sex</span><span class="op">:=</span><span class="fu"><a href="../reference/check_sex.html">predict_sex</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">Y</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"m"</span><span class="op">)</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"X"</span>, <span class="st">"Y"</span><span class="op">)</span> <span class="op">:=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/check_sex.html">check_sex</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">pheno</span><span class="op">[</span>, <span class="va">predicted_sex</span> <span class="op">:=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/check_sex.html">predict_sex</a></span><span class="op">(</span><span class="va">X</span>,<span class="va">Y</span>,<span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"m"</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span><span class="op">)</span><span class="op">)</span><span class="op">]</span></span>
 <span></span>
-<span><span class="va">tmp</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">predicted_sex</span><span class="op">==</span><span class="va">sex</span><span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span>,data<span class="op">=</span><span class="va">tmp</span>,pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">$</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span>,<span class="fl">1</span>,<span class="fl">4</span><span class="op">)</span>,asp<span class="op">=</span><span class="fl">1</span>,xlab<span class="op">=</span><span class="st">"Normalized X chromosome intensities"</span>,ylab<span class="op">=</span><span class="st">"Normalized Y chromosome intensities"</span><span class="op">)</span></span>
-<span><span class="va">tmp</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">predicted_sex</span><span class="op">!=</span><span class="va">sex</span><span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span>,data<span class="op">=</span><span class="va">tmp</span>,pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">$</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span>,<span class="fl">1</span>,<span class="fl">4</span><span class="op">)</span>,col<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>,pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">4</span><span class="op">)</span>,legend<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>,<span class="st">"male"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-14-1.png" width="576" style="display: block; margin: auto;"></p>
+<span><span class="va">tmp</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">predicted_sex</span> <span class="op">==</span> <span class="va">sex</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span>, data <span class="op">=</span> <span class="va">tmp</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"f"</span>,<span class="fl">1</span> , <span class="fl">4</span><span class="op">)</span>, asp <span class="op">=</span> <span class="fl">1</span>, xlab <span class="op">=</span> <span class="st">"Normalized X chromosome intensities"</span>, ylab<span class="op">=</span><span class="st">"Normalized Y chromosome intensities"</span><span class="op">)</span></span>
+<span><span class="va">tmp</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">predicted_sex</span> <span class="op">!=</span> <span class="va">sex</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span>, data <span class="op">=</span> <span class="va">tmp</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"f"</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, col <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>, <span class="st">"male"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-14-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>Samples form two cluster of males (top left) and females (bottom
 left). The one mislabeled sample here (in red) can easily be identified
 and should be flagged.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">sex</span><span class="op">!=</span><span class="va">predicted_sex</span>,<span class="va">exclude</span><span class="op">:=</span><span class="cn">TRUE</span><span class="op">]</span> <span class="co"># flag sample</span></span>
-<span><span class="va">pheno</span><span class="op">[</span><span class="va">sex</span><span class="op">!=</span><span class="va">predicted_sex</span>,<span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>,<span class="va">sex</span>,<span class="va">predicted_sex</span><span class="op">)</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">sex</span> <span class="op">!=</span> <span class="va">predicted_sex</span>, <span class="va">exclude</span> <span class="op">:=</span> <span class="cn">TRUE</span><span class="op">]</span> <span class="co"># flag sample</span></span>
+<span><span class="va">pheno</span><span class="op">[</span><span class="va">sex</span> <span class="op">!=</span> <span class="va">predicted_sex</span>, <span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">sex</span>, <span class="va">predicted_sex</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">##           gsm    sex predicted_sex</span></span>
 <span><span class="co">##        &lt;char&gt; &lt;char&gt;        &lt;fctr&gt;</span></span>
 <span><span class="co">## 1: GSM2260573      f             m</span></span></code></pre></div>
 <p>Another sample falls outside the two clusters.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">X</span> <span class="op">%between%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.85</span>,<span class="fl">0.95</span><span class="op">)</span> <span class="op">&amp;</span> <span class="va">Y</span> <span class="op">%between%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.65</span>,<span class="fl">0.75</span><span class="op">)</span>,<span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>,<span class="va">X</span>,<span class="va">Y</span>,<span class="va">sex</span>,<span class="va">predicted_sex</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">##           gsm         X         Y    sex predicted_sex</span></span>
-<span><span class="co">##        &lt;char&gt;     &lt;num&gt;     &lt;num&gt; &lt;char&gt;        &lt;fctr&gt;</span></span>
-<span><span class="co">## 1: GSM2260653 0.9266193 0.7212944      m             m</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">X</span> <span class="op">%between%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.85</span>,<span class="fl">0.95</span><span class="op">)</span> <span class="op">&amp;</span> <span class="va">Y</span> <span class="op">%between%</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.65</span>,<span class="fl">0.75</span><span class="op">)</span>, <span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">X</span>, <span class="va">Y</span>, <span class="va">sex</span>, <span class="va">predicted_sex</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">##           gsm         X        Y    sex predicted_sex</span></span>
+<span><span class="co">##        &lt;char&gt;     &lt;num&gt;    &lt;num&gt; &lt;char&gt;        &lt;fctr&gt;</span></span>
+<span><span class="co">## 1: GSM2260653 0.9172741 0.710014      m             m</span></span></code></pre></div>
 <p>There are several possible explanations for samples not clustering
 with males or females, for example chromosome abnormalities. Or sample
 contamination. The latter theory can be tested in the next quality
@@ -300,7 +299,7 @@ relevant information.</p>
 <span><span class="co">## 485577:   &lt;NA&gt;       NA         1         rs 485577    NA   2441   2441</span></span></code></pre></div>
 <p>SNP probes are labelled <code>"rs"</code>.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">snps</span> <span class="op">=</span> <span class="va">meth</span><span class="op">$</span><span class="va">manifest</span><span class="op">[</span><span class="va">probe_type</span><span class="op">==</span><span class="st">"rs"</span>,<span class="va">index</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">snps</span> <span class="op">=</span> <span class="va">meth</span><span class="op">$</span><span class="va">manifest</span><span class="op">[</span><span class="va">probe_type</span> <span class="op">==</span> <span class="st">"rs"</span>, <span class="va">index</span><span class="op">]</span></span>
 <span><span class="va">snps</span> <span class="op">=</span> <span class="va">beta</span><span class="op">[</span><span class="va">snps</span>,<span class="op">]</span></span></code></pre></div>
 <p>These SNPs are then used as input for <code><a href="../reference/call_genotypes.html">call_genotypes()</a></code>.
 This function estimates the parameters of a mixture model consisting of
@@ -312,17 +311,17 @@ used for soft classification. When setting the argument
 case, we use the pre-specified model as the dataset is quite small and
 maximum likelihood estimation might be unstable.</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">genotypes</span> <span class="op">=</span> <span class="fu"><a href="../reference/call_genotypes.html">call_genotypes</a></span><span class="op">(</span><span class="va">snps</span>,learn<span class="op">=</span><span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">genotypes</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/call_genotypes.html">call_genotypes</a></span><span class="op">(</span><span class="va">snps</span>, learn <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="../reference/call_genotypes.html">snp_outliers()</a></code> returns the average log odds of belonging
 to the outlier component across all SNP probes. I recommend to flag
 samples with a score greater than -4 for exclusion.</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">$</span><span class="va">outlier</span> <span class="op">=</span> <span class="fu"><a href="../reference/call_genotypes.html">snp_outliers</a></span><span class="op">(</span><span class="va">genotypes</span><span class="op">)</span></span>
-<span><span class="va">pheno</span><span class="op">[</span><span class="va">outlier</span> <span class="op">&gt;</span> <span class="op">-</span><span class="fl">4</span>,<span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>,<span class="va">X</span>,<span class="va">Y</span>,<span class="va">outlier</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">##           gsm         X         Y    outlier</span></span>
-<span><span class="co">##        &lt;char&gt;     &lt;num&gt;     &lt;num&gt;      &lt;num&gt;</span></span>
-<span><span class="co">## 1: GSM2260653 0.9266193 0.7212944 -0.8460863</span></span>
-<span><span class="va">pheno</span><span class="op">[</span><span class="va">outlier</span> <span class="op">&gt;</span> <span class="op">-</span><span class="fl">4</span>,<span class="va">exclude</span><span class="op">:=</span><span class="cn">TRUE</span><span class="op">]</span> <span class="co"># flag sample</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">$</span><span class="va">outlier</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/call_genotypes.html">snp_outliers</a></span><span class="op">(</span><span class="va">genotypes</span><span class="op">)</span></span>
+<span><span class="va">pheno</span><span class="op">[</span><span class="va">outlier</span> <span class="op">&gt;</span> <span class="op">-</span><span class="fl">4</span> ,<span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">X</span>, <span class="va">Y</span>, <span class="va">outlier</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">##           gsm         X        Y    outlier</span></span>
+<span><span class="co">##        &lt;char&gt;     &lt;num&gt;    &lt;num&gt;      &lt;num&gt;</span></span>
+<span><span class="co">## 1: GSM2260653 0.9172741 0.710014 -0.8460863</span></span>
+<span><span class="va">pheno</span><span class="op">[</span><span class="va">outlier</span> <span class="op">&gt;</span> <span class="op">-</span><span class="fl">4</span> ,<span class="va">exclude</span> <span class="op">:=</span> <span class="cn">TRUE</span><span class="op">]</span> <span class="co"># flag sample</span></span></code></pre></div>
 <p>The one sample failing this check is the same sample that did not
 belong to either the male or female cluster in the plot above. This is
 strong evidence that this sample is indeed contaminated. While SNP
@@ -343,16 +342,16 @@ below -2, i.e., greater than the cut-off of -4 used to exclude
 contaminated samples, but still small enough to guarantee that the SNP
 calls are accurate.</em></p>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">$</span><span class="va">donor_id</span> <span class="op">=</span> <span class="fu"><a href="../reference/check_snp_agreement.html">enumerate_sample_donors</a></span><span class="op">(</span><span class="va">genotypes</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">$</span><span class="va">donor_id</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/check_snp_agreement.html">enumerate_sample_donors</a></span><span class="op">(</span><span class="va">genotypes</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># List duplicates</span></span>
-<span><span class="va">pheno</span><span class="op">[</span>,<span class="va">n</span><span class="op">:=</span><span class="va">.N</span>,by<span class="op">=</span><span class="va">donor_id</span><span class="op">]</span></span>
-<span><span class="va">pheno</span><span class="op">[</span><span class="va">n</span><span class="op">&gt;</span><span class="fl">1</span>,<span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>,<span class="va">donor_id</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">pheno</span><span class="op">[</span>, <span class="va">n</span> <span class="op">:=</span> <span class="va">.N</span>, by <span class="op">=</span> <span class="va">donor_id</span><span class="op">]</span></span>
+<span><span class="va">pheno</span><span class="op">[</span><span class="va">n</span><span class="op">&gt;</span><span class="fl">1</span>, <span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">donor_id</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">##           gsm donor_id</span></span>
 <span><span class="co">##        &lt;char&gt;    &lt;num&gt;</span></span>
 <span><span class="co">## 1: GSM2260485        3</span></span>
 <span><span class="co">## 2: GSM2260543        3</span></span>
-<span><span class="va">pheno</span><span class="op">[</span><span class="va">gsm</span><span class="op">==</span><span class="st">"GSM2260543"</span>,<span class="va">exclude</span><span class="op">:=</span><span class="cn">TRUE</span><span class="op">]</span> <span class="co"># drop duplicate</span></span></code></pre></div>
+<span><span class="va">pheno</span><span class="op">[</span><span class="va">gsm</span> <span class="op">==</span> <span class="st">"GSM2260543"</span>, <span class="va">exclude</span> <span class="op">:=</span> <span class="cn">TRUE</span><span class="op">]</span> <span class="co"># drop duplicate</span></span></code></pre></div>
 <p>Here samples GSM2260485 and GSM2260543 come from the same donor.</p>
 <hr>
 <p><strong>PCA</strong></p>
@@ -372,19 +371,19 @@ important drivers of methylation beyond sex.</p>
 <span><span class="va">pcs</span> <span class="op">=</span> <span class="va">pcs</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowMeans</a></span><span class="op">(</span><span class="va">pcs</span><span class="op">)</span></span>
 <span><span class="va">pcs</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="va">pcs</span><span class="op">)</span></span>
 <span><span class="va">pcs</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">pcs</span><span class="op">)</span></span>
-<span><span class="va">pcs</span> <span class="op">=</span> <span class="fu">trlan.svd</span><span class="op">(</span><span class="va">pcs</span>,neig<span class="op">=</span><span class="fl">2</span><span class="op">)</span> <span class="co"># compute the first two principal components</span></span>
+<span><span class="va">pcs</span> <span class="op">=</span> <span class="fu">svd</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/svd/man/svd.html" class="external-link">trlan.svd</a></span><span class="op">(</span><span class="va">pcs</span>,neig<span class="op">=</span><span class="fl">2</span><span class="op">)</span> <span class="co"># compute the first two principal components</span></span>
 <span><span class="va">pcs</span> <span class="op">=</span> <span class="va">pcs</span><span class="op">$</span><span class="va">u</span></span>
 <span></span>
 <span><span class="va">pheno</span><span class="op">$</span><span class="va">pc1</span> <span class="op">=</span> <span class="va">pcs</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span></span>
 <span><span class="va">pheno</span><span class="op">$</span><span class="va">pc2</span> <span class="op">=</span> <span class="va">pcs</span><span class="op">[</span>, <span class="fl">2</span><span class="op">]</span></span></code></pre></div>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pc2</span> <span class="op">~</span> <span class="va">pc1</span>,pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span>,<span class="fl">1</span>,<span class="fl">4</span><span class="op">)</span>,<span class="va">pheno</span>,asp<span class="op">=</span><span class="fl">1</span>,xlab<span class="op">=</span><span class="st">"PC #1"</span>,ylab<span class="op">=</span><span class="st">"PC #2"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>,pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>,<span class="fl">4</span><span class="op">)</span>,legend<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>,<span class="st">"male"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-23-1.png" width="576" style="display: block; margin: auto;"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pc2</span> <span class="op">~</span> <span class="va">pc1</span>, pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, <span class="va">pheno</span>, asp <span class="op">=</span> <span class="fl">1</span>, xlab <span class="op">=</span> <span class="st">"PC #1"</span>, ylab <span class="op">=</span> <span class="st">"PC #2"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>, <span class="st">"male"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-23-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>There is one clear outlier.</p>
 <div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">pc1</span><span class="op">&lt;</span> <span class="op">-</span><span class="fl">0.8</span>,<span class="va">exclude</span><span class="op">:=</span><span class="cn">TRUE</span><span class="op">]</span></span>
-<span><span class="va">pheno</span><span class="op">[</span><span class="va">pc1</span><span class="op">&lt;</span> <span class="op">-</span><span class="fl">0.8</span>,<span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>,<span class="va">pc1</span>,<span class="va">pc2</span><span class="op">)</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">pc1</span> <span class="op">&lt;</span> <span class="op">-</span><span class="fl">0.8</span>, <span class="va">exclude</span> <span class="op">:=</span> <span class="cn">TRUE</span><span class="op">]</span></span>
+<span><span class="va">pheno</span><span class="op">[</span><span class="va">pc1</span> <span class="op">&lt;</span> <span class="op">-</span><span class="fl">0.8</span>, <span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">pc1</span>, <span class="va">pc2</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">##           gsm        pc1        pc2</span></span>
 <span><span class="co">##        &lt;char&gt;      &lt;num&gt;      &lt;num&gt;</span></span>
 <span><span class="co">## 1: GSM2219539 -0.9300883 -0.1484162</span></span></code></pre></div>
@@ -405,9 +404,9 @@ various sets of model parameters trained on various reference datasets
 (see <code><a href="../reference/cell_composition.html">?estimateLC</a></code> for a list of options). The function
 operates on the matrix of beta-values.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">LC</span> <span class="op">=</span> <span class="fu"><a href="../reference/cell_composition.html">estimateLC</a></span><span class="op">(</span><span class="va">beta</span>,ref<span class="op">=</span><span class="st">"HRS"</span><span class="op">)</span></span>
-<span><span class="va">pheno</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pheno</span>,<span class="va">LC</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">LC</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">LC</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/cell_composition.html">estimateLC</a></span><span class="op">(</span><span class="va">beta</span>, ref<span class="op">=</span><span class="st">"HRS"</span><span class="op">)</span></span>
+<span><span class="va">pheno</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pheno</span>, <span class="va">LC</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">LC</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">##       NE    EO    BA    MO EM_CT CM_CT  E_CT  N_CT EM_HT CM_HT  E_HT  N_HT</span></span>
 <span><span class="co">##    &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt; &lt;num&gt;</span></span>
 <span><span class="co">## 1: 0.877 0.011 0.000 0.049 0.016 0.006 0.000 0.018     0 0.025 0.000 0.000</span></span>
@@ -432,7 +431,7 @@ the dataset, consisting of a purified fraction of granulocytes. Plotting
 easily be spotted.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">[</span>,<span class="va">NE</span><span class="op">+</span><span class="va">EO</span><span class="op">+</span><span class="va">BA</span><span class="op">]</span><span class="op">*</span><span class="fl">100</span>,ylab<span class="op">=</span><span class="st">"Granulocyte fraction (%)"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-26-1.png" width="576" style="display: block; margin: auto;"></p>
+<p><img src="exemplary_ewas_files/figure-html/unnamed-chunk-26-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>It is the third to last sample, GSM1185585.</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">NE</span><span class="op">)</span>, <span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">NE</span><span class="op">)</span><span class="op">]</span></span>
@@ -450,10 +449,10 @@ easily be spotted.</p>
 <span><span class="va">pheno</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.min</a></span><span class="op">(</span><span class="va">NE</span><span class="op">)</span>, <span class="va">exclude</span> <span class="op">:=</span> <span class="cn">TRUE</span><span class="op">]</span></span></code></pre></div>
 <p>We drop the problematic samples</p>
 <div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">drop</span>  <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">exclude</span><span class="op">==</span><span class="cn">TRUE</span>,which<span class="op">=</span><span class="cn">TRUE</span><span class="op">]</span></span>
-<span><span class="va">pheno</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span> <span class="op">-</span><span class="va">drop</span><span class="op">]</span></span>
-<span><span class="va">beta</span>  <span class="op">=</span> <span class="va">beta</span> <span class="op">[</span>,<span class="op">-</span><span class="va">drop</span><span class="op">]</span></span>
-<span><span class="va">meth</span> <span class="op">%&lt;&gt;%</span> <span class="fu"><a href="../reference/drop_samples.html">drop_samples</a></span><span class="op">(</span>j<span class="op">=</span><span class="va">drop</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">drop</span>  <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">exclude</span> <span class="op">==</span> <span class="cn">TRUE</span>, which <span class="op">=</span> <span class="cn">TRUE</span><span class="op">]</span></span>
+<span><span class="va">pheno</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span>  <span class="op">-</span><span class="va">drop</span><span class="op">]</span></span>
+<span><span class="va">beta</span>  <span class="op">=</span> <span class="va">beta</span> <span class="op">[</span>, <span class="op">-</span><span class="va">drop</span><span class="op">]</span></span>
+<span><span class="va">meth</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/drop_samples.html">drop_samples</a></span><span class="op">(</span><span class="va">meth</span>, j <span class="op">=</span> <span class="va">drop</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="ewas">EWAS<a class="anchor" aria-label="anchor" href="#ewas"></a>
@@ -464,10 +463,10 @@ actual EWAS. First it is important to correctly code the variables.
 <code>character</code>, but should be converted to factors.</p>
 <div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pheno</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span>,<span class="fu">.</span><span class="op">(</span></span>
-<span>     <span class="va">gsm</span></span>
-<span>    ,sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">sex</span>,levels<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"m"</span>,<span class="st">"f"</span><span class="op">)</span><span class="op">)</span> <span class="co"># first level is the reference</span></span>
-<span>    ,smoker <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">smoker</span>,levels<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"non-smoker"</span>,<span class="st">"smoker"</span><span class="op">)</span><span class="op">)</span></span>
-<span>    ,<span class="va">NE</span>, <span class="va">MO</span>, <span class="va">B</span>, <span class="va">EO</span>, <span class="va">BA</span>, <span class="va">NK</span></span>
+<span>    <span class="va">gsm</span></span>
+<span>   ,sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">sex</span>, levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"m"</span>, <span class="st">"f"</span><span class="op">)</span><span class="op">)</span> <span class="co"># first level is the reference</span></span>
+<span>   ,smoking <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">smoking</span>, levels<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"non-smoker"</span>, <span class="st">"smoker"</span><span class="op">)</span><span class="op">)</span></span>
+<span>   ,<span class="va">NE</span>, <span class="va">MO</span>, <span class="va">B</span>, <span class="va">EO</span>, <span class="va">BA</span>, <span class="va">NK</span></span>
 <span><span class="op">)</span><span class="op">]</span></span></code></pre></div>
 <p>We want test all CpG sites for their association with smoking.
 Unfortunately, the phenotype data is very sparse, as it is typcial for
@@ -475,21 +474,20 @@ public datasets. Aside from smoking, only sex and the estimated
 proportions of the seven cell types will be including in the model. The
 following code snippet is optimized for readability not speed.</p>
 <div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">f</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">meth</span><span class="op">)</span><span class="op">{</span></span>
-<span>    <span class="va">m</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">meth</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">smoker</span> <span class="op">+</span> <span class="va">NE</span> <span class="op">+</span> <span class="va">MO</span> <span class="op">+</span> <span class="va">B</span> <span class="op">+</span> <span class="va">EO</span> <span class="op">+</span> <span class="va">BA</span> <span class="op">+</span> <span class="va">NK</span>, data<span class="op">=</span><span class="va">pheno</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="st">"smokersmoker"</span>,<span class="fl">4</span><span class="op">]</span> <span class="co"># extract the p-value for the smoking</span></span>
+<code class="sourceCode R"><span><span class="va">f</span> <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">cpg</span><span class="op">)</span><span class="op">{</span></span>
+<span>    <span class="va">m</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">cpg</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="va">sex</span> <span class="op">+</span> <span class="va">smoking</span> <span class="op">+</span> <span class="va">NE</span> <span class="op">+</span> <span class="va">MO</span> <span class="op">+</span> <span class="va">B</span> <span class="op">+</span> <span class="va">EO</span> <span class="op">+</span> <span class="va">BA</span> <span class="op">+</span> <span class="va">NK</span>, data<span class="op">=</span><span class="va">pheno</span><span class="op">)</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="st">"smokingsmoker"</span>, <span class="fl">4</span><span class="op">]</span> <span class="co"># extract the p-value for the smoking</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="va">f</span> <span class="op">=</span> <span class="fu">possibly</span><span class="op">(</span><span class="va">f</span>,otherwise<span class="op">=</span><span class="cn">NA_real_</span><span class="op">)</span> <span class="co"># catch errors</span></span>
+<span><span class="va">f</span> <span class="op">=</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/possibly.html" class="external-link">possibly</a></span><span class="op">(</span><span class="va">f</span>,otherwise<span class="op">=</span><span class="cn">NA_real_</span><span class="op">)</span> <span class="co"># catch errors</span></span>
 <span></span>
-<span><span class="va">pvals</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">beta</span>,<span class="fl">1</span>,<span class="va">f</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">pvals</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">beta</span>, <span class="fl">1</span>, <span class="va">f</span><span class="op">)</span></span></code></pre></div>
 <p>We create a <code>data.table</code> holding the p-values and
 information about the probes.</p>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">SMK</span> <span class="op">=</span> <span class="fu">data.table</span><span class="op">(</span>probe_id<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">beta</span><span class="op">)</span>,pval<span class="op">=</span><span class="va">pvals</span><span class="op">)</span></span>
-<span><span class="va">SMK</span> <span class="op">%&lt;&gt;%</span> <span class="va">na.omit</span></span>
-<span><span class="va">SMK</span><span class="op">[</span>,<span class="va">qval</span><span class="op">:=</span><span class="fu"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust</a></span><span class="op">(</span><span class="va">pval</span>,m<span class="op">=</span><span class="st">"fdr"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="va">SMK</span> <span class="op">=</span> <span class="va">SMK</span><span class="op">[</span><span class="va">qval</span><span class="op">&lt;</span><span class="fl">0.05</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">SMK</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/na.fail.html" class="external-link">na.omit</a></span><span class="op">(</span><span class="fu">data.table</span><span class="op">(</span>probe_id<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/colnames.html" class="external-link">rownames</a></span><span class="op">(</span><span class="va">beta</span><span class="op">)</span>, pval<span class="op">=</span><span class="va">pvals</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">SMK</span><span class="op">[</span>, <span class="va">qval</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/stats/p.adjust.html" class="external-link">p.adjust</a></span><span class="op">(</span><span class="va">pval</span>, m<span class="op">=</span><span class="st">"fdr"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="va">SMK</span> <span class="op">=</span> <span class="va">SMK</span><span class="op">[</span><span class="va">qval</span> <span class="op">&lt;</span> <span class="fl">0.05</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">SMK</span><span class="op">)</span></span>
 <span><span class="co">##       probe_id         pval        qval</span></span>
 <span><span class="co">##         &lt;char&gt;        &lt;num&gt;       &lt;num&gt;</span></span>
@@ -516,8 +514,8 @@ al., 2013)</a>.</p>
 </h2>
 <p>Depending on the dataset, many other types of quality checks might be
 applicable. If you have suggestions or comments regarding
-<code>ewastools</code>, please send an <a href="mailto:hhhh5@posteo.de">email</a>, or file an issue or submit a
-pull request on GitHub (<a href="https://github.com/hhhh5/ewastools" class="external-link uri">https://github.com/hhhh5/ewastools</a>).</p>
+<code>ewastools</code>, please send an <a href="mailto:heiss.jonathan@gmail.com">email</a>, or file an issue or
+submit a pull request on GitHub (<a href="https://github.com/hhhh5/ewastools" class="external-link uri">https://github.com/hhhh5/ewastools</a>).</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -526,11 +524,11 @@ pull request on GitHub (<a href="https://github.com/hhhh5/ewastools" class="exte
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Jonathan Alexander Heiss.</p>
+  <p>Developed by Jonathan Heiss.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
