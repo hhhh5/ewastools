@@ -2,7 +2,7 @@
 
 
 
-The following functionality is offered for the 450K and EPIC chips:
+The following functionality is offered for the 450K, EPIC(v1/v2) and Mouse (experimental) BeadChips:
 
 - Screen for problematic samples, e.g. failed assays, mislabeled or contaminated samples (`control_metrics, check_sex, snp_outliers`).
 - Compute detection p-values and mask respective data points (`detectionP, mask`).
