@@ -1,4 +1,5 @@
 # ewastools 1.8.1
+* Added experimental support for Mouse Methylation BeadChip (feedback welcome)
 * Added `on_disk` option to `read_idats()`. Uses `ff` package to store methylation data on disk instead
   memory. While slower, should enable analyses of large datasets on small machines.
 * Update vignette

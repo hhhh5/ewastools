@@ -64,6 +64,10 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE){
         platform = "EPICv2"
         chr      = "chr38"
         mapinfo  = "mapinfo38"
+    } else if(P == 361821) {
+        platform = "MOUSE"
+        chr      = "chr"
+        mapinfo  = "mapinfo"
     } else {
         stop("Unknown platform")
     }
