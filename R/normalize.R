@@ -6,8 +6,6 @@ NULL
 #' @name Preprocessing
 #' @rdname Preprocessing
 #' @param raw Output of calling \code{\link{read_idats}}
-#' @param tissue Optional. If set to "blood", predefined reference values are used for normalization.
-#'    Recommened when cell proportions are to be estimated.
 #'
 #' @return A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}.
 #'    A matrix of beta-values, either normalized (for \code{normalize}) or not (for \code{dont_normalize}).
