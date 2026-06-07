@@ -1,9 +1,11 @@
 lvls_chr37 = GenomeInfoDb::getChromInfoFromUCSC("hg19") $ chrom
 lvls_chr38 = GenomeInfoDb::getChromInfoFromUCSC("hg38") $ chrom
+lvls_mm10  = GenomeInfoDb::getChromInfoFromUCSC("mm10") $ chrom
 
 # Add mystery chromosome "chr0"
 lvls_chr37 = c(lvls_chr37, "chr0")
 lvls_chr38 = c(lvls_chr38, "chr0")
+lvls_mm10  = c(lvls_mm10,  "chr0")
 
 lvls_base = c("A", "G", "C", "T")
 
@@ -13,7 +15,8 @@ CONTROLS  = list()
 fp_manifest = list(
     `450K` = "humanmethylation450_15017482_v1-2.csv",
     EPICv1 = "infinium-methylationepic-v-1-0-b5-manifest-file.csv",
-    EPICv2 = "EPIC-8v2-0_A2.csv")
+    EPICv2 = "EPIC-8v2-0_A2.csv",
+    MOUSE  = "MouseMethylation-12v1-0_A2.csv")
 
 # -------------------------------- EPIC V2 chip manifest
 # Added by Costanza L. Vallerga
@@ -91,7 +94,7 @@ MANIFESTS$EPICv2 =
         chr38 = forcats::fct_relevel(chr38, !!!lvls_chr38),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
         channel = dplyr::if_else(probe_design == "II", "Both", channel),
-        channel = forcats::fct_relevel(channel, "Red", "Green", "Both"),
+        channel = forcats::fct_relevel(channel, "Red", "Grn", "Both"),
         probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "nv"),
         next_base = forcats::fct_relevel(next_base, !!!lvls_base))|>
     pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
@@ -185,7 +188,7 @@ MANIFESTS$EPICv1 =
         chr38 = forcats::fct_relevel(chr38, !!!lvls_chr38),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
         channel = dplyr::if_else(probe_design == "II", "Both", channel),
-        channel = forcats::fct_relevel(channel, "Red", "Green", "Both"),
+        channel = forcats::fct_relevel(channel, "Red", "Grn", "Both"),
         probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "nv"),
         next_base = forcats::fct_relevel(next_base, !!!lvls_base))|>
     pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
@@ -259,7 +262,7 @@ MANIFESTS$`450K` =
         chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
         channel = dplyr::if_else(probe_design == "II", "Both", channel),
-        channel = forcats::fct_relevel(channel, "Red", "Green", "Both"),
+        channel = forcats::fct_relevel(channel, "Red", "Grn", "Both"),
         probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "nv"),
         next_base = forcats::fct_relevel(next_base, !!!lvls_base))|>
     pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
@@ -273,6 +276,84 @@ CONTROLS$`450K` =
         col_types = "iccc",
         col_select = 1:4) |>
     pointblank::row_count_match(850)
+
+# -------------------------------- Mouse chip manifest
+# Manifest from May 25, 2021
+# CSV contains both 'normal' and control probes. Create two separate tables for them.
+
+MANIFESTS$MOUSE =
+    fp_manifest$MOUSE |>
+    readr::read_csv(
+        skip = 7, # Column names are at line 8
+        col_names = TRUE,
+        col_types = "ccicicfffffffffficfcccicccccccccccccccccccccclcicfi",
+        col_select = c(
+            ilmn_id = IlmnID,                    # cg25324105_BC11
+            probe_id = Name,                     # cg25324105
+            addressU = AddressA_ID,              # 1754126
+            # AlleleA_ProbeSeq                   # ATTTATAAAC...
+            addressM = AddressB_ID,              # 99753217
+            # AlleleB_ProbeSeq                   # GTTTATAAA...
+            next_base = Next_Base,               # A
+            channel = Color_Channel,             # Red
+            # Col                                # F/R
+            probe_type = Probe_Type,             # cg (ctl, cg, ch, my, rp, rs)
+            # strand_FR = Strand,                # F
+            # strand_TB = Strand_TB,             # B
+            # strand_CO = Strand_CO,             # C
+            probe_design = Infinium_Design_Type, # 1/2
+            probe_rep = Rep_Num,                 # 1
+            chr = CHR,                           # 
+            mapinfo = MAPINFO,                   # 75515719
+            # Species                            # Mus musculus
+            # Genome_Build                       # mm10
+            # SourceSeq                          # GTTTGTGGG...
+            # Forward_Sequence                   # CGGTTCCGC...GGC[CG]ACGTGCT...
+            # Top_Sequence                       # AGCAG...ACGT[CG]GCCGC...
+            # Genome_Build_NCBI                  #
+            # N_Shelf                            #
+            # N_Shore                            #
+            # CpG_Island                         #
+            # CpG_Island_chrom                   #
+            # CpG_Island_chromStart              #
+            # CpG_Island_chromEnd                #
+            # CpG_Island_length                  #
+            # CpG_Island_cpgNum                  #
+            # CpG_Island_gcNum                   #
+            # CpG_Island_perCpg                  #
+            # CpG_Island_perGc                   #
+            # CpG_Island_obsExp                  #
+            # S_Shore                            #
+            # S_Shelf                            #
+            # MFG_Change_Flagged                 #
+        ),
+        n_max = 287050) # This number is documented in line 6 of the manifest
+
+MANIFESTS$MOUSE =
+    MANIFESTS$MOUSE |>
+    dplyr::mutate(
+        chr = stringr::str_c("chr", chr), # Don't use paste0() as it doesn't handle NA
+        chr = forcats::fct_recode(chr, "chrM" = "chrMT"),
+        # ensure proper order of levels
+        chr = forcats::fct_relevel(chr, !!!lvls_mm10),
+        probe_design = forcats::fct_recode(probe_design, "I" = "1", "II" = "2"),
+        channel = dplyr::if_else(probe_design == "II", "Both", channel),
+        channel = forcats::fct_relevel(channel, "Red", "Grn", "Both"),
+        probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "rp", "mu"), # nv
+        next_base = forcats::fct_relevel(next_base, !!!lvls_base, "Y"))|>
+    pointblank::col_vals_in_set(chr, c(lvls_mm10, NA)) |>
+    pointblank::row_count_match(287050)
+
+CONTROLS$MOUSE =
+    fp_manifest$MOUSE |>
+    readr::read_csv(
+        skip = 7 + 287050 + 2, #
+        col_names = c("address", "group", "channel", "name"),
+        col_types = "iccc",
+        col_select = 1:4) |>
+    pointblank::row_count_match(642)
+
+# --------------------------------
 
 save(MANIFESTS, CONTROLS, file="../R/sysdata.rda",compress="xz")
 

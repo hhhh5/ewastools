@@ -52,7 +52,11 @@ detectionP = function(raw){
 
     with(raw,{
 
-        detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
+        if (ff::is.ff(M)) {
+            detP = ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
+        } else {
+            detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
+        }
 
         iR = manifest[channel == "Red" , index]
         iG = manifest[channel == "Grn" , index]
@@ -126,21 +130,24 @@ detectionP.neg = function(raw){
     muR = apply(bkgR,2,median,na.rm=TRUE) 
     sdR = apply(bkgR,2,mad   ,na.rm=TRUE) 
 
-    detP = matrix(NA_real_,nrow=nrow(U),ncol=ncol(U))
+    if (ff::is.ff(M)) {
+        raw$detP <<- ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
+    } else {
+        raw$detP <<- matrix(NA_real_,nrow=nrow(U),ncol=ncol(U))
+    }
 
     i = manifest[channel=='Red' ,index] 
         for(j in 1:ncol(M))  
-            detP[i,j] = pnorm(U[i,j]+M[i,j],mean=2*muR[j],sd=sqrt(2)*sdR[j],lower.tail=FALSE,log.p=TRUE) 
+            raw$detP[i,j] = pnorm(U[i,j]+M[i,j],mean=2*muR[j],sd=sqrt(2)*sdR[j],lower.tail=FALSE,log.p=TRUE) / log(10)
      
     i = manifest[channel=='Grn' ,index] 
         for(j in 1:ncol(M))  
-            detP[i,j] = pnorm(U[i,j]+M[i,j],mean=2*muG[j],sd=sqrt(2)*sdG[j],lower.tail=FALSE,log.p=TRUE) 
+            raw$detP[i,j] = pnorm(U[i,j]+M[i,j],mean=2*muG[j],sd=sqrt(2)*sdG[j],lower.tail=FALSE,log.p=TRUE) / log(10)
      
     i = manifest[channel=='Both',index] 
         for(j in 1:ncol(M)) 
-            detP[i,j] = pnorm(U[i,j]+M[i,j],mean=muR[j]+muG[j],sd=sqrt(sdR[j]^2+sdG[j]^2),lower.tail=FALSE,log.p=TRUE) 
+            raw$detP[i,j] = pnorm(U[i,j]+M[i,j],mean=muR[j]+muG[j],sd=sqrt(sdR[j]^2+sdG[j]^2),lower.tail=FALSE,log.p=TRUE) / log(10)
 
-    raw$detP = detP/log(10)
     return(raw)
   })
 }
@@ -153,9 +160,12 @@ detectionP.neg = function(raw){
 mask = function(raw,threshold){
 
     if(!all(c("M", "U", "detP") %in% names(raw))) stop("Invalid argument")
-        
-    raw$U[raw$detP > threshold] = NA_real_
-    raw$M[raw$detP > threshold] = NA_real_
+    
+    for (j in 1:ncol(raw$M)) {
+        undetected = which(raw$detP[, j] > threshold)
+        raw$U[undetected, j] = NA_real_
+        raw$M[undetected, j] = NA_real_
+    }
 
     return(raw)
 }

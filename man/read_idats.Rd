@@ -4,12 +4,18 @@
 \alias{read_idats}
 \title{Read .idat files}
 \usage{
-read_idats(idat_files, quiet = FALSE)
+read_idats(idat_files, quiet = FALSE, on_disk = FALSE)
 }
 \arguments{
-\item{idat_files}{Character vector of relative or absolute filepaths, but without the suffixes '_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".}
+\item{idat_files}{Character vector of relative or absolute filepaths, but without the suffixes
+_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be
+stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and
+200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".}
 
-\item{quiet}{If TRUE, suppresses the progress bar (useful for RMarkdown scripts).}
+\item{quiet}{If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).}
+
+\item{on_disk}{If \code{TRUE}, data will be stored on disk using the ff package.
+This will be slower but enables processing datasets larger than memory.}
 }
 \value{
 A list containing

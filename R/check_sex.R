@@ -12,19 +12,20 @@ check_sex = function(raw) {
 	with(raw, {
 
 		# select allosomal and autosomal probes
-		chrX = manifest[ forcats::fct_match(chr,   "chrX"),         index]
-		chrY = manifest[ forcats::fct_match(chr,   "chrY"),         index]
-    	auto = manifest[!forcats::fct_match(chr, c("chrX","chrY")), index]
+		i_chrX = manifest[ forcats::fct_match(chr,   "chrX"),         index]
+		i_chrY = manifest[ forcats::fct_match(chr,   "chrY"),         index]
+		i_auto = manifest[!forcats::fct_match(chr, c("chrX","chrY")), index]
 
-		# compute the total intensities
-		chrX = M[chrX, , drop = FALSE] + U[chrX, , drop = FALSE]
-		chrY = M[chrY, , drop = FALSE] + U[chrY, , drop = FALSE]
-		auto = M[auto, , drop = FALSE] + U[auto, , drop = FALSE]
+		J = ncol(M)
+		chrX = numeric(J)
+		chrY = numeric(J)
+		auto = numeric(J)
 
-		# compute per-sample average
-		chrX = colMeans(chrX, na.rm=TRUE)
-		chrY = colMeans(chrY, na.rm=TRUE)
-		auto = colMeans(auto, na.rm=TRUE)
+		for(j in 1:J) {
+			chrX[j] = mean(M[i_chrX, j] + U[i_chrX, j], na.rm = TRUE)
+			chrY[j] = mean(M[i_chrY, j] + U[i_chrY, j], na.rm = TRUE)
+			auto[j] = mean(M[i_auto, j] + U[i_auto, j], na.rm = TRUE)
+		}
 
 		# normalize allosomal intensities
 		chrX = chrX / auto

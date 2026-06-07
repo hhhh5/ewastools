@@ -20,12 +20,20 @@ enumerate_sample_donors(genotypes)
 \item{sample_ids}{Vector of unique sample IDs}
 }
 \value{
-\code{check_snp_agreement} returns all conflicts found between user-supplied donor IDs and those derived from the genetic fingerprint. Either \code{NULL} if not conflicts were found, or a list of \code{data.table}s, each representing one connected component of the conflict graph.
+\code{check_snp_agreement} returns all conflicts found between user-supplied donor IDs
+and those derived from the genetic fingerprint. Either \code{NULL} if not conflicts were found,
+or a list of \code{data.table}s, each representing one connected component of the conflict graph.
 
 \code{enumerate_sample_donors} returns for each sample the donor IDs.
 }
 \description{
-These function check the agreement of genetic fingerprints between samples (after genotype calling with \code{call_genotypes}). In case of \code{check_snp_agreement}, the user supplies for each sample the assumed donor ID and the function returns all conflicts (i.d., either samples that are supposed to come from the same donor but have distinct genetic fingerprints or samples from supposedly different donors with the same fingerprints). \code{check_snp_agreement} on the other hand is inferring donor IDs in case they are unknown (useful for example to detect technical replicates in a public dataset).
+These function check the agreement of genetic fingerprints between samples
+(after genotype calling with \code{call_genotypes}). In case of \code{check_snp_agreement},
+the user supplies for each sample the assumed donor ID and the function returns all conflicts,
+meaning either samples that are supposed to come from the same donor but have distinct genetic
+fingerprints, or samples from supposedly different donors with the same fingerprint.
+\code{enumerate_sample_donors} on the other hand is inferring donor IDs in case they are unknown
+(useful for example to detect technical replicates in a public dataset).
 }
 \author{
 Jonathan A. Heiss
