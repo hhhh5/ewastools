@@ -7,10 +7,14 @@
 read_idats(idat_files, quiet = FALSE, on_disk = FALSE)
 }
 \arguments{
-\item{idat_files}{Character vector of relative or absolute filepaths, but without the suffixes
-_Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be
-stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and
-200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".}
+\item{idat_files}{Character vector of relative or absolute filepaths without
+"_Grn.idat" and "_Red.idat" suffixes.
+IDATs for red and green channel must have the same prefix and be stored in the same folder.
+
+E.g., a sample with the files "file/path/sample1_Red.idat" and 
+"file/path/sample1_Grn.idat" would be passed as "200607110235_R01C01".
+
+All idats are assumed to be from the same platform.}
 
 \item{quiet}{If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).}
 
@@ -19,6 +23,7 @@ This will be slower but enables processing datasets larger than memory.}
 }
 \value{
 A list containing
+\item{platform}{Name of the BeadChip (450K/EPICv1/EPICv2/MOUSE)}
 \item{manifest}{A data.table describing the probes}
 \item{M}{intensities of targeting methylated sequences}
 \item{U}{intensities of targeting unmethylated sequences}
@@ -29,7 +34,7 @@ A list containing
 \item{meta}{A data.table containing unique sample_ids and metadata}
 }
 \description{
-Read .idat files
+Import and annotate the data from .idat files.
 }
 \examples{
 \dontrun{

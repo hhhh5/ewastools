@@ -1,0 +1,12 @@
+bibentry(
+  bibtype = "Article",
+  title="Identifying mislabeled and contaminated DNA methylation microarray data: an extended quality control toolset with examples from GEO",
+  author="Heiss, Jonathan A and Just, Allan C",
+  journal="Clinical epigenetics",
+  volume="10",
+  number="1",
+  pages="73",
+  year="2018",
+  doi = "https://doi.org/10.1186/s13148-018-0504-1"
+)
+

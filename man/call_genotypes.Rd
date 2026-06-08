@@ -25,16 +25,16 @@ the mixture model}
 \item{genotypes}{Output of \code{call_genotypes}}
 }
 \value{
-For \code{call_genotypes}, a list containing
+For \code{call_genotypes()}, a list containing
 \item{par}{Parameters of the mixture model}
 \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
 \item{outliers}{A-posteriori probability of SNP being an outlier}
 \item{gamma}{A-posteriori probabilities for each of the three genotypes}
 
-For \code{snp_outliers}, a metric assessing the outlierness of the SNP beta-values.
-High values may indicate either contaminated or failed samples.
+For \code{snp_outliers()}, a metric assessing the outlierness of the SNP beta-values.
+	High values may indicate either contaminated or failed samples.
 
-For \code{mxm_}, a histogram showing the distribution of beta-values for SNP probes with
+For \code{mxm_()}, a histogram showing the distribution of beta-values for SNP probes with
 the density function of the mixture model overlaid.
 }
 \description{
@@ -44,5 +44,5 @@ probes. After learning the model parameters via EM algorithm, the probability of
 is computed for each SNP.
 }
 \author{
-Jonathan A. Heiss
+Jonathan Heiss
 }

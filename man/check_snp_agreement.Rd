@@ -36,5 +36,5 @@ fingerprints, or samples from supposedly different donors with the same fingerpr
 (useful for example to detect technical replicates in a public dataset).
 }
 \author{
-Jonathan A. Heiss
+Jonathan Heiss
 }
