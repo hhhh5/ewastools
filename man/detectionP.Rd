@@ -58,5 +58,5 @@ Finally, \code{mask()} is masking all probes with detection p-values below the s
 p-values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
 }
 \author{
-Jonathan A. Heiss
+Jonathan Heiss
 }

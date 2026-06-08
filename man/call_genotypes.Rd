@@ -44,5 +44,5 @@ probes. After learning the model parameters via EM algorithm, the probability of
 is computed for each SNP.
 }
 \author{
-Jonathan A. Heiss
+Jonathan Heiss
 }
