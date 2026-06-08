@@ -14,7 +14,7 @@
 #'
 #' Finally, \code{mask()} is masking all probes with detection p-values below the specified threshold.
 #'
-#' @author Jonathan A. Heiss
+#' @author Jonathan Heiss
 #' @param raw Output of calling \code{\link{read_idats()}}, must include component \code{detP} for
 #' \code{mask()} and \code{eval_detP_threshold()}.
 #' @param threshold p-value threshold (arithmetic scale) above which oberservations are set to NA.

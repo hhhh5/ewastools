@@ -25,46 +25,46 @@
 #' @export
 #'
 
-estimateLC = function(meth,ref,constrained=FALSE){
-    
-    J = ncol(meth)
+estimateLC = function(meth,ref,constrained=FALSE) {
+   
+   J = ncol(meth)
 
-    coefs = read.table(system.file(paste0("data/",ref,".txt"),package="ewastools"))
-    coefs = as.matrix(coefs)
-    n_celltypes = ncol(coefs)
+   coefs = read.table(system.file(paste0("data/",ref,".txt"),package="ewastools"))
+   coefs = as.matrix(coefs)
+   n_celltypes = ncol(coefs)
 
-    markers = find_matching_rows(rownames(coefs),rownames(meth))
-    if (any(is.na(markers))) {
-        coefs = coefs[!is.na(markers),]
-        markers = na.omit(markers)
-    }
+   markers = find_matching_rows(rownames(coefs),rownames(meth))
+   if (any(is.na(markers))) {
+      coefs = coefs[!is.na(markers),]
+      markers = na.omit(markers)
+   }
 
-    EST = sapply(1:J,function(j){
-        tmp = meth[markers,j]
-        i = !is.na(tmp)
+   EST = sapply(1:J, \(j) {
+      tmp = meth[markers,j]
+      i = !is.na(tmp)
 
-        if(constrained == FALSE){
-            return(
-                quadprog::solve.QP(
-                 t(coefs[i,]) %*% coefs[i,]
-                ,t(coefs[i,]) %*% tmp[i]
-                ,diag(n_celltypes)
-                ,rep(0,n_celltypes)
-            )$sol)
-        } else {
-            return(
-                quadprog::solve.QP(
-                 t(coefs[i,]) %*% coefs[i,]
-                ,t(coefs[i,]) %*% tmp[i]
-                ,cbind(1,diag(n_celltypes))
-                ,c(1,rep(0,n_celltypes))
-                ,meq=1
-            )$sol)
-        }
-        })
-    EST = t(EST)
-    colnames(EST) = colnames(coefs)
-    EST = data.table(EST)
+      if(constrained == FALSE){
+         return(
+            quadprog::solve.QP(
+             t(coefs[i,]) %*% coefs[i,]
+            ,t(coefs[i,]) %*% tmp[i]
+            ,diag(n_celltypes)
+            ,rep(0,n_celltypes)
+         )$sol)
+      } else {
+         return(
+            quadprog::solve.QP(
+             t(coefs[i,]) %*% coefs[i,]
+            ,t(coefs[i,]) %*% tmp[i]
+            ,cbind(1,diag(n_celltypes))
+            ,c(1,rep(0,n_celltypes))
+            ,meq=1
+         )$sol)
+      }
+      })
+   EST = t(EST)
+   colnames(EST) = colnames(coefs)
+   EST = data.table(EST)
 
-    return(EST)
+   return(EST)
 }

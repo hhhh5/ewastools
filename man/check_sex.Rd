@@ -10,9 +10,9 @@ check_sex(raw)
 predict_sex(X, Y, male, female)
 }
 \arguments{
-\item{raw}{Output of calling \code{\link{read_idats}}}
+\item{raw}{Output of calling \code{\link{read_idats()}}}
 
-\item{X, Y}{Forwarded from \code{check_sex}}
+\item{X, Y}{Forwarded from \code{check_sex()}}
 
 \item{male, female}{Indices of male and female samples}
 }

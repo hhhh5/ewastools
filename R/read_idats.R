@@ -3,17 +3,23 @@ NULL
 
 #' Read .idat files
 #' 
-#' @export
+#' @description Import and annotate the data from .idat files.
 #' 
-#' @param idat_files Character vector of relative or absolute filepaths, but without the suffixes
-#' _Grn.idat' and '_Red.idat'. IDATs for red and green channel must have the same prefix and be
-#' stored in the same folder. E.g., a sample with the idats 200607110235_R01C01_Red.idat and
-#' 200607110235_R01C01_Grn.idat would be passed to \code{read_idats} as "200607110235_R01C01".
+#' @param idat_files Character vector of relative or absolute filepaths without
+#' "_Grn.idat" and "_Red.idat" suffixes.
+#' IDATs for red and green channel must have the same prefix and be stored in the same folder.
+#'
+#' E.g., a sample with the files "file/path/sample1_Red.idat" and 
+#' "file/path/sample1_Grn.idat" would be passed as "200607110235_R01C01".
+#'
+#' All idats are assumed to be from the same platform.
+#'
 #' @param quiet If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).
 #' @param on_disk If \code{TRUE}, data will be stored on disk using the ff package.
 #'    This will be slower but enables processing datasets larger than memory.
 #' 
 #' @return A list containing
+#' \item{platform}{Name of the BeadChip (450K/EPICv1/EPICv2/MOUSE)}
 #' \item{manifest}{A data.table describing the probes}
 #' \item{M}{intensities of targeting methylated sequences}
 #' \item{U}{intensities of targeting unmethylated sequences}
@@ -28,67 +34,71 @@ NULL
 #' read_idats('9976861004_R01C01')
 #' }
 #'
-read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE){
+#' @export
+#'
+read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
+{
+   if (on_disk) {
+      if(!requireNamespace("ff", quietly = TRUE))
+         stop("Package 'ff' is required but not installed.")
+   }
 
-    if(on_disk){
-        if(!requireNamespace("ff", quietly = TRUE)) stop("Package 'ff' is required but not installed.")
-    }
+   J = length(idat_files)
 
-    J = length(idat_files)
+   ## illuminaio can handle gzipped .idats
+   zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
+   suffix = ifelse(zipped, ".idat.gz", "idat.gz")
 
-    ## illuminaio can handle gzipped .idats
-    zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
-    suffix = rep(".idat", times=J)
-    suffix[zipped] = ".idat.gz"
+   ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
+   if(!all(ex)) stop("Some .idat files are missing")
 
-    ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
-    if(!all(ex)) stop("Some .idat files are missing")
+   ## How many different features/bead types are there?
+   # All idats are assumed to be from the same platform
+   # (Consider that Type I probes have each two different beads)
+   P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
+   print(P)
 
-    ## How many different features/bead types are there?
-    # (Consider that Type I probes have each two different beads)
-    P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
-    print(P)
+   ## Pick appropriate manifest
+   # (numbers are possible #features I have encountered in the wild so far)
+   # We assume that all .idats use the same platform they can differ in #features, though
+   if (P == 622399) { 
+      platform = "450K"
+      chr      = "chr37"
+      mapinfo  = "mapinfo37"
+   } else if (P %in% c(1051815, 1051943, 1052641)) {
+      platform = "EPICv1"
+      chr      = "chr38"
+      mapinfo  = "mapinfo38"
+   } else if (P == 1105209) {
+      platform = "EPICv2"
+      chr      = "chr38"
+      mapinfo  = "mapinfo38"
+   } else if (P == 361821) {
+      platform = "MOUSE"
+      chr      = "chr"
+      mapinfo  = "mapinfo"
+   } else {
+      stop("Unknown platform")
+   }
 
-    ## Pick appropriate manifest
-    # (numbers are possible #features I have encountered in the wild so far)
-    # We assume that all .idats use the same platform they can differ in #features, though
-    if(P == 622399) { 
-        platform = "450K"
-        chr      = "chr37"
-        mapinfo  = "mapinfo37"
-    } else if(P %in% c(1051815, 1051943, 1052641)) {
-        platform = "EPICv1"
-         chr     = "chr38"
-         mapinfo = "mapinfo38"
-    } else if(P == 1105209) {
-        platform = "EPICv2"
-        chr      = "chr38"
-        mapinfo  = "mapinfo38"
-    } else if(P == 361821) {
-        platform = "MOUSE"
-        chr      = "chr"
-        mapinfo  = "mapinfo"
-    } else {
-        stop("Unknown platform")
-    }
+   manifest = ewastools:::MANIFESTS[[ platform ]]
+   controls = ewastools:::CONTROLS [[ platform ]]
 
-    manifest = ewastools:::MANIFESTS[[ platform ]]
-    controls = ewastools:::CONTROLS [[ platform ]]
+   setDT(manifest)
+   setDT(controls)
 
-    setDT(manifest)
-    setDT(controls)
+   # Harmonize column names
+   setnames(manifest, c(chr, mapinfo), c("chr", "mapinfo"))
 
-    setnames(manifest, c(chr, mapinfo), c("chr", "mapinfo"))
+   manifest[, index := 1L:.N]
+   controls[, index := 1L:.N]
 
-    manifest[, index := 1L:.N]
-    controls[, index := 1L:.N]
+   manifest[channel == "Grn", OOBi := 1:.N]
+   manifest[channel == "Red", OOBi := 1:.N]
 
-    manifest[channel == "Grn", OOBi := 1:.N]
-    manifest[channel == "Red", OOBi := 1:.N]
+   I = nrow(manifest)
 
-    I = nrow(manifest)
-
-   if(on_disk){
+   if (on_disk) {
 
       #  Methylated (M) and unmethylated (U) signal intensities
       M = ff::ff(vmode = "double", dim = c(I, J))
@@ -125,91 +135,90 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE){
          U = matrix(NA_real_, nrow = manifest[channel == "Grn", .N], ncol = J))
    }
 
-    # Signal intensities of control probes
-    ctrlG = ctrlR = matrix(NA_real_, nrow = nrow(controls), ncol = J)
-    ctrlN = matrix(NA_integer_, nrow = nrow(controls), ncol = J)
+   # Signal intensities of control probes
+   ctrlG = ctrlR = matrix(NA_real_, nrow = nrow(controls), ncol = J)
+   ctrlN = matrix(NA_integer_, nrow = nrow(controls), ncol = J)
 
+   if(!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
 
-    if(!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
+   barcodes  = rep(NA_character_, J)
+   positions = rep(NA_character_, J)
+   dates     = rep(NA_character_, J)
 
-    barcodes  = rep(NA_character_, J)
-    positions = rep(NA_character_, J)
-    dates     = rep(NA_character_, J)
+   for (j in 1:J) {
 
-    for(j in 1:J){
+      red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
+      grn = illuminaio::readIDAT(paste0(idat_files[j], "_Grn", suffix[j]))
 
-        red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
-        grn = illuminaio::readIDAT(paste0(idat_files[j], "_Grn", suffix[j]))
+      idat_order = red$MidBlock
+      if(!identical(idat_order, grn$MidBlock)) stop("Red and green .idat files do not agree!")
 
-        idat_order = red$MidBlock
-        if(!identical(idat_order, grn$MidBlock)) stop("Red and green .idat files do not agree!")
+      barcodes [j] = red$Barcode
+      positions[j] = red$Unknowns$MostlyA
 
-        barcodes [j] = red$Barcode
-        positions[j] = red$Unknowns$MostlyA
+      # This information is sometimes not recorded
+      if (nrow(red$RunInfo) >1 ) dates[j] = red$RunInfo[2,1]
 
-        # This information is sometimes not recorded
-        if(nrow(red$RunInfo)>1) dates[j] = red$RunInfo[2,1]
+      manifest[,Ui := match(addressU, idat_order)]
+      manifest[,Mi := match(addressM, idat_order)]
+      controls[, i := match(address , idat_order)]
 
-        manifest[,Ui := match(addressU, idat_order)]
-        manifest[,Mi := match(addressM, idat_order)]
-        controls[, i := match(address , idat_order)]
+      setindexv(manifest,"channel")
+      manifest["Both", Mi := Ui, on = "channel"]
 
-        setindexv(manifest,"channel")
-        manifest["Both", Mi := Ui, on = "channel"]
+      ## Type I Red probes
+      i = manifest["Red", on = "channel"]
 
-        ## Type I Red probes
-        i = manifest["Red", on = "channel"]
-
-        U[ i$index,j ] = red$Quants[ i$Ui, 1] # Mean
-        T[ i$index,j ] = red$Quants[ i$Ui, 2] # SD
-        V[ i$index,j ] = red$Quants[ i$Ui, 3] # NBeads
+      U[ i$index,j ] = red$Quants[ i$Ui, 1] # Mean
+      T[ i$index,j ] = red$Quants[ i$Ui, 2] # SD
+      V[ i$index,j ] = red$Quants[ i$Ui, 3] # NBeads
     
-        M[ i$index,j ] = red$Quants[ i$Mi, 1] # Mean
-        S[ i$index,j ] = red$Quants[ i$Mi, 2] # SD
-        N[ i$index,j ] = red$Quants[ i$Mi, 3] # NBeads
+      M[ i$index,j ] = red$Quants[ i$Mi, 1] # Mean
+      S[ i$index,j ] = red$Quants[ i$Mi, 2] # SD
+      N[ i$index,j ] = red$Quants[ i$Mi, 3] # NBeads
 
-        oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
-        oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
+      oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
+      oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
 
-        ## Type I Green probes
-        i = manifest["Grn", on = "channel"]
+      ## Type I Green probes
+      i = manifest["Grn", on = "channel"]
 
-        U[ i$index,j ] = grn$Quants[ i$Ui,1 ] # Mean
-        T[ i$index,j ] = grn$Quants[ i$Ui,2 ] # SD
-        V[ i$index,j ] = grn$Quants[ i$Ui,3 ] # NBeads
+      U[ i$index,j ] = grn$Quants[ i$Ui,1 ] # Mean
+      T[ i$index,j ] = grn$Quants[ i$Ui,2 ] # SD
+      V[ i$index,j ] = grn$Quants[ i$Ui,3 ] # NBeads
 
-        M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
-        S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
-        N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
+      M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
+      S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
+      N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
 
-        oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
-        oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
+      oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
+      oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
         
-        ## Type II probes
-        i = manifest["Both", on = "channel"]
+      ## Type II probes
+      i = manifest["Both", on = "channel"]
 
-        U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
-        T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
-        V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
+      U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
+      T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
+      V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
 
-        M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
-        S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
-        N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
+      M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
+      S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
+      N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
 
-        ## Control probes
-        # Not keeping the SD for control probes ATM
-        ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
-        ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
-        ctrlN[ controls$index,j ] = red$Quants[ controls$i,3 ]
+      ## Control probes
+      # Not keeping the SD for control probes ATM
+      ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
+      ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
+      ctrlN[ controls$index,j ] = red$Quants[ controls$i,3 ]
 
-        if(!quiet) setTxtProgressBar(pb, j)
+      if(!quiet) setTxtProgressBar(pb, j)
 
-    }
+   }
 
-    if(!quiet) close(pb)
+   if(!quiet) close(pb)
 
-    # Probes with zero beads on the chip (result of random chip assembly)
-    # are set to intensity zero in the .idat files. Mark them as missing.
+   # Probes with zero beads on the chip (result of random chip assembly)
+   # are set to intensity zero in the .idat files. Mark them as missing.
    for (j in 1:J) {
       U[V[, j] == 0, j] = NA
       M[N[, j] == 0, j] = NA
@@ -219,43 +228,45 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE){
       S[N[, j] < 2, j] = NA
    }
 
-    ctrlG[ctrlN == 0] = NA
-    ctrlR[ctrlN == 0] = NA
+   ctrlG[ctrlN == 0] = NA
+   ctrlR[ctrlN == 0] = NA
 
-    sample_ids = strsplit(x = idat_files, split = "/")
-    sample_ids = sapply(sample_ids, tail, n = 1L)
+   sample_ids = strsplit(x = idat_files, split = "/")
+   sample_ids = sapply(sample_ids, tail, n = 1L)
 
-    meta = tibble::tibble(
-         sample_id = sample_ids
-        ,date = as.IDate(dates, "%m/%d/%Y %r")
-        ,time = as.ITime(dates, "%m/%d/%Y %r")
-        ,barcode = barcodes
-        ,position = positions
-        )
+   meta = tibble::tibble(
+       sample_id = sample_ids
+      ,date = as.IDate(dates, "%m/%d/%Y %r")
+      ,time = as.ITime(dates, "%m/%d/%Y %r")
+      ,barcode = barcodes
+      ,position = positions
+      )
 
-    raw = list(
-         platform = platform
-        ,manifest = manifest
-        ,U = U, T = T, V = V
-        ,M = M, S = S, N = N
-        ,controls = controls
-        ,ctrlG = ctrlG, ctrlR = ctrlR, ctrlN = ctrlN
-        ,oobG = oobG, oobR = oobR
-        ,meta = meta
-    )
+   raw = list(
+       platform = platform
+      ,manifest = manifest
+      ,U = U, T = T, V = V
+      ,M = M, S = S, N = N
+      ,controls = controls
+      ,ctrlG = ctrlG, ctrlR = ctrlR, ctrlN = ctrlN
+      ,oobG = oobG, oobR = oobR
+      ,meta = meta
+   )
 
-    return(raw)
+   return(raw)
 }
 
-#' Drop samples from raw data.
-#' @author Jonathan A. Heiss
-#'
-#' @export
+#' Drop samples
+#' @description Drop samples from the object returned by \code{read_idats()}.
+#'    Used for removing samples that failed quality control before computing
+#'    beta-values.
 #'
 #' @param raw Output of calling \code{\link{read_idats}}
 #' @param j Indices of the samples to drop
 #'
 #' @return A modified \code{raw} object
+#'
+#' @export
 #'
 drop_samples = function(raw, j = NULL){
 

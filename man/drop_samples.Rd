@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_idats.R
 \name{drop_samples}
 \alias{drop_samples}
-\title{Drop samples from raw data.}
+\title{Drop samples}
 \usage{
 drop_samples(raw, j = NULL)
 }
@@ -15,8 +15,7 @@ drop_samples(raw, j = NULL)
 A modified \code{raw} object
 }
 \description{
-Drop samples from raw data.
-}
-\author{
-Jonathan A. Heiss
+Drop samples from the object returned by \code{read_idats()}.
+   Used for removing samples that failed quality control before computing
+   beta-values.
 }
