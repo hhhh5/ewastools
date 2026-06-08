@@ -21,11 +21,6 @@ beta_values(raw)
   Output of calling
   [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
 
-- tissue:
-
-  Optional. If set to "blood", predefined reference values are used for
-  normalization. Recommened when cell proportions are to be estimated.
-
 ## Value
 
 A modified `raw` object with dye-bias corrected intensities using RELIC
@@ -33,7 +28,9 @@ for `correct_dye_bias`. A matrix of beta-values, either normalized (for
 `normalize`) or not (for `dont_normalize`).
 
 A matrix of beta-values. If IDATs were imported with option
-`on_disk = TRUE`, a {codeff object.
+`on_disk = TRUE`, a {codeff object. If the data was imported using
+`on_disk = TRUE`, it is recommended to transpose the returned ff object
+for fast row-based access.
 
 ## References
 

@@ -1,6 +1,6 @@
 # Read .idat files
 
-Read .idat files
+Import and annotate the data from .idat files.
 
 ## Usage
 
@@ -12,12 +12,14 @@ read_idats(idat_files, quiet = FALSE, on_disk = FALSE)
 
 - idat_files:
 
-  Character vector of relative or absolute filepaths, but without the
-  suffixes \_Grn.idat' and '\_Red.idat'. IDATs for red and green channel
-  must have the same prefix and be stored in the same folder. E.g., a
-  sample with the idats 200607110235_R01C01_Red.idat and
-  200607110235_R01C01_Grn.idat would be passed to `read_idats` as
-  "200607110235_R01C01".
+  Character vector of relative or absolute filepaths without
+  "\_Grn.idat" and "\_Red.idat" suffixes. IDATs for red and green
+  channel must have the same prefix and be stored in the same folder.
+
+  E.g., a sample with the files "file/path/sample1_Red.idat" and
+  "file/path/sample1_Grn.idat" would be passed as "200607110235_R01C01".
+
+  All idats are assumed to be from the same platform.
 
 - quiet:
 
@@ -31,6 +33,10 @@ read_idats(idat_files, quiet = FALSE, on_disk = FALSE)
 ## Value
 
 A list containing
+
+- platform:
+
+  Name of the BeadChip (450K/EPICv1/EPICv2/MOUSE)
 
 - manifest:
 

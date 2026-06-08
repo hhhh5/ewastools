@@ -1,19 +1,28 @@
 # Detection p-values
 
-Compute detection p-values. p-values are based on the distribution of
-the intensities of the negative control probes or the U (M) intensities
-observed for completely methylated (unmethylated) probes, respectively
-(Heiss and Just, 2019). `detP_threshold` generates a plot\\ showing the
-number of undetected Y chromosome probes among male and female subjects
-for various p-value thresholds, in order to empirically choose a
-threshold. Finally, `mask` is masking an implementation for
-`RGChannelSet` objects as used in the `minfi` package.
+Detection p-values are based on the distribution of the intensities of
+the negative control probes or the U (M) intensities observed for
+completely methylated (unmethylated) probes, respectively.
+
+`detectionP()` is the recommend approach that generates realistic
+p-values as described in Heiss and Just, 2019.
+
+`detectionP.neg()` follows the approach used in GenomeStudio (p-values
+are unrealistic).
+
+`detectionP.minfi()` provides an implementation for `RGChannelSet`
+objects as used in the `minfi` package.
+
+`eval_detP_threshold()` generates a plot showing the number of
+undetected chrY probes among male and female subjects for various
+p-value thresholds, in order to empirically choose a threshold.
+
+Finally, `mask()` is masking all probes with detection p-values below
+the specified threshold.
 
 ## Usage
 
 ``` r
-summits(beta)
-
 detectionP(raw)
 
 detectionP.neg(raw)
@@ -30,8 +39,9 @@ detectionP.minfi(rgSet)
 - raw:
 
   Output of calling
-  [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md),
-  must include component `detP` for `mask` and `detP_threshold`.
+  [`read_idats()`](https://hhhh5.github.io/ewastools/reference/read_idats.md),
+  must include component `detP` for `mask()` and
+  `eval_detP_threshold()`.
 
 - threshold:
 
@@ -48,26 +58,22 @@ detectionP.minfi(rgSet)
 
 ## Value
 
-For `detectionP` and `detectionP.neg` a modified `raw` object with a
-`detP` component, a matrix of detection p-values, added. `detectionP`
-computes p-values on the linear scale, whereas `detectionP.neg` returns
-p-values on the log10 scale.
+For `detectionP()` and `detectionP.neg()` a modified `raw` object with a
+`detP` component, a matrix of detection p-values, added. `detectionP()`
+computes p-values on the linear scale, whereas `detectionP.neg()`
+returns p-values on the log10 scale.
 
-For `detectionP.minfi` a matrix of detection p-values.
+For `detectionP.minfi()` a matrix of detection p-values.
 
-For `mask`, a modified `raw` object, with undetected probes set to `NA`.
-
-Vector of length two
+For `mask()`, a modified `raw` object, with undetected probes set to
+`NA`.
 
 ## References
 
 Heiss JA, Just AC. Improved filtering of DNA methylation microarray data
 by detection p-values and its impact on downstream analyses. Clinical
-Epigenetics (2019) 11:15 Return peaks of beta-value distribution
-
-Return the locations of the two peaks (completly methylated and
-unmethylated CpG sites) of the beta-value distribution.
+Epigenetics (2019) 11:15
 
 ## Author
 
-Jonathan A. Heiss
+Jonathan Heiss

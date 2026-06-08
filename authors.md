@@ -6,13 +6,18 @@
 
 ## Citation
 
-Just AC, Heiss J (2026). *ewastools: EWAS Tools*. R package version
-1.8.1, <https://hhhh5.github.io/ewastools/>.
+Heiss, A J, Just, C A (2018). “Identifying mislabeled and contaminated
+DNA methylation microarray data: an extended quality control toolset
+with examples from GEO.” *Clinical epigenetics*, **10**(1), 73.
+[doi:10.1186/s13148-018-0504-1](https://doi.org/10.1186/s13148-018-0504-1).
 
-    @Manual{,
-      title = {ewastools: EWAS Tools},
-      author = {Allan C. Just and Jonathan Heiss},
-      year = {2026},
-      note = {R package version 1.8.1},
-      url = {https://hhhh5.github.io/ewastools/},
+    @Article{,
+      title = {Identifying mislabeled and contaminated DNA methylation microarray data: an extended quality control toolset with examples from GEO},
+      author = {{Heiss} and Jonathan A and {Just} and Allan C},
+      journal = {Clinical epigenetics},
+      volume = {10},
+      number = {1},
+      pages = {73},
+      year = {2018},
+      doi = {https://doi.org/10.1186/s13148-018-0504-1},
     }

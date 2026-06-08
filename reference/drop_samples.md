@@ -1,6 +1,9 @@
-# Drop samples from raw data.
+# Drop samples
 
-Drop samples from raw data.
+Drop samples from the object returned by
+[`read_idats()`](https://hhhh5.github.io/ewastools/reference/read_idats.md).
+Used for removing samples that failed quality control before computing
+beta-values.
 
 ## Usage
 
@@ -22,7 +25,3 @@ drop_samples(raw, j = NULL)
 ## Value
 
 A modified `raw` object
-
-## Author
-
-Jonathan A. Heiss

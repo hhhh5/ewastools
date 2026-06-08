@@ -59,18 +59,15 @@ Convert fluorescence intensities to beta-values"></head><body>
 <dl><dt id="arg-raw">raw<a class="anchor" aria-label="anchor" href="#arg-raw"></a></dt>
 <dd><p>Output of calling <code><a href="read_idats.html">read_idats</a></code></p></dd>
 
-
-<dt id="arg-tissue">tissue<a class="anchor" aria-label="anchor" href="#arg-tissue"></a></dt>
-<dd><p>Optional. If set to "blood", predefined reference values are used for normalization.
-Recommened when cell proportions are to be estimated.</p></dd>
-
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A modified <code>raw</code> object with dye-bias corrected intensities using RELIC for <code>correct_dye_bias</code>.
    A matrix of beta-values, either normalized (for <code>normalize</code>) or not (for <code>dont_normalize</code>).</p>
 <p>A matrix of beta-values.
-  If IDATs were imported with option <code>on_disk = TRUE</code>, a {codeff object.</p>
+  If IDATs were imported with option <code>on_disk = TRUE</code>, a {codeff object.
+  If the data was imported using <code>on_disk = TRUE</code>, it is recommended to transpose
+  the returned ff object for fast row-based access.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

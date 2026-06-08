@@ -56,17 +56,18 @@ implemented in `ewastools` can be found at
 - [`control_metrics()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
   [`sample_failure()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
   : Quality control metrics
-- [`summits()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
-  [`detectionP()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
+- [`detectionP()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
   [`detectionP.neg()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
   [`mask()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
   [`eval_detP_cutoffs()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
   [`detectionP.minfi()`](https://hhhh5.github.io/ewastools/reference/detectionP.md)
   : Detection p-values
 - [`drop_samples()`](https://hhhh5.github.io/ewastools/reference/drop_samples.md)
-  : Drop samples from raw data.
+  : Drop samples
 - [`read_idats()`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
   : Read .idat files
+- [`summits()`](https://hhhh5.github.io/ewastools/reference/summits.md)
+  : Return peaks of beta-value distribution
 
 # Articles
 

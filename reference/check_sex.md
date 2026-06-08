@@ -16,11 +16,11 @@ predict_sex(X, Y, male, female)
 - raw:
 
   Output of calling
-  [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
+  [`read_idats()`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
 
 - X, Y:
 
-  Forwarded from `check_sex`
+  Forwarded from `check_sex()`
 
 - male, female:
 

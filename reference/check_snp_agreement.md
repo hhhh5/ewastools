@@ -45,4 +45,4 @@ representing one connected component of the conflict graph.
 
 ## Author
 
-Jonathan A. Heiss
+Jonathan Heiss

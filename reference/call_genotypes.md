@@ -36,7 +36,7 @@ eBeta(x, w)
 
 ## Value
 
-For `call_genotypes`, a list containing
+For `call_genotypes()`, a list containing
 
 - par:
 
@@ -54,13 +54,13 @@ For `call_genotypes`, a list containing
 
   A-posteriori probabilities for each of the three genotypes
 
-For `snp_outliers`, a metric assessing the outlierness of the SNP
+For `snp_outliers()`, a metric assessing the outlierness of the SNP
 beta-values. High values may indicate either contaminated or failed
 samples.
 
-For `mxm_`, a histogram showing the distribution of beta-values for SNP
-probes with the density function of the mixture model overlaid.
+For `mxm_()`, a histogram showing the distribution of beta-values for
+SNP probes with the density function of the mixture model overlaid.
 
 ## Author
 
-Jonathan A. Heiss
+Jonathan Heiss
