@@ -15,9 +15,6 @@ beta_values(raw)
 }
 \arguments{
 \item{raw}{Output of calling \code{\link{read_idats}}}
-
-\item{tissue}{Optional. If set to "blood", predefined reference values are used for normalization.
-Recommened when cell proportions are to be estimated.}
 }
 \value{
 A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}.
@@ -25,6 +22,8 @@ A modified \code{raw} object with dye-bias corrected intensities using RELIC for
 
 A matrix of beta-values.
   If IDATs were imported with option \code{on_disk = TRUE}, a \{code{ff} object.
+  If the data was imported using \code{on_disk = TRUE}, it is recommended to transpose
+  the returned ff object for fast row-based access.
 }
 \description{
 Functions for preprocessing
