@@ -43,20 +43,20 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
          stop("Package 'ff' is required but not installed.")
    }
 
-   J = length(idat_files)
-
    ## illuminaio can handle gzipped .idats
+   df_idats = tibble::tibble(basename = idat_files)
+
    zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
    suffix = ifelse(zipped, ".idat.gz", "idat.gz")
 
    ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
-   if(!all(ex)) stop("Some .idat files are missing")
+   if (!all(ex)) stop("Some .idat files are missing")
 
    ## How many different features/bead types are there?
    # All idats are assumed to be from the same platform
    # (Consider that Type I probes have each two different beads)
    P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
-   print(P)
+   print(P) # Print this in case someone encounters a new variant of a chip
 
    ## Pick appropriate manifest
    # (numbers are possible #features I have encountered in the wild so far)
@@ -90,6 +90,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    # Harmonize column names
    setnames(manifest, c(chr, mapinfo), c("chr", "mapinfo"))
 
+   # (Consider moving this to "manifest.R")
    manifest[, index := 1L:.N]
    controls[, index := 1L:.N]
 
@@ -97,16 +98,19 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    manifest[channel == "Red", OOBi := 1:.N]
 
    I = nrow(manifest)
+   J = length(idat_files)
 
+   # Allocate the matrices that will hold the data
    if (on_disk) {
 
-      #  Methylated (M) and unmethylated (U) signal intensities
-      M = ff::ff(vmode = "double", dim = c(I, J))
-      U = ff::ff(vmode = "double", dim = c(I, J))
-      # Standard deviations
+      # Methylated (M) and unmethylated (U) signal intensities
+      # ("double" because these intensities will be adjusted)
+      M = ff::ff(vmode = "double",  dim = c(I, J))
+      U = ff::ff(vmode = "double",  dim = c(I, J))
+      # Standard deviations for the methylated (S) and unmethylated (T) intensities
       S = ff::ff(vmode = "integer", dim = c(I, J))
       T = ff::ff(vmode = "integer", dim = c(I, J))
-      # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
+      # Number of beads underlying methylated (N) and unmethylated (V) intensities
       N = ff::ff(vmode = "integer", dim = c(I, J))
       V = ff::ff(vmode = "integer", dim = c(I, J))
 
@@ -120,8 +124,10 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
    } else {
 
+      # Methylated (M) and unmethylated (U) signal intensities
+      # ("double" because these intensities will be adjusted)
       M = U = matrix(NA_real_   ,nrow = I, ncol = J)
-      # Standard deviations
+      # Standard deviations for the methylated (S) and unmethylated (T) intensities
       S = T = matrix(NA_integer_,nrow = I, ncol = J)
       # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
       N = V = matrix(NA_integer_,nrow = I, ncol = J)
@@ -136,10 +142,11 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    }
 
    # Signal intensities of control probes
+   # (as their number is low, these will be always stored in memory, even for `on_disk == TRUE`)
    ctrlG = ctrlR = matrix(NA_real_, nrow = nrow(controls), ncol = J)
    ctrlN = matrix(NA_integer_, nrow = nrow(controls), ncol = J)
 
-   if(!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
+   if (!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
 
    barcodes  = rep(NA_character_, J)
    positions = rep(NA_character_, J)
