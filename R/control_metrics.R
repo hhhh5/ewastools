@@ -7,19 +7,41 @@ NULL
 #' @note You can download the Software Guide at https://support.illumina.com/downloads/beadarray-controls-reporter-software-guide-1000000004009.html
 #' @title Quality control metrics
 #' 
-#' @param raw Output of calling \code{\link{read_idats}}
-#' @param metrics Output of callling \code{control_metrics}
+#' @param raw Output of \code{\link{read_idats}}.
+#' @param metrics Output of \code{control_metrics}.
 #' 
-#' @return For \code{control_metrics}, a list of 17 control metrics, each one a numeric vector equal in length to the sample size
-#' @return For \code{sample_failure}, a logical vector, \code{TRUE} if sample at corresponding index failed on any of the 17 control metrics.
+#' @return For \code{control_metrics}, a list of 17 control metrics, each one a numeric vector equal in length to the sample size:
+#' \item{Restoration}{Assesses the restoration of the DNA methylation state after bisulfite treatment. Green channel ratio.}
+#' \item{Staining Green}{Biotin staining efficiency. Ratio of Biotin (High) to background green signals.}
+#' \item{Staining Red}{DNP staining efficiency. Ratio of DNP (High) to background red signals.}
+#' \item{Extension Green}{Extension efficiency of C/G base pairs. Ratio of green intensities.}
+#' \item{Extension Red}{Extension efficiency of A/T base pairs. Ratio of red intensities.}
+#' \item{Hybridization High/Medium}{Hybridization performance. Ratio of high-to-medium green signal intensities.}
+#' \item{Hybridization Medium/Low}{Hybridization performance. Ratio of medium-to-low green signal intensities.}
+#' \item{Target Removal 1}{Target removal efficiency 1. Ratio of green intensities (+3000 background offset).}
+#' \item{Target Removal 2}{Target removal efficiency 2. Ratio of green intensities (+3000 background offset).}
+#' \item{Bisulfite Conversion I Green}{Bisulfite conversion efficiency for Type I green probes. Ratio of green intensities.}
+#' \item{Bisulfite Conversion I Green (Bkg)}{Bisulfite conversion green background ratio (+3000 background offset).}
+#' \item{Bisulfite Conversion I Red}{Bisulfite conversion efficiency for Type I red probes. Ratio of red intensities.}
+#' \item{Bisulfite Conversion I Red (Bkg)}{Bisulfite conversion red background ratio (+3000 background offset).}
+#' \item{Bisulfite Conversion II}{Bisulfite conversion efficiency for Type II probes. Ratio of red-to-green intensities.}
+#' \item{Bisulfite Conversion II (Bkg)}{Bisulfite conversion Type II green background ratio (+3000 background offset).}
+#' \item{Specificity I Green}{Specificity of hybridization for Type I green probes. Ratio of green intensities.}
+#' \item{Specificity I Red}{Specificity of hybridization for Type I red probes. Ratio of red intensities.}
+#' \item{Specificity II}{Specificity of hybridization for Type II probes. Ratio of red-to-green intensities.}
+#' \item{Specificity II (Bkg)}{Specificity of hybridization green background ratio (+3000 background offset).}
+#' \item{Non-polymorphic Green}{Non-polymorphic query performance in the green channel.}
+#' \item{Non-polymorphic Red}{Non-polymorphic query performance in the red channel.}
+#' 
+#' @return For \code{sample_failure}, a logical vector, \code{TRUE} if the sample at the corresponding index failed on any of the 17 control metrics.
 #' 
 control_metrics = function(raw){
 
-   if(!all(c("controls", "ctrlG", "ctrlR", "meta") %in% names(raw))) stop("Invalid argument")
+   if(!all(c("controls", "ctrlG", "ctrlR") %in% names(raw))) stop("Invalid argument")
 
    with(raw,{
 
-      ### calculate the control probe metrics
+      ### Calculate the control probe metrics
       metrics = list()
 
       cg = controls[group == "EXTENSION" & name %like% "\\([CG]\\)|EXT-[CG]$", index]
@@ -139,6 +161,7 @@ control_metrics = function(raw){
 #' @export
 #' 
 sample_failure = function(metrics){
+   # Returns TRUE for any sample that falls below the quality control threshold for at least one metric
    failed = sapply(metrics,function(metric){
       metric < attr(metric,"threshold") 
    })
