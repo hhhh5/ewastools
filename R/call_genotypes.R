@@ -1,23 +1,26 @@
 #' @title Genotype calling
-#' @description Detect SNP probes which do not fit into on of the three categories (AA,AB,BB).
+#' @description Detect SNP probes which do not fit into one of the three categories (AA, AB, BB).
 #' A mixture model (3 Beta distributions, 1 uniform distribution for outliers) is fitted to all SNP
-#' probes. After learning the model parameters via EM algorithm, the probability of being an outlier
+#' probes. After learning the model parameters via the EM algorithm, the probability of being an outlier
 #' is computed for each SNP.
 #'
 #' @author Jonathan Heiss
 #' @rdname call_genotypes
 #'
-#' @param snpmatrix Matrix of beta-values for SNP probes. Provide SNPs probes as rows and samples as
+#' @param snpmatrix Matrix of beta-values for SNP probes. Provide SNP probes as rows and samples as
 #' columns. 
+#' @param learn Logical. If \code{TRUE}, model parameters are learned from the dataset using the EM algorithm.
+#' If \code{FALSE} (default), predefined model parameters are used.
 #' @param genotypes Output of \code{call_genotypes}
 #' @param maxiter Maximal number of iterations of the Expectation-Maximization algorithm learning
-#' the mixture model
+#' the mixture model.
 #' 
-#' @return For \code{call_genotypes()}, a list containing
-#' \item{par}{Parameters of the mixture model}
-#' \item{loglik}{Log-likelihood in each iteration of the EM algorithm}
-#' \item{outliers}{A-posteriori probability of SNP being an outlier}
-#' \item{gamma}{A-posteriori probabilities for each of the three genotypes}
+#' @return For \code{call_genotypes()}, a list containing:
+#' \item{snps}{The input \code{snpmatrix}.}
+#' \item{outliers}{A matrix of a-posteriori probabilities of each SNP observation being an outlier.}
+#' \item{gamma}{A list of three matrices containing the a-posteriori probabilities for each of the three genotypes (AA, AB, BB) respectively.}
+#' \item{par}{Parameters of the fitted mixture model (class priors \code{pi}, beta parameters \code{shapes1} and \code{shapes2}, and outlier prior \code{alpha}).}
+#' \item{loglik}{Log-likelihood in each iteration of the EM algorithm.}
 #'
 #' @return For \code{snp_outliers()}, a metric assessing the outlierness of the SNP beta-values.
 #' 	High values may indicate either contaminated or failed samples.
@@ -33,7 +36,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
    dim(snps) = NULL
 
    # Drop NAs to be able to compute likelihoods, but keep
-   # score of which entries to reinsert them again later
+   # track of which indices are NA to re-insert them later
    NAs = which(is.na(snps))
    snps = na.omit(snps)
    n = length(snps)
@@ -46,7 +49,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
       # Class probability for outliers
       alpha = 0.06646095
 
-      # Class probabilities for homozygous and heterozygous genotypes
+      # Class probabilities for the three genotypes: homozygous AA, heterozygous AB, homozygous BB
       pi = c(0.2818387,0.4330363,0.2851250)
 
       # Beta distribution parameters
@@ -58,28 +61,33 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 
       loglik = NULL
 
+      # Expectation step: Compute posterior probabilities (gamma) for each of the three genotype classes
       gamma = cbind(
           pi[1] * dbeta(snps,shape1=shapes1[1],shape2=shapes2[1])
          ,pi[2] * dbeta(snps,shape1=shapes1[2],shape2=shapes2[2])
          ,pi[3] * dbeta(snps,shape1=shapes1[3],shape2=shapes2[3])
          )
 
+      # Scale by non-outlier prior probability
       gamma = (1-alpha) * gamma
       tmp = rowSums(gamma)
       gamma = gamma/tmp
 
+      # Compute a-posteriori probability of each observation being an outlier
       outliers = (alpha*p) / ((alpha*p) + tmp)
 
    } else { # Learn dataset-specific model parameters using the EM algorithm
 
       alpha = 1e-2
       outliers = rep(alpha,times=n)
-      pi = c(1/3,1/3,1/3) # Class probabilities
-      shapes1 = c(10,80,80) 
-      shapes2 = c(80,80,10)
-      p = 1 # Uniform distribution
+      pi = c(1/3,1/3,1/3) # Initial class probabilities for the three genotypes
+      shapes1 = c(10,80,80) # Initial shape1 values
+      shapes2 = c(80,80,10) # Initial shape2 values
+      p = 1 # Uniform distribution for outliers
       gamma = NA
 
+      # Expectation Step (E-step)
+      # Computes the posterior probabilities for genotype classes and outlier status
       e_step = function(){
          gamma = cbind(
              pi[1] * dbeta(snps,shape1=shapes1[1],shape2=shapes2[1])
@@ -93,17 +101,20 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 
          outliers <<- (alpha*p) / ((alpha*p) + tmp)
 
+         # Calculate overall log-likelihood
          loglik = (alpha*p) + tmp
          loglik = sum(log(loglik))
 
          return(loglik)
       }
 
+      # Maximization Step (M-step)
+      # Estimates the model parameters (class priors, beta shapes) that maximize the expected log-likelihood
       m_step = function(){
 
          gamma = gamma * (1-outliers)
 
-         # MLE
+         # Maximum Likelihood Estimation (MLE) of Beta distribution parameters for each class
          s1 = eBeta(snps,gamma[,1])
          s2 = eBeta(snps,gamma[,2])
          s3 = eBeta(snps,gamma[,3])
@@ -134,7 +145,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
       loglik=loglik[1:(i-1)]
    }
 
-   ## Re-insert missing values
+   ## Re-insert missing values (NAs) that were dropped initially
    if (length(NAs) != 0) {
       tmp = rep(NA_real_,times=length(snpmatrix))
       tmp[-NAs] = outliers
@@ -170,6 +181,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 #'
 mxm_ = function(genotypes)
 {
+   # Visualizes the distribution of SNP beta-values and overlays the fitted mixture model density
    with(genotypes,{
 
    hist(snps,breaks=200,freq=FALSE,xlab="beta-value",main=NA)
@@ -199,10 +211,15 @@ snp_outliers = function(genotypes)
 }
 
 #' @rdname call_genotypes
+#' @param x Vector of observations (beta-values).
+#' @param w Vector of weights (posterior probabilities for the class).
+#' @return A list with estimated Beta distribution parameters:
+#' \item{shape1}{Estimated shape1 parameter.}
+#' \item{shape2}{Estimated shape2 parameter.}
 #'
 eBeta = function(x,w)
 {
-   # Beta distribution parameter estimation
+   # Method of moments estimation of Beta distribution parameters from weighted observations
    n = length(w)
    w = n*w/sum(w)
    sample.mean =  mean(w*x)

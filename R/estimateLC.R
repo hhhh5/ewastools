@@ -1,6 +1,6 @@
-#' Cell composition
+#' Cell composition estimation
 #'
-#' Estimation of cell proportions for blood and saliva using the Houseman algorithm
+#' Estimation of cell proportions for blood and saliva using the Houseman algorithm.
 #'
 #' @rdname cell_composition
 #'
@@ -10,7 +10,9 @@
 #' `Salas` [7], `Lolipop` [8]. Furthermore, the option `saliva` and `salivaEPIC` are available [9].
 #' @param constrained Force that all cell proportions sum up to 1.
 #'
-#' @return Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
+#' @return A \code{data.table} of estimated cell proportions (e.g., B-lymphocytes, CD4 T-cells, 
+#' CD8 T-cells, granulocytes, monocytes, natural killer cells, and nucleated red blood cells) 
+#' using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
 #'
 #' @references{Houseman EA, et al. DNA methylation arrays as surrogate measures of cell mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.}
 #' @references{Reinius LE, et al. Differential DNA methylation in purified human blood cells: implications for cell lineage and studies on disease susceptibility. PloS one. 2012 Jul 25;7(7):e41361.}
@@ -29,21 +31,26 @@ estimateLC = function(meth,ref,constrained=FALSE) {
    
    J = ncol(meth)
 
+   # Load the regression coefficients/reference panel matrix
    coefs = read.table(system.file(paste0("data/",ref,".txt"),package="ewastools"))
    coefs = as.matrix(coefs)
    n_celltypes = ncol(coefs)
 
+   # Find matching rows (probes) between reference coefficients and target methylation matrix
    markers = find_matching_rows(rownames(coefs),rownames(meth))
    if (any(is.na(markers))) {
       coefs = coefs[!is.na(markers),]
       markers = na.omit(markers)
    }
 
+   # Estimate cell proportions for each sample using quadratic programming
    EST = sapply(1:J, \(j) {
       tmp = meth[markers,j]
       i = !is.na(tmp)
 
       if(constrained == FALSE){
+         # Unconstrained optimization: solve.QP finds cell proportions >= 0
+         # Dm = t(coefs) %*% coefs, dvec = t(coefs) %*% tmp, constraints: diag(n) %*% beta >= 0
          return(
             quadprog::solve.QP(
              t(coefs[i,]) %*% coefs[i,]
@@ -52,6 +59,8 @@ estimateLC = function(meth,ref,constrained=FALSE) {
             ,rep(0,n_celltypes)
          )$sol)
       } else {
+         # Constrained optimization: solve.QP finds cell proportions >= 0 AND sum(proportions) == 1
+         # meq = 1 means the first constraint (sum equals 1) is an equality constraint
          return(
             quadprog::solve.QP(
              t(coefs[i,]) %*% coefs[i,]

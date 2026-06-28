@@ -10,12 +10,12 @@ NULL
 #' IDATs for red and green channel must have the same prefix and be stored in the same folder.
 #'
 #' E.g., a sample with the files "file/path/sample1_Red.idat" and 
-#' "file/path/sample1_Grn.idat" would be passed as "200607110235_R01C01".
+#' "file/path/sample1_Grn.idat" would be passed as "file/path/sample1".
 #'
-#' All idats are assumed to be from the same platform.
+#' All .idat files are assumed to be from the same platform.
 #'
 #' @param quiet If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).
-#' @param on_disk If \code{TRUE}, data will be stored on disk using the ff package.
+#' @param on_disk If \code{TRUE}, data will be stored on disk using the \code{ff} package.
 #'    This will be slower but enables processing datasets larger than memory.
 #' 
 #' @return A list containing
@@ -43,20 +43,20 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
          stop("Package 'ff' is required but not installed.")
    }
 
-   J = length(idat_files)
-
    ## illuminaio can handle gzipped .idats
+   df_idats = tibble::tibble(basename = idat_files)
+
    zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
-   suffix = ifelse(zipped, ".idat.gz", "idat.gz")
+   suffix = ifelse(zipped, ".idat.gz", ".idat")
 
    ex = file.exists(paste0(idat_files,"_Grn",suffix)) & file.exists(paste0(idat_files,"_Red",suffix))
-   if(!all(ex)) stop("Some .idat files are missing")
+   if (!all(ex)) stop("Some .idat files are missing")
 
    ## How many different features/bead types are there?
-   # All idats are assumed to be from the same platform
+   # All idats are assumed to be from the same platform.
    # (Consider that Type I probes have each two different beads)
    P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
-   print(P)
+   print(P) # Print this in case someone encounters a new variant of a chip
 
    ## Pick appropriate manifest
    # (numbers are possible #features I have encountered in the wild so far)
@@ -87,9 +87,10 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    setDT(manifest)
    setDT(controls)
 
-   # Harmonize column names
+   # Harmonize chromosome and mapping coordinate column names
    setnames(manifest, c(chr, mapinfo), c("chr", "mapinfo"))
 
+   # (Consider moving this to "manifest.R")
    manifest[, index := 1L:.N]
    controls[, index := 1L:.N]
 
@@ -97,16 +98,19 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    manifest[channel == "Red", OOBi := 1:.N]
 
    I = nrow(manifest)
+   J = length(idat_files)
 
+   # Allocate the matrices that will hold the data
    if (on_disk) {
 
-      #  Methylated (M) and unmethylated (U) signal intensities
-      M = ff::ff(vmode = "double", dim = c(I, J))
-      U = ff::ff(vmode = "double", dim = c(I, J))
-      # Standard deviations
+      # Methylated (M) and unmethylated (U) signal intensities
+      # ("double" because these intensities will be adjusted)
+      M = ff::ff(vmode = "double",  dim = c(I, J))
+      U = ff::ff(vmode = "double",  dim = c(I, J))
+      # Standard deviations for the methylated (S) and unmethylated (T) intensities
       S = ff::ff(vmode = "integer", dim = c(I, J))
       T = ff::ff(vmode = "integer", dim = c(I, J))
-      # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
+      # Number of beads underlying methylated (N) and unmethylated (V) intensities
       N = ff::ff(vmode = "integer", dim = c(I, J))
       V = ff::ff(vmode = "integer", dim = c(I, J))
 
@@ -120,8 +124,10 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
    } else {
 
+      # Methylated (M) and unmethylated (U) signal intensities
+      # ("double" because these intensities will be adjusted)
       M = U = matrix(NA_real_   ,nrow = I, ncol = J)
-      # Standard deviations
+      # Standard deviations for the methylated (S) and unmethylated (T) intensities
       S = T = matrix(NA_integer_,nrow = I, ncol = J)
       # Number of beads underlying methylated (N) and unmethylated (V) signal intensities
       N = V = matrix(NA_integer_,nrow = I, ncol = J)
@@ -136,10 +142,11 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    }
 
    # Signal intensities of control probes
+   # (as their number is low, these will be always stored in memory, even for `on_disk == TRUE`)
    ctrlG = ctrlR = matrix(NA_real_, nrow = nrow(controls), ncol = J)
    ctrlN = matrix(NA_integer_, nrow = nrow(controls), ncol = J)
 
-   if(!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
+   if (!quiet) pb = txtProgressBar(min = 0, max = J, style = 3)
 
    barcodes  = rep(NA_character_, J)
    positions = rep(NA_character_, J)
@@ -172,7 +179,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       U[ i$index,j ] = red$Quants[ i$Ui, 1] # Mean
       T[ i$index,j ] = red$Quants[ i$Ui, 2] # SD
       V[ i$index,j ] = red$Quants[ i$Ui, 3] # NBeads
-    
+     
       M[ i$index,j ] = red$Quants[ i$Mi, 1] # Mean
       S[ i$index,j ] = red$Quants[ i$Mi, 2] # SD
       N[ i$index,j ] = red$Quants[ i$Mi, 3] # NBeads
@@ -193,8 +200,8 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
       oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
       oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
-        
-      ## Type II probes
+         
+      ## Type II probes (measured in both channels: Red for Unmethylated, Green for Methylated)
       i = manifest["Both", on = "channel"]
 
       U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
@@ -218,12 +225,12 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    if(!quiet) close(pb)
 
    # Probes with zero beads on the chip (result of random chip assembly)
-   # are set to intensity zero in the .idat files. Mark them as missing.
+   # are set to intensity zero in the .idat files. Mark them as missing (NA).
    for (j in 1:J) {
       U[V[, j] == 0, j] = NA
       M[N[, j] == 0, j] = NA
       
-      # Need at least two data points to calculate a standard deviation
+      # Need at least two bead observations to calculate standard deviation
       T[V[, j] < 2, j] = NA
       S[N[, j] < 2, j] = NA
    }
@@ -231,6 +238,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    ctrlG[ctrlN == 0] = NA
    ctrlR[ctrlN == 0] = NA
 
+   # Extract sample IDs from the file names (using the last portion of the path)
    sample_ids = strsplit(x = idat_files, split = "/")
    sample_ids = sapply(sample_ids, tail, n = 1L)
 
@@ -261,7 +269,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 #'    Used for removing samples that failed quality control before computing
 #'    beta-values.
 #'
-#' @param raw Output of calling \code{\link{read_idats}}
+#' @param raw Output of \code{\link{read_idats}}
 #' @param j Indices of the samples to drop
 #'
 #' @return A modified \code{raw} object
@@ -308,6 +316,7 @@ drop_samples = function(raw, j = NULL){
          raw$detP = drop_cols(raw$detP, j)
 
    } else {
+      # Standard in-memory matrix column removal
       raw$U = raw$U[, -j, drop = FALSE]
       raw$M = raw$M[, -j, drop = FALSE]
 
