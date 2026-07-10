@@ -61,7 +61,12 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    ## Pick appropriate manifest
    # (numbers are possible #features I have encountered in the wild so far)
    # We assume that all .idats use the same platform they can differ in #features, though
-   if (P == 622399) { 
+
+   if (P == 55300) {
+      platform = "27K"
+      chr      = "chr36"
+      mapinfo  = "mapinfo36"
+   } else if (P == 622399) { 
       platform = "450K"
       chr      = "chr37"
       mapinfo  = "mapinfo37"
@@ -200,7 +205,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
       oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
       oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
-         
+
       ## Type II probes (measured in both channels: Red for Unmethylated, Green for Methylated)
       i = manifest["Both", on = "channel"]
 
