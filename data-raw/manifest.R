@@ -8,6 +8,7 @@ lvls_chr37 = c(lvls_chr37, "chr0")
 lvls_chr38 = c(lvls_chr38, "chr0")
 lvls_mm10  = c(lvls_mm10,  "chr0")
 
+lvls_pdsign  = c("I", "II")
 lvls_base = c("A", "G", "C", "T")
 lvls_ptypes = c("cg", "ch", "rs", "nv")
 lvls_channel = c("Red", "Grn", "Both")
@@ -20,6 +21,7 @@ fp_manifest = list(
     `450K` = "humanmethylation450_15017482_v1-2.csv",
     EPICv1 = "infinium-methylationepic-v-1-0-b5-manifest-file.csv",
     EPICv2 = "EPIC-8v2-0_A2.csv",
+    MSA    = "MSA-48v1-0_20102838_B1.csv",
     MOUSE  = "MouseMethylation-12v1-0_A2.csv")
 
 # -------------------------------- 27K chip manifest
@@ -183,16 +185,15 @@ MANIFESTS$`450K` =
 MANIFESTS$`450K` =
     MANIFESTS$`450K` |>
     dplyr::mutate(
-        probe_rep = 1L, # There are no replicate probes for EPIC v1
-        probe_type = substr(probe_id, 1L, 2L), # Column not in original manifest
-        chr37 = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
-        # ensure proper order of levels
-        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
-        probe_design = forcats::fct_relevel(probe_design, "I", "II"),
-        channel = dplyr::if_else(probe_design == "II", "Both", channel),
-        channel = forcats::fct_relevel(channel, !!!lvls_channel),
-        probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "nv"),
-        next_base = forcats::fct_relevel(next_base, !!!lvls_base))|>
+        probe_rep    = 1L, # There are no replicate probes for EPIC v1
+        probe_type   = substr(probe_id, 1L, 2L), # Column not in original manifest
+        chr37        = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
+        chr37        = forcats::fct_relevel(chr37, !!!lvls_chr37),
+        probe_design = forcats::fct_relevel(probe_design, !!!lvls_pdsign),
+        channel      = dplyr  ::if_else(probe_design == "II", "Both", channel),
+        channel      = forcats::fct_relevel(channel,    !!!lvls_channel),
+        probe_type   = forcats::fct_relevel(probe_type, !!!lvls_ptypes),
+        next_base    = forcats::fct_relevel(next_base,  !!!lvls_base))|>
     pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
     pointblank::row_count_match(485553 + 24)
 
@@ -274,18 +275,16 @@ MANIFESTS$EPICv1 =
 MANIFESTS$EPICv1 =
     MANIFESTS$EPICv1 |>
     dplyr::mutate(
-        probe_rep = 1L, # There are no replicate probes for EPIC v1
-        probe_type = substr(probe_id, 1L, 2L), # Column not in original manifest
-        chr37 = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
-        # chr38 has already the "chr" prefix
-        # ensure proper order of levels
-        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
-        chr38 = forcats::fct_relevel(chr38, !!!lvls_chr38),
-        probe_design = forcats::fct_relevel(probe_design, "I", "II"),
-        channel = dplyr::if_else(probe_design == "II", "Both", channel),
-        channel = forcats::fct_relevel(channel, !!!lvls_channel),
-        probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "nv"),
-        next_base = forcats::fct_relevel(next_base, !!!lvls_base))|>
+        probe_rep    = 1L, # There are no replicate probes for EPIC v1
+        probe_type   = substr(probe_id, 1L, 2L), # Column not in original manifest
+        chr37        = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
+        chr37        = forcats::fct_relevel(chr37, !!!lvls_chr37),
+        chr38        = forcats::fct_relevel(chr38, !!!lvls_chr38), # chr38 already prefixed
+        probe_design = forcats::fct_relevel(probe_design, !!!lvls_pdsign),
+        channel      = dplyr  ::if_else(probe_design == "II", "Both", channel),
+        channel      = forcats::fct_relevel(channel,    !!!lvls_channel),
+        probe_type   = forcats::fct_relevel(probe_type, !!!lvls_ptypes),
+        next_base    = forcats::fct_relevel(next_base,  !!!lvls_base))|>
     pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
     pointblank::col_vals_in_set(chr38, c(lvls_chr38, NA)) |>
     pointblank::row_count_match(865918)
@@ -370,19 +369,19 @@ MANIFESTS$EPICv2 =
     dplyr::mutate(
         chr37 = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
         chr38 = stringr::str_c("chr", chr38), # Don't use paste0() as it doesn't handle NA
-        # ensure proper order of levels
-        chr37 = forcats::fct_relevel(chr37, !!!lvls_chr37),
-        chr38 = forcats::fct_relevel(chr38, !!!lvls_chr38),
+        chr37        = forcats::fct_relevel(chr37, !!!lvls_chr37),
+        chr38        = forcats::fct_relevel(chr38, !!!lvls_chr38),
         probe_design = forcats::fct_relevel(probe_design, "I", "II"),
-        channel = dplyr::if_else(probe_design == "II", "Both", channel),
-        channel = forcats::fct_relevel(channel, !!!lvls_channel),
-        probe_type = forcats::fct_relevel(probe_type, "cg", "ch", "rs", "nv"),
-        next_base = forcats::fct_relevel(next_base, !!!lvls_base))|>
+        channel      = dplyr  ::if_else(probe_design == "II", "Both", channel),
+        channel      = forcats::fct_relevel(channel, !!!lvls_channel),
+        probe_type   = forcats::fct_relevel(probe_type, !!!lvls_ptypes),
+        next_base    = forcats::fct_relevel(next_base, !!!lvls_base))|>
     pointblank::col_vals_not_null(columns =
         c(ilmn_id, probe_id, addressU, channel, probe_type, probe_design, probe_rep)) |>
     pointblank::rows_distinct(columns = ilmn_id) |>
     pointblank::rows_distinct(columns = addressU) |>
-    pointblank::rows_distinct(columns = addressM, preconditions = \(df) dplyr::filter(df, !is.na(addressM))) |>
+    pointblank::rows_distinct(columns = addressM,
+        preconditions = \(df) dplyr::filter(df, !is.na(addressM))) |>
     pointblank::col_vals_in_set(probe_design, c("I", "II")) |>
     pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
     pointblank::col_vals_in_set(chr38, c(lvls_chr38, NA)) |>
@@ -397,6 +396,104 @@ CONTROLS$EPICv2 =
         col_types = "iccc",
         col_select = 1:4) |>
     pointblank::row_count_match(635)
+
+# -------------------------------- Methylation Screening Array (MSA)
+# Use version B1 of manifest
+# CSV contains both 'normal' and control probes. Create two separate tables for them.
+
+MANIFESTS$MSA =
+    fp_manifest$MSA |>
+    readr::read_csv(
+        skip = 7, # Column names are at line 8
+        col_names = TRUE,
+        col_types = "ccicicfffffffffficfcccicccccccccccccccccccccclcicfi",
+        col_select = c(
+            ilmn_id = IlmnID,                    # cg25324105_BC11
+            probe_id = Name,                     # cg25324105
+            addressU = AddressA_ID,              # 1754126
+            # AlleleA_ProbeSeq                   # ATTTATAAAC...
+            addressM = AddressB_ID,              # 99753217
+            # AlleleB_ProbeSeq                   # GTTTATAAA...
+            next_base = Next_Base,               # A
+            channel = Color_Channel,             # Red
+            # col                                # R
+            probe_type = Probe_Type,             # cg
+            # strand_FR = Strand_FR,             # F
+            # strand_TB = Strand_TB,             # B
+            # strand_CO = Strand_CO,             # C
+            # Infinium_Design                    # 1
+            probe_design = Infinium_Design_Type, # I
+            probe_rep = Rep_Num,                 # 1
+            chr38 = CHR,                         # chr19
+            mapinfo38 = MAPINFO,                 # 37692358
+            # Species                            # Human
+            # Genome_Build                       # GRCh38
+            # Source_Seq                         # GTTTGTGGG...
+            # Forward_Sequence                   # CGGTTCCGC...GGC[CG]ACGTGCT...
+            # Top_Sequence                       # AGCAG...ACGT[CG]GCCGC...
+            # UCSC_RefGene_Group                 # TSS200;TSS200
+            # UCSC_RefGene_Name                  # ZNF781;ZNF781
+            # UCSC_RefGene_Accession             # NR_173332.1;NR_173331.1
+            # UCSC_CpG_Islands_Name              # chr19:37691892-37692426
+            # Relation_to_UCSC_CpG_Island        # Island
+            # GencodeV41_Group                   # TSS200;TSS200
+            # GencodeV41_Name                    # ENSG00000120784.17;ENSG00000120784.17
+            # GencodeV41_Accession               # ENST00000587199.5;ENST00000589676.5
+            # Phantom5_Enhancers                 # NA
+            # HMM_Island                         # NA
+            # Regulatory_Feature_Name            # 19:38182603-38183622
+            # Regulatory_Feature_Group           # Unclassified_Cell_type_specific
+            # DNase_Hypersensitivity_NAME        # EH38D5131145
+            # Encode_CisReg_Site                 # EH38E3303729|DNase-only;EH38E3303729|Low-DNase
+            # Encode_CisReg_Site_Evid            # 1;18;46;22
+            # OpenChromatin_NAME                 # Het;Quies;TssA
+            # OpenChromatin_Evidence_Count       # 261;34;540;408;120;186;50;42;12;3;7
+            # EPICv2_Locus_Match
+            # EPICv1_Locus_Match
+            # Methyl450_Locus_Match
+            # EPICv2_ProbeSeq_Match
+            # EPICv1_ProbeSeq_Match
+            # Methyl450_ProbeSeq_Match
+            # SNP_ID                             # NA
+            # SNP_DISTANCE                       # NA
+            # SNP_MinorAlleleFrequency           # NA
+            chr37 = CHR_GRCh37,                  #
+            mapinfo37 = MAPINFO_GRCh37           #
+        ),
+        n_max = 281798) # This number is documented in line 6 of the manifest
+
+MANIFESTS$MSA =
+    MANIFESTS$MSA |>
+    dplyr::mutate(
+        chr37        = stringr::str_c("chr", chr37), # Don't use paste0() as it doesn't handle NA
+        chr38        = stringr::str_c("chr", chr38), # Don't use paste0() as it doesn't handle NA
+        chr37        = forcats::fct_relevel(chr37, !!!lvls_chr37),
+        chr38        = forcats::fct_relevel(chr38, !!!lvls_chr38),
+        probe_design = forcats::fct_relevel(probe_design, !!!lvls_pdsign),
+        channel      = dplyr  ::if_else(probe_design == "II", "Both", channel),
+        channel      = forcats::fct_relevel(channel, !!!lvls_channel),
+        probe_type   = forcats::fct_relevel(probe_type, !!!lvls_ptypes),
+        next_base    = forcats::fct_relevel(next_base, !!!lvls_base))|>
+    pointblank::col_vals_not_null(columns =
+        c(ilmn_id, probe_id, addressU, channel, probe_type, probe_design, probe_rep)) |>
+    pointblank::rows_distinct(columns = ilmn_id) |>
+    pointblank::rows_distinct(columns = addressU) |>
+    pointblank::rows_distinct(columns = addressM,
+        preconditions = \(df) dplyr::filter(df, !is.na(addressM))) |>
+    pointblank::col_vals_in_set(probe_design, c("I", "II")) |>
+    pointblank::col_vals_in_set(chr37, c(lvls_chr37, NA)) |>
+    pointblank::col_vals_in_set(chr38, c(lvls_chr38, NA)) |>
+    pointblank::row_count_match(281798) |>
+    invisible()
+
+CONTROLS$MSA =
+    fp_manifest$MSA |>
+    readr::read_csv(
+        skip = 7 + 281798 + 2, #
+        col_names = c("address", "group", "channel", "name"),
+        col_types = "iccc",
+        col_select = 1:4) |>
+    pointblank::row_count_match(2511)
 
 # -------------------------------- Mouse chip manifest
 # Manifest from May 25, 2021
