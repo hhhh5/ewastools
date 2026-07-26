@@ -132,6 +132,15 @@ CONTROLS$`27K` =
             "NORMALIZATION-GREEN" ~ "NORM_G")) |>
     pointblank::row_count_match(94)
 
+setDT(CONTROLS$`27K`)
+
+CONTROLS$`27K`[group == "STAINING", name := stringr::str_replace(name, "Bgnd", "Bkg")]
+CONTROLS$`27K`[group == "TARGET REMOVAL", name := "Target Removal 1"]
+CONTROLS$`27K`[group == "BISULFITE CONVERSION I", name := stringr::str_replace(name, "BS conversion ", "BS Conversion I-")]
+CONTROLS$`27K`[group == "SPECIFICITY I", name := stringr::str_replace(name, "GT mismatch (\\d)(.+$)", "GT Mismatch \\1 \\2")]
+CONTROLS$`27K`[group == "NORM_A", `:=`(channel = "Red",  name = stringr::str_replace(name, " Red ", "_A"))]
+CONTROLS$`27K`[group == "NORM_G", `:=`(channel = "Blue", name = stringr::str_replace(name, " Green ", "_G"))]
+
 rm(SNPS27K)
 
 # -------------------------------- 450K chip manifest
@@ -571,7 +580,36 @@ CONTROLS$MOUSE =
         col_select = 1:4) |>
     pointblank::row_count_match(642)
 
+setDT(CONTROLS$MOUSE)
+
+
+# Move species tag to dedicated column
+CONTROLS$MOUSE[, species := stringr::str_extract(name, pattern = "_(HSA|MUS)$", group = 1)]
+CONTROLS$MOUSE[, name := stringr::str_remove(name, pattern = "_(HSA|MUS)$")]
+
+# Harmonize names of control probes
+CONTROLS$MOUSE[group == "RESTORATION", name := "Restore"]
+CONTROLS$MOUSE[group == "HYBRIDIZATION", name := stringr::str_replace(name, "HYB-(.+)$", "Hyb (\\1)")]
+CONTROLS$MOUSE[group == "EXTENSION", name := stringr::str_replace(name, "EXT-(.)", "Extension (\\1)")]
+CONTROLS$MOUSE[group == "STAINING", name := stringr::str_replace(name, "STN-(DNP|Biotin)-(.+)", "\\1 (\\2)")]
+CONTROLS$MOUSE[group == "TARGET REMOVAL", name := stringr::str_replace(name, "^TRM-(\\d)$", "Target Removal \\1")]
+CONTROLS$MOUSE[group == "BISULFITE CONVERSION I", name := stringr::str_replace(name, "^BS1-(.+)$", "BS Conversion I-\\1")]
+CONTROLS$MOUSE[group == "BISULFITE CONVERSION II", name := stringr::str_replace(name, "^BS2-(\\d+)$", "BS Conversion II-\\1")]
+CONTROLS$MOUSE[group == "SPECIFICITY I", name := stringr::str_replace(name, "^SP1-(PM|MM)(\\d)$", "GT Mismatch \\2 (\\1)")]
+CONTROLS$MOUSE[group == "SPECIFICITY II", name := stringr::str_replace(name, "^SP2-(\\d)", "Specificity \\1")]
+CONTROLS$MOUSE[group == "NON-POLYMORPHIC", name := stringr::str_replace(name, "^NPM-([ACGT])", "NP (\\1)")]
+CONTROLS$MOUSE[group == "NON-POLYMORPHIC", name := stringr::str_replace(name, "^NPM-(\\d)", "NP (G) \\1")]
+CONTROLS$MOUSE[group == "NEGATIVE", name := stringr::str_replace(name, "^NEG-(\\d+)$", "Negative \\1")]
+CONTROLS$MOUSE[group %like% "^NORM_[ACGT]$", name := stringr::str_replace(name, "^NRM-([ACGT])-(\\d+)$", "Norm_\\1\\2")]
+
 # --------------------------------
 
 save(MANIFESTS, CONTROLS, file="../R/sysdata.rda",compress="xz")
 
+
+
+
+CONTROLS$MOUSE[group %like% "^NORM_[ACGT]$", name := stringr::str_replace(name, "^NRM-([ACGT])-(\\d+)$", "Norm_\\1\\2")]
+
+
+CONTROLS |> purrr::map(dplyr::filter, group == "NORM_G")
