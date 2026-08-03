@@ -215,6 +215,10 @@ CONTROLS$`450K` =
         col_select = 1:4) |>
     pointblank::row_count_match(850)
 
+setDT(CONTROLS$`450K`)
+CONTROLS$`450K`[name == "BS Conversion I C1", name := "BS Conversion I-C1"]
+CONTROLS$`450K`[name == "BS Conversion I U1", name := "BS Conversion I-U1"]
+
 # -------------------------------- EPICv1
 # Use version b5 of manifest
 # CSV contains both 'normal' and control probes. Create two separate tables for them.
