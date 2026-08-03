@@ -60,14 +60,14 @@ control_metrics = function(raw, FFPE = FALSE){
       # non-CpG cytosines in the genome.
       
       # Bisulfite conversion I
-      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-C[123]", index]
-      bkg = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[123]", index]
+      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-C[12]", index]
+      bkg = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[12]", index]
       metrics$`Bisulfite Conversion I Green` = apply(ctrlG[ii,,drop=FALSE],2,min) / apply(ctrlG[bkg,,drop=FALSE],2,max)
       attr(metrics$`Bisulfite Conversion I Green`,'threshold') <- 1
       
       # Background/(U1, U2, or U3) [manual doesn't specify highest/lowest. I chose `max` mirroring the calculation for red]
       # Green channel-bkg = Extension Green highest AT
-      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[123]", index]
+      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[12]", index]
       metrics$`Bisulfite Conversion I Green (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
       attr(metrics$`Bisulfite Conversion I Green (Bkg)`,'threshold') <- 1
 
@@ -121,8 +121,8 @@ control_metrics = function(raw, FFPE = FALSE){
       # Used to examine the efficiency of the staining step in both channels.
       # Staining controls have various levels of dinitrophenyl (DNP) or biotin attached to the beads.
       # These controls are independent of the hybridization and extension step.
-      ii  = controls[name %ilike% "Biotin (High)", index]
-      bkg = controls[name %ilike% "Biotin (Bkg)" , index]
+      ii  = controls[name == "Biotin (High)", index]
+      bkg = controls[name == "Biotin (Bkg)" , index]
       metrics$`Staining Green` = ctrlG[ii,] / ctrlG[bkg,]
       attr(metrics$`Staining Green`, "threshold") <- 5
 
