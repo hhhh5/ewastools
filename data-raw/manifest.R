@@ -605,11 +605,3 @@ CONTROLS$MOUSE[group %like% "^NORM_[ACGT]$", name := stringr::str_replace(name, 
 # --------------------------------
 
 save(MANIFESTS, CONTROLS, file="../R/sysdata.rda",compress="xz")
-
-
-
-
-CONTROLS$MOUSE[group %like% "^NORM_[ACGT]$", name := stringr::str_replace(name, "^NRM-([ACGT])-(\\d+)$", "Norm_\\1\\2")]
-
-
-CONTROLS |> purrr::map(dplyr::filter, group == "NORM_G")
