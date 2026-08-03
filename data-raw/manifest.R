@@ -608,4 +608,9 @@ CONTROLS$MOUSE[group %like% "^NORM_[ACGT]$", name := stringr::str_replace(name, 
 
 # --------------------------------
 
+for(nm in names(CONTROLS)) {
+    attr(MANIFESTS[[nm]], "spec") = NULL
+    attr(CONTROLS [[nm]], "spec") = NULL
+}
+
 save(MANIFESTS, CONTROLS, file="../R/sysdata.rda",compress="xz")
