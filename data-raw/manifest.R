@@ -17,12 +17,12 @@ MANIFESTS = list()
 CONTROLS  = list()
 
 fp_manifest = list(
-    `27K`  = "humanmethylation27_270596_v1-2.csv",
-    `450K` = "humanmethylation450_15017482_v1-2.csv",
-    EPICv1 = "infinium-methylationepic-v-1-0-b5-manifest-file.csv",
-    EPICv2 = "EPIC-8v2-0_A2.csv",
-    MSA    = "MSA-48v1-0_20102838_B1.csv",
-    MOUSE  = "MouseMethylation-12v1-0_A2.csv")
+    `27K`  = "../ewastools-data/humanmethylation27_270596_v1-2.csv",
+    `450K` = "../ewastools-data/humanmethylation450_15017482_v1-2.csv",
+    EPICv1 = "../ewastools-data/infinium-methylationepic-v-1-0-b5-manifest-file.csv",
+    EPICv2 = "../ewastools-data/EPIC-8v2-0_A2.csv",
+    MSA    = "../ewastools-data/MSA-48v1-0_20102838_B1.csv",
+    MOUSE  = "../ewastools-data/MouseMethylation-12v1-0_A2.csv")
 
 # -------------------------------- 27K chip manifest
 # Use version 1.2 of manifest
@@ -613,4 +613,4 @@ for(nm in names(CONTROLS)) {
     attr(CONTROLS [[nm]], "spec") = NULL
 }
 
-save(MANIFESTS, CONTROLS, file="../R/sysdata.rda",compress="xz")
+save(MANIFESTS, CONTROLS, file="./R/sysdata.rda",compress="xz")
