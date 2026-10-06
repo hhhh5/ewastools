@@ -1,4 +1,4 @@
-data_dir <- normalizePath("~/repos/ewastools-data", mustWork = FALSE)
+data_dir <- testthat::test_path("../../../ewastools-data")
 
 test_that("read_idats imports 27K platform", {
   skip_if_not(dir.exists(data_dir), "Local test data directory 'ewastools-data' not found.")
