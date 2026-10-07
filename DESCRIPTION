@@ -14,7 +14,8 @@ Suggests:
     testthat (>= 2.1.0),
     tidyverse,
     svd,
-    ff
+    ff,
+    vdiffr
 License: Unlimited
 VignetteBuilder: knitr
 NeedsCompilation: no
