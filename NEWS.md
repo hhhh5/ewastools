@@ -1,3 +1,9 @@
+# ewastools 1.8.2
+* Added support for Infinium Methylation Screening Array (MSA) BeadChip
+* Refactored calculation of control metrics
+* Added benchmark vignette using GSE250556 technical replicates for sample tracking and cell type deconvolution
+* Added additional unit tests
+
 # ewastools 1.8.1
 * Added experimental support for Mouse Methylation BeadChip (feedback welcome)
 * Added `on_disk` option to `read_idats()`. Uses `ff` package to store methylation data on disk instead
