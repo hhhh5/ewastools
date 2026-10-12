@@ -33,14 +33,25 @@ library(ggplot2)
 
 ## Data Preparation
 
-We first locate the raw IDAT files and retrieve sample metadata from GEO.
+We first download the raw IDAT files from GEO and then retrieve the sample metadata.
+GEO provides all supplementary files of a series as a single tar archive
+(`GSE250556_RAW.tar`) containing the gzipped IDAT files, which `read_idats()`
+can import directly without decompressing them.
 
-```{r locate_data}
-# Locate directory containing GSE250556 raw IDAT files
-data_dir = if (dir.exists("../../ewastools-data/GSE250556_RAW")) {
-  "../../ewastools-data/GSE250556_RAW"
-} else if (dir.exists("../ewastools-data/GSE250556_RAW")) {
-  "../ewastools-data/GSE250556_RAW"
+```{r download_data}
+data_dir = "GSE250556_RAW"
+dir.create(data_dir, showWarnings = FALSE)
+
+# Download and unpack the archive of raw IDAT files (~1.1 GB)
+if (length(list.files(data_dir, pattern = "\\.idat(\\.gz)?$")) == 0) {
+  tar_file = file.path(data_dir, "GSE250556_RAW.tar")
+  options(timeout = max(3600, getOption("timeout"))) # large file
+  download.file(
+    "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE250556&format=file",
+    destfile = tar_file,
+    mode = "wb")
+  untar(tar_file, exdir = data_dir)
+  file.remove(tar_file) # delete the archive to save disk space
 }
 ```
 
