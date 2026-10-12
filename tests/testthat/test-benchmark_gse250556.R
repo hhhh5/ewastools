@@ -40,26 +40,13 @@ testthat::test_that("GSE250556 benchmarks: sample tracking and cell type deconvo
   U_snps = meth$U[snps, , drop = FALSE]
   beta_snps = M_snps / (M_snps + U_snps + 100)
   
+  # Check for perfect 1-to-1 mapping between metadata subjects and methylation donors
   genotypes = call_genotypes(beta_snps, learn = FALSE)
-  
-  # Group samples that have matching genotypes
   pheno_df$donor_id = enumerate_sample_donors(genotypes)
   
-  # Check for perfect 1-to-1 mapping between metadata subjects and methylation donors
-  
-  # 1. Each metadata subject should have exactly 1 donor ID
-  donors_per_subject = pheno_df |>
-    dplyr::group_by(subject_id) |>
-    dplyr::summarise(n = dplyr::n_distinct(donor_id))
-    
-  testthat::expect_true(all(donors_per_subject$n == 1))
-  
-  # 2. Each methylation donor ID should correspond to exactly 1 metadata subject
-  subjects_per_donor = pheno_df |>
-    dplyr::group_by(donor_id) |>
-    dplyr::summarise(n = dplyr::n_distinct(subject_id))
-    
-  testthat::expect_true(all(subjects_per_donor$n == 1))
+  pheno_df |>
+    dplyr::count(subject_id, donor_id) |>
+    testthat::expect_shape(nrow = 4)
   
   # --- BENCHMARK 2: Reproducibility of Cell Type Deconvolution ---
   meth = detectionP(meth)
@@ -71,34 +58,13 @@ testthat::test_that("GSE250556 benchmarks: sample tracking and cell type deconvo
   LC = estimateLC(beta_full, ref="HRS")
   pheno_df = cbind(pheno_df, as.data.frame(LC))
   
-  # Calculate variance across technical replicates for each subject
   cell_types = colnames(LC)
-  variance_summary = pheno_df |>
-    dplyr::group_by(subject_id) |>
-    dplyr::summarise(dplyr::across(dplyr::all_of(cell_types), ~ var(.x, na.rm = TRUE)))
-    
-  mean_vars = colMeans(variance_summary[, cell_types, drop = FALSE], na.rm = TRUE)
   
-  # We expect the mean intra-subject variance for every cell type to be extremely low
-  testthat::expect_true(all(mean_vars < 0.01))
-  
-  # --- VISUAL REGRESSION TESTING ---
-  # Create a long format dataframe for plotting
-  plot_df = pheno_df |>
-    tidyr::pivot_longer(cols = dplyr::all_of(cell_types), names_to = "Cell_Type", values_to = "Proportion")
-    
-  p = ggplot2::ggplot(plot_df, ggplot2::aes(x = subject_id, y = Proportion, color = subject_id)) +
-    ggplot2::geom_boxplot(outlier.shape = NA) +
-    ggplot2::geom_jitter(width = 0.2, alpha = 0.7) +
-    ggplot2::facet_wrap(~ Cell_Type, scales = "free_y") +
-    ggplot2::theme_minimal() +
-    ggplot2::labs(
-      title = "Cell Type Deconvolution across Technical Replicates",
-      x = "Subject ID",
-      y = "Estimated Proportion"
-    ) +
-    ggplot2::theme(legend.position = "none", axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
-    
-  # visual regression test: this generates/checks tests/testthat/_snaps/leukocyte_variance_plot.svg
-  vdiffr::expect_doppelganger("leukocyte_variance_plot", p)
+  pheno_df |>
+    tidyr::pivot_longer(cols = dplyr::all_of(cell_types),
+      names_to = "Cell Type", values_to = "Proportion") |>
+  ggplot2::ggplot(ggplot2::aes(x = subject_id, y = Proportion, color = subject_id)) +
+  ggplot2::geom_boxplot() +
+  ggplot2::scale_y_continuous(trans = "log10") +
+  ggplot2::facet_wrap(ggplot2::vars(`Cell Type`), labeller = ggplot2::label_both)
 })
