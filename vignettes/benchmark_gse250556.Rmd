@@ -11,6 +11,7 @@ vignette: >
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
+  eval = FALSE,
   collapse = TRUE,
   comment = "#>",
   fig.width = 7,
@@ -43,7 +44,7 @@ data_dir = if (dir.exists("../../ewastools-data/GSE250556_RAW")) {
 }
 ```
 
-```{r metadata, eval = dir.exists(data_dir), message = FALSE}
+```{r metadata, message = FALSE}
 # 1. Fetch metadata from GEO
 pheno_url = "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE250556&targ=gsm&form=text&view=brief"
 pheno = readLines(pheno_url)
@@ -67,7 +68,7 @@ files_df = tibble::tibble(
 pheno_df = dplyr::inner_join(pheno_df, files_df, by = "gsm", unmatched = "error")
 ```
 
-```{r read_idats, eval = dir.exists(data_dir)}
+```{r read_idats}
 # 3. Read IDAT files
 meth = read_idats(pheno_df$prefix, quiet = TRUE, on_disk = TRUE)
 ```
@@ -79,7 +80,7 @@ Illumina DNA methylation microarrays contain a panel of SNP
 These probes can be used to call genotypes and verify that samples collected
 from the same individual indeed share the same genetic profile.
 
-```{r snp_genotyping, eval = dir.exists(data_dir)}
+```{r snp_genotyping}
 # Identify SNP probes in manifest
 snps = meth$manifest$index[meth$manifest$probe_type == "rs"]
 
@@ -98,7 +99,7 @@ pheno_df |>
   print()
 ```
 
-As shown in the table above, all replicates for each subject group togetherinto
+As shown in the table above, all replicates for each subject group together into
 a unique inferred donor ID, confirming that there were no sample mislabelings or mix-ups.
 
 ## Benchmark 2: Reproducibility of Cell Type Deconvolution
@@ -109,7 +110,7 @@ Whole blood consists of heterogeneous cell populations. Cell type deconvolution 
 
 Before cell type estimation, we apply detection p-value masking and dye-bias correction:
 
-```{r preprocessing, eval = dir.exists(data_dir)}
+```{r preprocessing}
 meth = detectionP(meth)
 meth = mask(meth, 0.01)
 meth = correct_dye_bias(meth)
@@ -120,7 +121,7 @@ beta_full = beta_values(meth)
 
 We estimate cell proportions using the reference dataset for blood (`ref = "HRS"`):
 
-```{r estimate_lc, eval = dir.exists(data_dir)}
+```{r estimate_lc}
 LC = estimateLC(beta_full, ref = "HRS")
 pheno_df = cbind(pheno_df, as.data.frame(LC))
 cell_types = colnames(LC)
@@ -132,7 +133,7 @@ head(LC)
 
 We reshape the data to plot the estimated proportions of each cell type across technical replicates, grouped by subject:
 
-```{r plot_replicates, eval = dir.exists(data_dir), fig.width = 9, fig.height = 6}
+```{r plot_replicates, fig.width = 9, fig.height = 6}
 plot_df = pheno_df |>
   tidyr::pivot_longer(
     cols = dplyr::all_of(cell_types),
