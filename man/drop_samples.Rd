@@ -7,12 +7,12 @@
 drop_samples(raw, j = NULL)
 }
 \arguments{
-\item{raw}{Output of calling \code{\link{read_idats}}}
+\item{raw}{Output of \code{\link{read_idats}}.}
 
-\item{j}{Indices of the samples to drop}
+\item{j}{Indices (column numbers) of the samples to drop.}
 }
 \value{
-A modified \code{raw} object
+A modified \code{raw} object without the dropped samples.
 }
 \description{
 Drop samples from the object returned by \code{read_idats()}.

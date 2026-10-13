@@ -14,20 +14,25 @@
 #' \code{eval_detP_cutoffs()} generates a plot showing the number of undetected chrY probes among
 #' male and female subjects for various p-value thresholds, in order to empirically choose a threshold.
 #'
-#' Finally, \code{mask()} masks all probes with detection p-values above a specified threshold.
+#' Finally, \code{mask()} masks all observations with detection p-values above a specified threshold,
+#' i.e., sets the corresponding intensities in \code{M} and \code{U} to \code{NA}.
 #'
 #' @author Jonathan Heiss
 #' @param raw Output of \code{\link{read_idats}}. Must include component \code{detP} for
 #' \code{mask()} and \code{eval_detP_cutoffs()}.
-#' @param threshold p-value threshold (arithmetic scale) above which observations are set to \code{NA}.
-#' @param male/female Indices of male and female subjects
+#' @param threshold p-value threshold above which observations are set to \code{NA}. Must be on the
+#' same scale as \code{raw$detP}, i.e., on the log10 scale if p-values were computed with \code{detectionP.neg()}.
+#' @param males,females Column indices of male and female subjects.
 #' @param rgSet A \code{minfi} \code{RGChannelSet} object.
-#' 
+#'
 #' @return For \code{detectionP()} and \code{detectionP.neg()}, a modified \code{raw} list object with a
 #' \code{detP} component (a matrix of detection p-values) added. \code{detectionP()} computes p-values
 #' on the linear scale, whereas \code{detectionP.neg()} returns p-values on the log10 scale.
-#' @return For \code{detectionP.minfi()}, a matrix of detection p-values.
-#' @return For \code{mask()}, a modified \code{raw} list object with undetected probes set to \code{NA}.
+#' If the data was imported with \code{on_disk = TRUE}, \code{detP} is an \code{ff} object.
+#' @return For \code{detectionP.minfi()}, a matrix of detection p-values with probe IDs as row names.
+#' @return For \code{mask()}, a modified \code{raw} list object with undetected observations set to \code{NA}.
+#' @return For \code{eval_detP_cutoffs()}, Plot of the 90\% quantile (males) and 10\% quantile (females) of the number of undetected
+#' chrY probes for each p-value cut-off.
 #'
 #' @references{Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection
 #' p-values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
@@ -196,9 +201,13 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
 #'
 detectionP.minfi = function(rgSet)
 {
-   minfi:::.isRGOrStop(rgSet)
+   if (!requireNamespace("minfi", quietly = TRUE))
+      stop("Package 'minfi' is required for 'detectionP.minfi()'.")
 
-   locusNames = getManifestInfo(rgSet, "locusNames")
+   if (!inherits(rgSet, "RGChannelSet"))
+      stop("Argument 'rgSet' must be an 'RGChannelSet' object.")
+
+   locusNames = minfi::getManifestInfo(rgSet, "locusNames")
    detP = matrix(NA_real_,ncol=ncol(rgSet),nrow=length(locusNames),dimnames = list(locusNames, colnames(rgSet)))
 
    i2 = minfi::getProbeInfo(rgSet, type = "II")
@@ -273,9 +282,9 @@ detectionP.minfi = function(rgSet)
 #' of the beta-value distribution.
 #'
 #' @param beta Numeric vector of beta-values.
-#' @return A numeric vector of length 2 containing the locations of the lower (unmethylated) 
+#' @return A numeric vector of length 2 containing the locations of the lower (unmethylated)
 #' and upper (methylated) summits.
-#'
+#' @noRd
 summits = function (beta)
 {
    # Compute kernel density estimation with fixed bandwidth

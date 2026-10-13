@@ -19,39 +19,47 @@ eval_detP_cutoffs(raw, males = NULL, females = NULL)
 detectionP.minfi(rgSet)
 }
 \arguments{
-\item{raw}{Output of calling \code{\link{read_idats()}}, must include component \code{detP} for
-\code{mask()} and \code{eval_detP_threshold()}.}
+\item{raw}{Output of \code{\link{read_idats}}. Must include component \code{detP} for
+\code{mask()} and \code{eval_detP_cutoffs()}.}
 
-\item{threshold}{p-value threshold (arithmetic scale) above which oberservations are set to NA.}
+\item{threshold}{p-value threshold above which observations are set to \code{NA}. Must be on the
+same scale as \code{raw$detP}, i.e., on the log10 scale if p-values were computed with \code{detectionP.neg()}.}
 
-\item{rgSet}{minfi rgSet object}
+\item{males, females}{Column indices of male and female subjects.}
 
-\item{male/female}{Indices of male and female subjects}
+\item{rgSet}{A \code{minfi} \code{RGChannelSet} object.}
 }
 \value{
-For \code{detectionP()} and \code{detectionP.neg()} a modified \code{raw} object with a
-\code{detP} component, a matrix of detection p-values, added. \code{detectionP()} computes p-values
+For \code{detectionP()} and \code{detectionP.neg()}, a modified \code{raw} list object with a
+\code{detP} component (a matrix of detection p-values) added. \code{detectionP()} computes p-values
 on the linear scale, whereas \code{detectionP.neg()} returns p-values on the log10 scale.
+If the data was imported with \code{on_disk = TRUE}, \code{detP} is an \code{ff} object.
 
-For \code{detectionP.minfi()} a matrix of detection p-values.
+For \code{detectionP.minfi()}, a matrix of detection p-values with probe IDs as row names.
 
-For \code{mask()}, a modified \code{raw} object, with undetected probes set to \code{NA}.
+For \code{mask()}, a modified \code{raw} list object with undetected observations set to \code{NA}.
+
+For \code{eval_detP_cutoffs()}, Plot of the 90\% quantile (males) and 10\% quantile (females) of the number of undetected
+chrY probes for each p-value cut-off.
 }
 \description{
-Detection p-values are based on the distribution of the intensities
-of the negative control probes or the U (M) intensities observed for completely methylated
-(unmethylated) probes, respectively.
+Detection p-values assess whether the signal from a given probe is significantly
+different from background noise.
 
-\code{detectionP()} is the recommend approach that generates realistic p-values as described in Heiss and Just, 2019.
+\code{detectionP()} is the recommended approach that generates realistic p-values as described in Heiss and Just, 2019.
+It estimates the background signal based on the opposite signal at
+completely methylated and completely unmethylated probes.
 
-\code{detectionP.neg()} follows the approach used in GenomeStudio (p-values are unrealistic).
+\code{detectionP.neg()} follows the approach used in GenomeStudio, which computes p-values based on the
+intensities of negative control probes (yielding unrealistically small p-values).
 
 \code{detectionP.minfi()} provides an implementation for \code{RGChannelSet} objects as used in the \code{minfi} package.
 
-\code{eval_detP_threshold()} generates a plot showing the number of undetected chrY probes among
+\code{eval_detP_cutoffs()} generates a plot showing the number of undetected chrY probes among
 male and female subjects for various p-value thresholds, in order to empirically choose a threshold.
 
-Finally, \code{mask()} is masking all probes with detection p-values below the specified threshold.
+Finally, \code{mask()} masks all observations with detection p-values above a specified threshold,
+i.e., sets the corresponding intensities in \code{M} and \code{U} to \code{NA}.
 }
 \references{
 {Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection

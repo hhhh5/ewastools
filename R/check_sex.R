@@ -1,9 +1,20 @@
-#' Infer the sex of sample donor
-#' 
-#' Return the normalized average total intensities of probes targeting the X and Y chromosomes. 
-#' 
+#' Infer the sex of sample donors
+#'
+#' \code{check_sex()} computes the normalized average total intensities of probes targeting the
+#' X and Y chromosomes. \code{predict_sex()} uses these values and the recorded sex of the samples
+#' to predict the sex of each sample, which allows to identify mislabeled samples.
+#'
+#' \code{check_sex()} should be applied to dye-bias corrected intensities (see \code{\link{correct_dye_bias}})
+#' but \strong{before} masking undetected probes with \code{\link{mask}},
+#' as masking would remove many of the Y chromosome probes.
+#'
+#' \code{predict_sex()} determines cutoffs for the X and Y chromosome intensities as the
+#' Hodges-Lehmann estimators of the midpoint between recorded male and female samples.
+#' Samples samples with low X and high Y intensities as male,
+#' samples with high X and low Y intensities are predicted as female.
+#'
 #' @rdname check_sex
-#' @param raw Output of \code{\link{read_idats}}
+#' @param raw Output of \code{\link{read_idats}}.
 #' @return \code{check_sex} returns a list containing two numeric vectors:
 #' \item{X}{Normalized average total intensities of probes targeting the X chromosome.}
 #' \item{Y}{Normalized average total intensities of probes targeting the Y chromosome.}
@@ -40,9 +51,9 @@ check_sex = function(raw) {
 }
 
 #' @rdname check_sex
-#' @param X,Y Forwarded from \code{check_sex()}
-#' @param male,female Indices of male and female samples
-#' @return \code{predict_sex} returns a factor with levels "f" (female) and "m" (male). 
+#' @param X,Y Normalized X and Y chromosome intensities as returned by \code{check_sex()}.
+#' @param male,female Indices of male and female samples.
+#' @return \code{predict_sex} returns a factor with levels "m" (male) and "f" (female).
 #'   Samples that cannot be determined conclusively are assigned \code{NA}.
 #' @export
 predict_sex = function(X, Y, male, female){

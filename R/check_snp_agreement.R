@@ -1,4 +1,4 @@
-#' Check agreement of SNP genotypes between samples
+#' Check agreement of genetic fingerprint between samples
 #'
 #' These functions check the agreement of genetic fingerprints between samples
 #' (after genotype calling with \code{\link{call_genotypes}}). In case of \code{check_snp_agreement},
@@ -7,22 +7,28 @@
 #' fingerprints, or samples from supposedly different donors with the same fingerprint.
 #' \code{enumerate_sample_donors} on the other hand infers donor IDs in case they are unknown
 #' (useful, for example, to detect technical replicates in a public dataset).
-#' 
+#'
+#' Two samples are considered to have the same genetic fingerprint if their agreement score
+#' (the probability of sharing the same genotype, averaged across SNP probes and weighted by the
+#' probability of the observations not being outliers) exceeds 0.9.
+#'
 #' @author Jonathan Heiss
-#' 
-#' @title  Agreement of SNPs
+#'
 #' @export
 #'
 #' @rdname check_snp_agreement
 #' @param genotypes Output of \code{\link{call_genotypes}}.
-#' @param donor_ids Vector of donor IDs corresponding to the samples (columns of genotypes). Should include duplicates if replicates exist.
+#' @param donor_ids Vector of donor IDs corresponding to the samples (columns of the SNP matrix).
+#' Contains duplicates if several samples come from the same donor.
 #' @param sample_ids Vector of unique sample IDs corresponding to the samples.
-#' 
-#' @return \code{check_snp_agreement} returns all conflicts found between user-supplied donor IDs
-#' and those derived from the genetic fingerprint. Returns \code{NULL} if no conflicts were found,
-#' or a list of \code{data.table}s, each representing one connected component of the conflict graph.
-#' @return \code{enumerate_sample_donors} returns an integer vector of inferred donor IDs for each sample.
-#' 
+#'
+#' @return \code{check_snp_agreement} returns \code{NULL} if no conflicts were found. Otherwise a list
+#' of \code{data.table}s, each representing one connected component of the conflict graph (i.e.,
+#' a group of related conflicts), with columns \code{donor1}, \code{sample1}, \code{donor2},
+#' \code{sample2}, and \code{agreement}.
+#' @return \code{enumerate_sample_donors} returns an integer vector of inferred donor IDs, one for
+#' each sample. Samples with the same ID share the same genetic fingerprint.
+#'
 check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 
    J = ncol(genotypes$snps)
@@ -83,9 +89,10 @@ check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
    return(conflicts)
 }
 
-#' @rdname check_snp_agreement
-#' @param ... Additional arguments passed to \code{\link[graphics]{boxplot}}.
+#' Boxplot of agreement scores for pairs of samples from the same vs. different donors
 #'
+#' @param ... Additional arguments passed to \code{\link[graphics]{boxplot}}.
+#' @noRd
 agreement_ = function(genotypes,donor_ids,sample_ids,...){
 
    J = ncol(genotypes$snps)

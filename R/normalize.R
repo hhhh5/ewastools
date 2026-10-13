@@ -3,22 +3,27 @@ NULL
 
 #' Dye-bias correction and beta-values
 #'
-#' @description Preprocessing functions to correct dye-bias using the RELIC method and convert 
-#' intensities to beta-values.
+#' @description \code{correct_dye_bias()} corrects the dye bias between the red and green color
+#' channel. It implements an improved version of RELIC using a robust Theil-Sen estimator
+#' to regress the intensities of the red on those of the green normalization control probes.
+#'
+#' \code{beta_values()} converts the methylated (M) and unmethylated (U) intensities into
+#' beta-values (M / (M + U)). Intensities below 1 are set to 1 before the conversion.
 #'
 #' @author Jonathan Heiss
 #' @name Preprocessing
 #' @rdname Preprocessing
 #' @param raw Output of \code{\link{read_idats}}.
 #'
-#' @return \code{correct_dye_bias} and \code{correct_dye_bias2} return a modified \code{raw} list 
-#'   object with dye-bias corrected intensities in \code{M}, \code{U}, and out-of-band signals.
-#' @return \code{beta_values} returns a matrix of beta-values. If IDATs were imported with 
-#'   \code{on_disk = TRUE}, this returns an \code{ff} object.
-#' 
+#' @return \code{correct_dye_bias} returns a modified \code{raw} list object with dye-bias corrected
+#'   intensities in \code{M}, \code{U}, and the out-of-band signals.
+#' @return \code{beta_values} returns a matrix of beta-values with probe IDs as row names and
+#'   sample IDs as column names. If the data was imported with \code{on_disk = TRUE}, an \code{ff}
+#'   object is returned instead. In this case, it is recommended to transpose the returned ff object
+#'   for fast row-based access.
+#'
 #' @references{Xu Z, Langie SA, De Boever P, Taylor JA, Niu L. RELIC: a novel dye-bias correction method for Illumina Methylation BeadChip. BMC Genomics. 2017 Jan 3;18(1):4.}
-#' @references{Heiss JA, Brenner H. Between-array normalization for 450K data. Frontiers in Genetics. 2015;6.}
-#' 
+#'
 NULL
 
 #' @rdname Preprocessing
@@ -71,8 +76,10 @@ correct_dye_bias <- function(raw)
    return(raw)
 }
 
-#' @rdname Preprocessing
-#' 
+#' Experimental dye-bias correction using separate regressions for A~G and T~C
+#'
+#' @param raw Output of \code{read_idats()}.
+#' @noRd
 correct_dye_bias2 = function (raw) 
 {
    # Experimental version of dye-bias correction. I found that red~green differs for 
@@ -117,12 +124,7 @@ correct_dye_bias2 = function (raw)
    return(raw)
 }
 
-#' Convert fluorescence intensities to beta-values
 #' @rdname Preprocessing
-#' @return A matrix of beta-values.
-#'   If IDATs were imported with option \code{on_disk = TRUE}, a \code{ff} object.
-#'   If the data was imported using \code{on_disk = TRUE}, it is recommended to transpose
-#'   the returned ff object for fast row-based access.
 #' @export
 #'
 beta_values = function(raw)
@@ -161,7 +163,7 @@ beta_values = function(raw)
 #' @param rownames Character vector of row names (probe IDs) of the target matrix.
 #' 
 #' @return An integer vector of the matching indices of \code{query} in \code{rownames}.
-#'
+#' @noRd
 find_matching_rows = function(query, rownames)
 {
    # Regex for legacy Illumina probe formats (cg/rs/ch followed by numbers)

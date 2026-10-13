@@ -3,22 +3,39 @@
 \name{check_sex}
 \alias{check_sex}
 \alias{predict_sex}
-\title{Infer the sex of sample donor}
+\title{Infer the sex of sample donors}
 \usage{
 check_sex(raw)
 
 predict_sex(X, Y, male, female)
 }
 \arguments{
-\item{raw}{Output of calling \code{\link{read_idats()}}}
+\item{raw}{Output of \code{\link{read_idats}}.}
 
-\item{X, Y}{Forwarded from \code{check_sex()}}
+\item{X, Y}{Normalized X and Y chromosome intensities as returned by \code{check_sex()}.}
 
-\item{male, female}{Indices of male and female samples}
+\item{male, female}{Indices of male and female samples.}
 }
 \value{
-\code{check_sex} returns the normalized average total intensities of probes targeting the X and Y chromosomes. These are forwarded to \code{predict_sex} which returns a factor with levels "f","m" (and \code{NA} if the sex cannot be determined conclusively).
+\code{check_sex} returns a list containing two numeric vectors:
+\item{X}{Normalized average total intensities of probes targeting the X chromosome.}
+\item{Y}{Normalized average total intensities of probes targeting the Y chromosome.}
+
+\code{predict_sex} returns a factor with levels "m" (male) and "f" (female).
+  Samples that cannot be determined conclusively are assigned \code{NA}.
 }
 \description{
-Return the normalized average total intensities of probes targeting the X and Y chromosomes.
+\code{check_sex()} computes the normalized average total intensities of probes targeting the
+X and Y chromosomes. \code{predict_sex()} uses these values and the recorded sex of the samples
+to predict the sex of each sample, which allows to identify mislabeled samples.
+}
+\details{
+\code{check_sex()} should be applied to dye-bias corrected intensities (see \code{\link{correct_dye_bias}})
+but \strong{before} masking undetected probes with \code{\link{mask}},
+as masking would remove many of the Y chromosome probes.
+
+\code{predict_sex()} determines cutoffs for the X and Y chromosome intensities as the
+Hodges-Lehmann estimators of the midpoint between recorded male and female samples.
+Samples samples with low X and high Y intensities as male,
+samples with high X and low Y intensities are predicted as female.
 }

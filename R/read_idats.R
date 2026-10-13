@@ -8,8 +8,9 @@ NULL
 #' @param idat_files Character vector of relative or absolute filepaths without
 #' "_Grn.idat" and "_Red.idat" suffixes.
 #' IDATs for red and green channel must have the same prefix and be stored in the same folder.
+#' Gzipped files (".idat.gz") are supported as well.
 #'
-#' E.g., a sample with the files "file/path/sample1_Red.idat" and 
+#' E.g., a sample with the files "file/path/sample1_Red.idat" and
 #' "file/path/sample1_Grn.idat" would be passed as "file/path/sample1".
 #'
 #' All .idat files are assumed to be from the same platform.
@@ -17,17 +18,29 @@ NULL
 #' @param quiet If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).
 #' @param on_disk If \code{TRUE}, data will be stored on disk using the \code{ff} package.
 #'    This will be slower but enables processing datasets larger than memory.
-#' 
+#'
 #' @return A list containing
-#' \item{platform}{Name of the BeadChip (450K/EPICv1/EPICv2/MOUSE)}
+#' \item{platform}{Name of the BeadChip (27K/450K/EPICv1/EPICv2/MSA/MOUSE)}
 #' \item{manifest}{A data.table describing the probes}
-#' \item{M}{intensities of targeting methylated sequences}
-#' \item{U}{intensities of targeting unmethylated sequences}
-#' \item{N}{number of beads from which average intensities in M were derived}
-#' \item{V}{number of beads from which average intensities in U were derived}
+#' \item{M}{Intensities of probes targeting methylated sequences}
+#' \item{U}{Intensities of probes targeting unmethylated sequences}
+#' \item{S}{Standard deviations of the bead intensities underlying \code{M}}
+#' \item{T}{Standard deviations of the bead intensities underlying \code{U}}
+#' \item{N}{Number of beads from which average intensities in \code{M} were derived}
+#' \item{V}{Number of beads from which average intensities in \code{U} were derived}
+#' \item{controls}{A data.table describing the control probes}
 #' \item{ctrlG}{Intensities of the control probes in the green color channel}
 #' \item{ctrlR}{Intensities of the control probes in the red color channel}
-#' \item{meta}{A data.table containing unique sample_ids and metadata}
+#' \item{ctrlN}{Number of beads underlying the control probe intensities}
+#' \item{oobG}{List of matrices \code{M} and \code{U} with out-of-band intensities in the green
+#'   color channel (of Infinium type I probes measured in the red color channel)}
+#' \item{oobR}{List of matrices \code{M} and \code{U} with out-of-band intensities in the red
+#'   color channel (of Infinium type I probes measured in the green color channel)}
+#' \item{meta}{A tibble with sample metadata: \code{sample_id} (file name without path), scan
+#'   \code{date} and \code{time}, Sentrix \code{barcode} and \code{position}}
+#'
+#' The intensity matrices have one row per probe (in the order of \code{manifest}) and one column
+#' per sample. If \code{on_disk = TRUE}, they are \code{ff} objects (except for control probes).
 #' 
 #' @examples
 #' \dontrun{
@@ -278,10 +291,10 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 #'    Used for removing samples that failed quality control before computing
 #'    beta-values.
 #'
-#' @param raw Output of \code{\link{read_idats}}
-#' @param j Indices of the samples to drop
+#' @param raw Output of \code{\link{read_idats}}.
+#' @param j Indices (column numbers) of the samples to drop.
 #'
-#' @return A modified \code{raw} object
+#' @return A modified \code{raw} object without the dropped samples.
 #'
 #' @export
 #'

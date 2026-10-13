@@ -1,18 +1,24 @@
 #' @import data.table
 NULL
 
-#' Calculate the QC metrics as described in the 'BeadArray Controls Reporter Software Guide' from Illumina.
-#' 
+#' Quality control metrics
+#'
+#' \code{control_metrics()} calculates the metrics described in the
+#' 'BeadArray Controls Reporter Software Guide' from Illumina.
+#' \code{sample_failure()} compares these metrics against the thresholds recommended by Illumina.
+#'
 #' @export
-#' @note You can download the Software Guide at https://support.illumina.com/downloads/beadarray-controls-reporter-software-guide-1000000004009.html
-#' @title Quality control metrics
-#' 
+#' @note You can download the Software Guide at
+#' \url{https://support.illumina.com/downloads/beadarray-controls-reporter-software-guide-1000000004009.html}
+#'
 #' @param raw Output of \code{\link{read_idats}}.
-#' @param FFPE Set to \code{TRUE} if the FFPE restoration kit was used.
-#' @param metrics Output of \code{control_metrics}.
-#' 
-#' @return For \code{control_metrics}, a list of 17 control metrics, each one a numeric vector equal in length to the sample size:
-#' \item{Restoration}{Assesses the restoration of the DNA methylation state after bisulfite treatment. Green channel ratio.}
+#' @param FFPE Set to \code{TRUE} if the FFPE DNA restoration kit was used.
+#' @param metrics Output of \code{control_metrics()}.
+#'
+#' @return For \code{control_metrics}, a list of 21 control metrics, each one a numeric vector equal in length to the number of samples.
+#' Each vector has an attribute \code{"threshold"} holding the cut-off recommended by Illumina (samples below the threshold fail).
+#' \item{Restoration}{Success of the FFPE DNA restoration. Green signal of the restoration control relative to background.
+#'   Only evaluated if \code{FFPE = TRUE}.}
 #' \item{Staining Green}{Biotin staining efficiency. Ratio of Biotin (High) to background green signals.}
 #' \item{Staining Red}{DNP staining efficiency. Ratio of DNP (High) to background red signals.}
 #' \item{Extension Green}{Extension efficiency of C/G base pairs. Ratio of green intensities.}
@@ -34,8 +40,9 @@ NULL
 #' \item{Non-polymorphic Green}{Non-polymorphic query performance in the green channel.}
 #' \item{Non-polymorphic Red}{Non-polymorphic query performance in the red channel.}
 #' 
-#' @return For \code{sample_failure}, a logical vector, \code{TRUE} if the sample at the corresponding index failed on any of the 17 control metrics.
-#' 
+#' @return For \code{sample_failure}, a logical vector, \code{TRUE} if the sample at the corresponding index falls below
+#' the threshold for any of the control metrics.
+#'
 control_metrics = function(raw, FFPE = FALSE){
 
    if(!all(c("controls", "ctrlG", "ctrlR") %in% names(raw))) stop("Invalid argument")

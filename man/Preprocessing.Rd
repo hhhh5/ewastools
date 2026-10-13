@@ -3,37 +3,35 @@
 \name{Preprocessing}
 \alias{Preprocessing}
 \alias{correct_dye_bias}
-\alias{correct_dye_bias2}
 \alias{beta_values}
-\title{Functions for preprocessing}
+\title{Dye-bias correction and beta-values}
 \usage{
 correct_dye_bias(raw)
-
-correct_dye_bias2(raw)
 
 beta_values(raw)
 }
 \arguments{
-\item{raw}{Output of calling \code{\link{read_idats}}}
+\item{raw}{Output of \code{\link{read_idats}}.}
 }
 \value{
-A modified \code{raw} object with dye-bias corrected intensities using RELIC for \code{correct_dye_bias}.
-   A matrix of beta-values, either normalized (for \code{normalize}) or not (for \code{dont_normalize}).
+\code{correct_dye_bias} returns a modified \code{raw} list object with dye-bias corrected
+  intensities in \code{M}, \code{U}, and the out-of-band signals.
 
-A matrix of beta-values.
-  If IDATs were imported with option \code{on_disk = TRUE}, a \{code{ff} object.
-  If the data was imported using \code{on_disk = TRUE}, it is recommended to transpose
-  the returned ff object for fast row-based access.
+\code{beta_values} returns a matrix of beta-values with probe IDs as row names and
+  sample IDs as column names. If the data was imported with \code{on_disk = TRUE}, an \code{ff}
+  object is returned instead. In this case, it is recommended to transpose the returned ff object
+  for fast row-based access.
 }
 \description{
-Functions for preprocessing
+\code{correct_dye_bias()} corrects the dye bias between the red and green color
+channel. It implements an improved version of RELIC using a robust Theil-Sen estimator
+to regress the intensities of the red on those of the green normalization control probes.
 
-Convert fluorescence intensities to beta-values
+\code{beta_values()} converts the methylated (M) and unmethylated (U) intensities into
+beta-values (M / (M + U)). Intensities below 1 are set to 1 before the conversion.
 }
 \references{
 {Xu Z, Langie SA, De Boever P, Taylor JA, Niu L. RELIC: a novel dye-bias correction method for Illumina Methylation BeadChip. BMC Genomics. 2017 Jan 3;18(1):4.}
-
-{Heiss JA, Brenner H. Between-array normalization for 450K data. Frontiers in Genetics. 2015;6.}
 }
 \author{
 Jonathan Heiss
