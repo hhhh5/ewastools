@@ -69,7 +69,8 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    # All idats are assumed to be from the same platform.
    # (Consider that Type I probes have each two different beads)
    P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
-   print(P) # Print this in case someone encounters a new variant of a chip
+   if (!quiet)
+      message(sprintf("Number of features: %d", P))
 
    ## Pick appropriate manifest
    # (numbers are possible #features I have encountered in the wild so far)
