@@ -329,6 +329,7 @@ drop_samples = function(raw, j = NULL){
 
       raw$ctrlG = drop_cols(raw$ctrlG, j)
       raw$ctrlR = drop_cols(raw$ctrlR, j)
+      raw$ctrlN = drop_cols(raw$ctrlN, j)
 
       raw$oobG$M = drop_cols(raw$oobG$M, j)
       raw$oobG$U = drop_cols(raw$oobG$U, j)
@@ -351,6 +352,7 @@ drop_samples = function(raw, j = NULL){
 
       raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
       raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
+      raw$ctrlN = raw$ctrlN[, -j, drop = FALSE]
 
       raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
       raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
