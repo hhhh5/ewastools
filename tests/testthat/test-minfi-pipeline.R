@@ -1,13 +1,14 @@
-library(minfi)
-library(ENmix)
-library(IlluminaHumanMethylationEPICanno.ilm10b4.hg19)
-
-data_dir <- normalizePath("~/repos/ewastools-data", mustWork = FALSE)
-
 test_that("compatibility with minfi", {
 
+	testthat::skip_if_not_installed("minfi")
+	testthat::skip_if_not_installed("ENmix")
+	testthat::skip_if_not_installed("IlluminaHumanMethylationEPICanno.ilm10b4.hg19")
+
+	data_dir <- normalizePath("~/repos/ewastools-data", mustWork = FALSE)
 	idat_prefix <- file.path(data_dir, "GSE110554/GSM2998021")
-	meth = read.metharray(idat_prefix, extended = TRUE)
+	testthat::skip_if_not(file.exists(paste0(idat_prefix, "_Grn.idat.gz")), "Test data not found")
+
+	meth = minfi::read.metharray(idat_prefix, extended = TRUE)
 	detP = detectionP.minfi(meth)
 
 	ctrls <- getProbeInfo(meth, type="Control")
