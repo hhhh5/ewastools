@@ -33,7 +33,10 @@ methylation_score = function(beta, model) {
          )
 
       i = find_matching_rows(markers$probe_id, rownames(beta))
-      y = beta[i,]
+      if (any(is.na(i)))
+         warning(glue::glue("{sum(is.na(i))} of {length(i)} model probes were not found in the beta matrix."))
+
+      y = beta[i, , drop = FALSE]
       y = y * markers$coef
       y = colSums(y, na.rm = TRUE)
       return(y)
@@ -50,7 +53,10 @@ methylation_score = function(beta, model) {
       markers = markers[-1]
 
       i = find_matching_rows(markers$probe_id, rownames(beta))
-      y = beta[i,]
+      if (any(is.na(i)))
+         warning(glue::glue("{sum(is.na(i))} of {length(i)} model probes were not found in the beta matrix."))
+
+      y = beta[i, , drop = FALSE]
       y = y * markers$coef
       y = colSums(y, na.rm = TRUE)
       y = y + 41.72579759
@@ -66,7 +72,10 @@ methylation_score = function(beta, model) {
       markers = markers[-1]
 
       i = find_matching_rows(markers$probe_id, rownames(beta))
-      y = beta[i,]
+      if (any(is.na(i)))
+         warning(glue::glue("{sum(is.na(i))} of {length(i)} model probes were not found in the beta matrix."))
+
+      y = beta[i, , drop = FALSE]
       y = y * markers$coef
       y = colSums(y, na.rm = TRUE)
       y = y + 24.99772133
@@ -79,14 +88,17 @@ methylation_score = function(beta, model) {
       markers = system.file("data/horvath_clock.csv", package="ewastools")
       markers = fread(markers, header=TRUE)
       i = find_matching_rows(markers$probe_id, rownames(beta))
-      y = beta[i,]
+      if (any(is.na(i)))
+         warning(glue::glue("{sum(is.na(i))} of {length(i)} model probes were not found in the beta matrix."))
+
+      y = beta[i, , drop = FALSE]
       y = y * markers$coef
       y = colSums(y, na.rm = TRUE)
       y = y + 0.695507258
 
       # Epigenetic age predictor uses a transformation function to handle young ages.
       # Below is the inverse of the transformation function applied to linear predictions.
-      inverse_transformation = function(x,adult.age=20) {
+      inverse_transformation = function(x, adult.age = 20) {
          ifelse(x<0, (1+adult.age)*exp(x)-1, (1+adult.age)*x+adult.age) }
 
       return(inverse_transformation(y))
