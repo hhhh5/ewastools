@@ -9,10 +9,13 @@ Description: Collection of useful functions for working with DNA methylation mic
 Depends: R (>= 4.2.0)
 Imports: 
     data.table,
+    dplyr,
     forcats,
+    glue,
     igraph,
     illuminaio,
     mblm,
+    purrr,
     quadprog,
     stringr,
     tibble
