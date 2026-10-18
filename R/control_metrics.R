@@ -192,9 +192,9 @@ control_metrics = function(raw, FFPE = FALSE){
 #' 
 sample_failure = function(metrics){
    # Returns TRUE for any sample that falls below the quality control threshold for at least one metric
-   failed = sapply(metrics,function(metric){
-      metric < attr(metric,"threshold") 
-   })
-
-   apply(failed,1,any,na.rm=TRUE)
+   metrics |>
+      purrr::map(\(m) tidyr::replace_na(m, attr(m, "threshold"))) |>
+      tibble::as_tibble() |>
+      dplyr::summarize(failed = dplyr::if_any(everything(), \(m) m < attr(m, "threshold"))) |>
+      dplyr::pull(failed)
 }
