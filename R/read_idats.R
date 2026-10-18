@@ -56,9 +56,6 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
          stop("Package 'ff' is required but not installed.")
    }
 
-   ## illuminaio can handle gzipped .idats
-   df_idats = tibble::tibble(basename = idat_files)
-
    zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
    suffix = ifelse(zipped, ".idat.gz", ".idat")
 
