@@ -101,8 +101,9 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       stop("Unknown platform")
    }
 
-   manifest = ewastools:::MANIFESTS[[ platform ]]
-   controls = ewastools:::CONTROLS [[ platform ]]
+   m = read_manifest(platform)
+   manifest = copy(m$manifest)
+   controls = copy(m$controls)
 
    setDT(manifest)
    setDT(controls)

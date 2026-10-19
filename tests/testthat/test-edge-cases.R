@@ -34,3 +34,28 @@ test_that("methylation_score handles single-sample matrix and warns on missing p
   expect_length(score, 1)
   expect_false(is.na(score))
 })
+
+test_that("read_manifest lazy loads and caches manifest and controls", {
+  m27k = ewastools:::read_manifest("27K")
+  expect_type(m27k, "list")
+  expect_named(m27k, c("manifest", "controls"))
+  expect_s3_class(m27k$manifest, "data.frame")
+  expect_s3_class(m27k$controls, "data.frame")
+})
+
+test_that("read_idats does not mutate cached manifests or controls in place", {
+  k450 = testthat::test_path("../../data/5640269011_R01C01_Grn.idat")
+  if (file.exists(k450)) {
+    idat_base = sub("_Grn\\.idat$", "", k450)
+    raw1 = read_idats(idat_base, quiet = TRUE)
+    # Cached 450K manifest should still have chr37 and not index or OOBi
+    m450 = ewastools:::read_manifest("450K")
+    expect_true("chr37" %in% names(m450$manifest))
+    expect_false("OOBi" %in% names(m450$manifest))
+    expect_false("index" %in% names(m450$manifest))
+    expect_false("index" %in% names(m450$controls))
+
+    # A second read_idats call on the same platform should succeed cleanly
+    expect_no_error(raw2 <- read_idats(idat_base, quiet = TRUE))
+  }
+})
