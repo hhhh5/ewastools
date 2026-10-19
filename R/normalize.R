@@ -169,7 +169,7 @@ find_matching_rows = function(query, rownames)
    # Regex for legacy Illumina probe formats (cg/rs/ch followed by numbers)
    legacy_regex = stringr::regex("^cg\\d{8,8}$|^rs\\d+$|^ch\\.\\w+\\.\\d+[FR]$")
    # Regex for EPICv2 probe formats (containing strand and replicate tags like _BC11)
-   epicv2_regex = stringr::regex("^[cg|ch|rs|nv].*_[TB][CO]\\d+$")
+   epicv2_regex = stringr::regex("^(?:cg|ch|rs|nv).*_[TB][CO]\\d+$")
 
    if (all(stringr::str_detect(query, pattern = legacy_regex))) {
       query_type = "legacy"
