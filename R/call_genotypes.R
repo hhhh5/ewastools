@@ -227,22 +227,25 @@ snp_outliers = function(genotypes)
 #' \item{shape1}{Estimated shape1 parameter.}
 #' \item{shape2}{Estimated shape2 parameter.}
 #' @noRd
-eBeta = function(x,w)
+eBeta = function(x, w)
 {
-   # Method of moments estimation of Beta distribution parameters from weighted observations
-   n = length(w)
-   w = n*w/sum(w)
-   sample.mean =  mean(w*x)
-   sample.var  = (mean(w*x^2)-sample.mean^2) * n/(n-1)
-   v = sample.mean * (1-sample.mean)
-    
-   if (sample.var < v){
-      shape1 = sample.mean * (v/sample.var - 1)
-      shape2 = (1 - sample.mean) * (v/sample.var - 1)
-   } else {
-      shape2 = sample.mean * (v/sample.var - 1)
-      shape1 = (1 - sample.mean) * (v/sample.var - 1)
-   }
-    
-   list(shape1 = shape1, shape2 = shape2)
+  stopifnot(all(x > 0 & x < 1), all(weights >= 0), length(x) == length(weights))
+  
+  # Normalize weights
+  w = w / sum(w)
+  
+  # Weighted mean and variance
+  x_bar <- sum(w * x)
+  s2 <- sum(w * (x - x_bar)^2)
+  
+  # Condition check: sample variance must be strictly less than x_bar * (1 - x_bar)
+  term <- (x_bar * (1 - x_bar) / s2) - 1
+  if (term <= 0) {
+    stop("Weighted variance is too large to fit a valid Beta distribution.")
+  }
+  
+  alpha <- x_bar * term
+  beta  <- (1 - x_bar) * term
+  
+  return(c(shape1 = alpha, shape2 = beta))
 }
