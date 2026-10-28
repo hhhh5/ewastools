@@ -229,7 +229,7 @@ snp_outliers = function(genotypes)
 #' @noRd
 eBeta = function(x, w)
 {
-  stopifnot(all(x > 0 & x < 1), all(weights >= 0), length(x) == length(weights))
+  stopifnot(all(x > 0 & x < 1), all(w >= 0), length(x) == length(w))
   
   # Normalize weights
   w = w / sum(w)
@@ -247,5 +247,5 @@ eBeta = function(x, w)
   alpha <- x_bar * term
   beta  <- (1 - x_bar) * term
   
-  return(c(shape1 = alpha, shape2 = beta))
+  return(list(shape1 = alpha, shape2 = beta))
 }
