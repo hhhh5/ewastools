@@ -299,13 +299,13 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 #'
 drop_samples = function(raw, j = NULL){
 
-   if(is.null(j)) return(raw)
-
+   if (is.logical(j)) j = which(j)
+   if (is.null(j) || length(j) == 0L) return(raw)
 
    if (ff::is.ff(raw$M)) {
 
       drop_cols = function(x, j) { # x must be an ff matrix
-         cols_to_keep = setdiff(1:ncol(x), j)
+         cols_to_keep = setdiff(seq_len(ncol(x)), j)
          res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
          if (length(cols_to_keep) > 0) {
             for (k in seq_along(cols_to_keep))
@@ -324,10 +324,6 @@ drop_samples = function(raw, j = NULL){
 
       raw$V = drop_cols(raw$V, j)
       raw$N = drop_cols(raw$N, j)
-
-      raw$ctrlG = drop_cols(raw$ctrlG, j)
-      raw$ctrlR = drop_cols(raw$ctrlR, j)
-      raw$ctrlN = drop_cols(raw$ctrlN, j)
 
       raw$oobG$M = drop_cols(raw$oobG$M, j)
       raw$oobG$U = drop_cols(raw$oobG$U, j)
@@ -348,10 +344,6 @@ drop_samples = function(raw, j = NULL){
       raw$V = raw$V[, -j, drop = FALSE]
       raw$N = raw$N[, -j, drop = FALSE]
 
-      raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
-      raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
-      raw$ctrlN = raw$ctrlN[, -j, drop = FALSE]
-
       raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
       raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
       raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
@@ -360,6 +352,10 @@ drop_samples = function(raw, j = NULL){
       if("detP" %in% names(raw))
         raw$detP = raw$detP[, -j, drop = FALSE]
    }
+
+   raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
+   raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
+   raw$ctrlN = raw$ctrlN[, -j, drop = FALSE]
 
    raw$meta = raw$meta[-j,, drop = FALSE]
    
