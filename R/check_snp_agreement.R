@@ -32,8 +32,6 @@
 check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 
    J = ncol(genotypes$snps)
-   weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
-   gamma = genotypes$gamma
 
    stopifnot(anyDuplicated(sample_ids) == 0) # Stop if sample IDs are not unique
    stopifnot(length(sample_ids) == J)
@@ -46,25 +44,9 @@ check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
    setnames(conflicts, 1:4, c('donor1','sample1','donor2','sample2'))
 
    ## Compute the agreement between all sample pairs
-   # (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
-   d = matrix(NA_real_,nrow = J,ncol = J)
-   for(j in 1:J){
-      # Probability of sharing the same genotype (sum of product of genotype posteriors)
-      # weighted by the probability of neither observation being an outlier.
-      tmp = 
-      (weights * gamma[[1]]) * (weights[,j] * gamma[[1]][,j]) +
-      (weights * gamma[[2]]) * (weights[,j] * gamma[[2]][,j]) +
-      (weights * gamma[[3]]) * (weights[,j] * gamma[[3]][,j])
-
-      # Normalize the agreement score by the sum of joint outlier weights
-      d[,j] = colSums(tmp,na.rm=TRUE) / colSums(weights*weights[,j],na.rm=TRUE)
-
-   }
-
-   ## Drop duplicate entries (since matrix is symmetric) and the diagonal
-   d[upper.tri(d,diag=TRUE)] = NA_real_
+   d = snp_agreement_matrix_(genotypes)
    conflicts$agreement = as.numeric(d)
-   rm(tmp,d)
+   rm(d)
    conflicts = conflicts[!is.na(agreement)]
    
    ## Drop expected/non-conflict cases:
@@ -77,14 +59,14 @@ check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
    
    ## Find the weakly connected components of the graph
    # (consider conflicts as edges in a graph to group related issues together)
-   e = rep(NA,times=2*nrow(conflicts))
-   e[c(TRUE,FALSE)] = conflicts$sample1
-   e[c(FALSE,TRUE)] = conflicts$sample2
+   e = rep(NA_character_, times = 2 * nrow(conflicts))
+   e[c(TRUE,FALSE)] = as.character(conflicts$sample1)
+   e[c(FALSE,TRUE)] = as.character(conflicts$sample2)
 
    g = igraph::make_graph(edges=e,directed=FALSE)
    g = igraph::components(g,mode="weak")$membership
 
-   conflicts$group = g[conflicts$sample1]
+   conflicts$group = g[as.character(conflicts$sample1)]
    conflicts = split(conflicts,by='group',keep.by=FALSE)
    return(conflicts)
 }
@@ -96,8 +78,6 @@ check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 agreement_ = function(genotypes,donor_ids,sample_ids,...){
 
    J = ncol(genotypes$snps)
-   weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
-   gamma = genotypes$gamma
    
    stopifnot(anyDuplicated(sample_ids)==0) # Stop if sample IDs are not unique
    stopifnot(length(sample_ids) == J)
@@ -109,22 +89,9 @@ agreement_ = function(genotypes,donor_ids,sample_ids,...){
    setnames(conflicts, 1:4, c('donor1','sample1','donor2','sample2'))
 
    ## Compute the agreement between all sample pairs
-   # (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
-   d = matrix(NA_real_,nrow=J,ncol=J)
-   for(j in 1:J){
-      tmp = 
-      (weights * gamma[[1]]) * (weights[,j] * gamma[[1]][,j]) +
-      (weights * gamma[[2]]) * (weights[,j] * gamma[[2]][,j]) +
-      (weights * gamma[[3]]) * (weights[,j] * gamma[[3]][,j])
-
-      d[,j] = colSums(tmp,na.rm=TRUE) / colSums(weights*weights[,j],na.rm=TRUE)
-
-   }
-
-   # Drop duplicate entries and the diagonal
-   d[upper.tri(d,diag=TRUE)] = NA_real_
+   d = snp_agreement_matrix_(genotypes)
    conflicts$agreement = as.numeric(d)
-   rm(tmp,d)
+   rm(d)
    conflicts = conflicts[!is.na(agreement)]
 
    # Plot a boxplot comparing agreement distribution for same vs. different donors
@@ -139,29 +106,14 @@ agreement_ = function(genotypes,donor_ids,sample_ids,...){
 enumerate_sample_donors = function(genotypes){
 
    J = ncol(genotypes$snps)
-   weights = 1-genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
-   gamma = genotypes$gamma
 
    samesame = CJ(1:J,1:J,sorted=FALSE)
    setnames(samesame,1:2,c('sample1','sample2'))
 
    ## Compute the agreement between all sample pairs
-   # (everything is computed twice, i.e., pairs i,j and j,i -> duplicates and diagonal entries)
-   d = matrix(NA_real_,nrow=J,ncol=J)
-   for(j in 1:J){
-      tmp = 
-      (weights * gamma[[1]]) * (weights[,j] * gamma[[1]][,j]) +
-      (weights * gamma[[2]]) * (weights[,j] * gamma[[2]][,j]) +
-      (weights * gamma[[3]]) * (weights[,j] * gamma[[3]][,j])
-
-      d[,j] = colSums(tmp,na.rm=TRUE) / colSums(weights*weights[,j],na.rm=TRUE)
-
-   }
-
-   # Drop duplicate entries and the diagonal
-   d[upper.tri(d,diag=TRUE)] = NA_real_
+   d = snp_agreement_matrix_(genotypes)
    samesame$agreement = as.numeric(d)
-   rm(tmp,d)
+   rm(d)
    samesame = samesame[!is.na(agreement)]
    
    ## Select sample pairs with the same fingerprint/high agreement (> 0.90)
@@ -177,4 +129,28 @@ enumerate_sample_donors = function(genotypes){
 
    g = igraph::make_graph(edges=e,n=J,directed=FALSE)
    return(igraph::components(g,mode="strong")$membership)
+}
+
+#' Compute lower-triangular matrix of pairwise SNP agreement scores
+#' @noRd
+snp_agreement_matrix_ = function(genotypes) {
+   weights = 1 - genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
+   weights[is.na(weights)] = 0
+
+   w_gamma = lapply(genotypes$gamma, function(g) {
+      wg = weights * g
+      wg[is.na(wg)] = 0
+      wg
+   })
+
+   # Probability of sharing the same genotype (sum of product of genotype posteriors)
+   # weighted by the probability of neither observation being an outlier,
+   # normalized by the sum of joint outlier weights.
+   num = crossprod(w_gamma[[1]]) + crossprod(w_gamma[[2]]) + crossprod(w_gamma[[3]])
+   den = crossprod(weights)
+   d = num / den
+
+   ## Drop duplicate entries (since matrix is symmetric) and the diagonal
+   d[upper.tri(d, diag = TRUE)] = NA_real_
+   d
 }
