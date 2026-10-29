@@ -173,6 +173,8 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    positions = rep(NA_character_, J)
    dates     = rep(NA_character_, J)
 
+   prev_idat_order = NULL
+
    for (j in 1:J) {
 
       red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
@@ -185,53 +187,55 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       positions[j] = red$Unknowns$MostlyA
 
       # This information is sometimes not recorded
-      if (nrow(red$RunInfo) >1 ) dates[j] = red$RunInfo[2,1]
+      if (NROW(red$RunInfo) > 1) dates[j] = red$RunInfo[2,1]
 
-      manifest[,Ui := match(addressU, idat_order)]
-      manifest[,Mi := match(addressM, idat_order)]
-      controls[, i := match(address , idat_order)]
+      if (!identical(idat_order, prev_idat_order)) {
+         manifest[,Ui := match(addressU, idat_order)]
+         manifest[,Mi := match(addressM, idat_order)]
+         controls[, i := match(address , idat_order)]
 
-      setindexv(manifest,"channel")
-      manifest["Both", Mi := Ui, on = "channel"]
+         setindexv(manifest,"channel")
+         manifest["Both", Mi := Ui, on = "channel"]
+
+         iR = manifest["Red",  on = "channel"]
+         iG = manifest["Grn",  on = "channel"]
+         i2 = manifest["Both", on = "channel"]
+
+         prev_idat_order = idat_order
+      }
 
       ## Type I Red probes
-      i = manifest["Red", on = "channel"]
-
-      U[ i$index,j ] = red$Quants[ i$Ui, 1] # Mean
-      T[ i$index,j ] = red$Quants[ i$Ui, 2] # SD
-      V[ i$index,j ] = red$Quants[ i$Ui, 3] # NBeads
+      U[ iR$index,j ] = red$Quants[ iR$Ui, 1] # Mean
+      T[ iR$index,j ] = red$Quants[ iR$Ui, 2] # SD
+      V[ iR$index,j ] = red$Quants[ iR$Ui, 3] # NBeads
      
-      M[ i$index,j ] = red$Quants[ i$Mi, 1] # Mean
-      S[ i$index,j ] = red$Quants[ i$Mi, 2] # SD
-      N[ i$index,j ] = red$Quants[ i$Mi, 3] # NBeads
+      M[ iR$index,j ] = red$Quants[ iR$Mi, 1] # Mean
+      S[ iR$index,j ] = red$Quants[ iR$Mi, 2] # SD
+      N[ iR$index,j ] = red$Quants[ iR$Mi, 3] # NBeads
 
-      oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
-      oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
+      oobG$U[ iR$OOBi,j ] = grn$Quants[ iR$Ui,1 ]
+      oobG$M[ iR$OOBi,j ] = grn$Quants[ iR$Mi,1 ]
 
       ## Type I Green probes
-      i = manifest["Grn", on = "channel"]
+      U[ iG$index,j ] = grn$Quants[ iG$Ui,1 ] # Mean
+      T[ iG$index,j ] = grn$Quants[ iG$Ui,2 ] # SD
+      V[ iG$index,j ] = grn$Quants[ iG$Ui,3 ] # NBeads
 
-      U[ i$index,j ] = grn$Quants[ i$Ui,1 ] # Mean
-      T[ i$index,j ] = grn$Quants[ i$Ui,2 ] # SD
-      V[ i$index,j ] = grn$Quants[ i$Ui,3 ] # NBeads
+      M[ iG$index,j ] = grn$Quants[ iG$Mi,1 ] # Mean
+      S[ iG$index,j ] = grn$Quants[ iG$Mi,2 ] # SD
+      N[ iG$index,j ] = grn$Quants[ iG$Mi,3 ] # NBeads
 
-      M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
-      S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
-      N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
-
-      oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
-      oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
+      oobR$U[ iG$OOBi,j ] = red$Quants[ iG$Ui,1 ]
+      oobR$M[ iG$OOBi,j ] = red$Quants[ iG$Mi,1 ]
 
       ## Type II probes (measured in both channels: Red for Unmethylated, Green for Methylated)
-      i = manifest["Both", on = "channel"]
+      U[ i2$index,j ] = red$Quants[ i2$Ui,1 ] # Mean
+      T[ i2$index,j ] = red$Quants[ i2$Ui,2 ] # SD
+      V[ i2$index,j ] = red$Quants[ i2$Ui,3 ] # NBeads
 
-      U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
-      T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
-      V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
-
-      M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
-      S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
-      N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
+      M[ i2$index,j ] = grn$Quants[ i2$Mi,1 ] # Mean
+      S[ i2$index,j ] = grn$Quants[ i2$Mi,2 ] # SD
+      N[ i2$index,j ] = grn$Quants[ i2$Mi,3 ] # NBeads
 
       ## Control probes
       # Not keeping the SD for control probes ATM
@@ -254,14 +258,18 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       # Need at least two bead observations to calculate standard deviation
       T[V[, j] < 2, j] = NA
       S[N[, j] < 2, j] = NA
+
+      oobG$U[V[iR$index, j] == 0, j] = NA
+      oobG$M[N[iR$index, j] == 0, j] = NA
+      oobR$U[V[iG$index, j] == 0, j] = NA
+      oobR$M[N[iG$index, j] == 0, j] = NA
    }
 
    ctrlG[ctrlN == 0] = NA
    ctrlR[ctrlN == 0] = NA
 
    # Extract sample IDs from the file names (using the last portion of the path)
-   sample_ids = strsplit(x = idat_files, split = "/")
-   sample_ids = sapply(sample_ids, tail, n = 1L)
+   sample_ids = basename(idat_files)
 
    meta = tibble::tibble(
        sample_id = sample_ids
