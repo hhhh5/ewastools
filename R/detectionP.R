@@ -112,6 +112,8 @@ detectionP = function(raw)
 #'
 detectionP.neg = function(raw)
 {
+   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+
    with(raw, {
 
       bkgR = bkgG = controls[group == "NEGATIVE",index] 
@@ -126,30 +128,31 @@ detectionP.neg = function(raw)
       sdR = apply(bkgR,2,mad   ,na.rm=TRUE) 
 
       if (ff::is.ff(M)) {
-         raw$detP <<- ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
+         detP = ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
       } else {
-         raw$detP <<- matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
+         detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
       }
 
       # Red channel probes
       i = manifest[channel == "Red" ,index] 
       for(j in 1:ncol(M))  
-         raw$detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muR[j], sd = sqrt(2) * sdR[j],
-                               lower.tail = FALSE, log.p = TRUE) / log(10)
+         detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muR[j], sd = sqrt(2) * sdR[j],
+                           lower.tail = FALSE, log.p = TRUE) / log(10)
      
       # Green channel probes
       i = manifest[channel == "Grn" ,index] 
       for(j in 1:ncol(M))  
-         raw$detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muG[j], sd = sqrt(2) * sdG[j],
-                               lower.tail = FALSE, log.p = TRUE) / log(10)
+         detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muG[j], sd = sqrt(2) * sdG[j],
+                           lower.tail = FALSE, log.p = TRUE) / log(10)
      
       # Type II probes (both channels)
       i = manifest[channel == "Both",index] 
       for(j in 1:ncol(M)) 
-         raw$detP[i,j] = pnorm(U[i, j] + M[i, j], mean = muR[j] + muG[j], sd = sqrt(sdR[j]^2 + sdG[j]^2),
-                               lower.tail = FALSE, log.p = TRUE) / log(10)
+         detP[i,j] = pnorm(U[i, j] + M[i, j], mean = muR[j] + muG[j], sd = sqrt(sdR[j]^2 + sdG[j]^2),
+                           lower.tail = FALSE, log.p = TRUE) / log(10)
 
-     return(raw)
+      raw$detP = detP
+      return(raw)
    })
 }
 
@@ -180,13 +183,13 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
    if(!'detP'%in%names(raw)) stop('detP component missing')
 
    chrY = raw$manifest[forcats::fct_match(chr, "chrY"), index]
-   chrY = raw$detP[chrY,]
+   chrY = raw$detP[chrY, , drop = FALSE]
 
    cutoffs = c(1, 0.5, 0.1, 0.05, 0.01, 0.001, 0.0001)
 
    tmp = sapply(cutoffs,function(t){ colSums(chrY > t,na.rm=TRUE) })
-     males = apply(tmp[  males,], 2, quantile, prob = 0.9)
-   females = apply(tmp[females,], 2, quantile, prob = 0.1)
+     males = apply(tmp[  males, , drop = FALSE], 2, quantile, prob = 0.9)
+   females = apply(tmp[females, , drop = FALSE], 2, quantile, prob = 0.1)
 
    # Plot the quantiles of undetected chr Y probes
    plot  (-log10(cutoffs),females,ylim=c(0,nrow(chrY)),ylab='Chr Y # undetected ',xlab='p-value cutoff',xaxt="n")
@@ -219,8 +222,8 @@ detectionP.minfi = function(rgSet)
    iG = as.data.table(as.data.frame(iG))
 
    betas   = minfi::getBeta(rgSet)
-   betasIr = betas[iR$Name,]
-   betasIg = betas[iG$Name,]
+   betasIr = betas[iR$Name, , drop = FALSE]
+   betasIg = betas[iG$Name, , drop = FALSE]
    rm(betas)
 
    reds   = minfi::getRed(rgSet)
@@ -236,8 +239,8 @@ detectionP.minfi = function(rgSet)
       sG = summits(betasIg[,j])
 
       # Red channel
-      bkgU = order(abs(betasIr[,j]-sR[2]))[1:1000]
-      bkgM = order(abs(betasIr[,j]-sR[1]))[1:1000]
+      bkgU = head(order(abs(betasIr[,j]-sR[2])), n = 1000)
+      bkgM = head(order(abs(betasIr[,j]-sR[1])), n = 1000)
 
       bkgU = iR$AddressA[bkgU]
       bkgM = iR$AddressB[bkgM]
@@ -252,8 +255,8 @@ detectionP.minfi = function(rgSet)
       sdMR[j] = mad(bkgM,na.rm=TRUE)
 
       # Green channel
-      bkgU = order(abs(betasIg[,j]-sG[2]))[1:1000]
-      bkgM = order(abs(betasIg[,j]-sG[1]))[1:1000]
+      bkgU = head(order(abs(betasIg[,j]-sG[2])), n = 1000)
+      bkgM = head(order(abs(betasIg[,j]-sG[1])), n = 1000)
 
       bkgU = iG$AddressA[bkgU]
       bkgM = iG$AddressB[bkgM]
