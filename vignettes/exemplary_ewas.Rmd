@@ -155,7 +155,7 @@ We can see the improved accuracy by counting the number of Y chromosome probes t
 ```{r fig.width=6,fig.height=4}
 chrY = meth$manifest[chr=='chrY', index]
 
-P.neg = colSums(P.neg[chrY,] < 0.01, na.rm = TRUE) |>
+P.neg = colSums(P.neg[chrY,] < log10(0.01), na.rm = TRUE) |>
    split(pheno$sex) |>
    purrr::map(mean)
 
