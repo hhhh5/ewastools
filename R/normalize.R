@@ -57,7 +57,7 @@ correct_dye_bias <- function(raw)
       keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
       x = x[keep]; y = y[keep]
 
-      # Theil-Sen robust linear regression to estimate the slope (intercept is ignored)
+      # Theil-Sen robust linear regression on log-transformed intensities
       m = mblm::mblm(y~x, repeated = FALSE)
 
       # Adjust the intensities in the Green channel using the regression coefficients
