@@ -89,10 +89,10 @@ correct_dye_bias2 = function (raw)
    i1g = raw$manifest[channel == "Grn", ]
    i2  = raw$manifest[channel == "Both",]
 
-   Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai,]
-   Gi = raw$controls[group == "NORM_G"][order(name)]$index; Gi = raw$ctrlG[Gi,]
-   Ti = raw$controls[group == "NORM_T"][order(name)]$index; Ti = raw$ctrlR[Ti,]
-   Ci = raw$controls[group == "NORM_C"][order(name)]$index; Ci = raw$ctrlG[Ci,]
+   Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai, , drop = FALSE]
+   Gi = raw$controls[group == "NORM_G"][order(name)]$index; Gi = raw$ctrlG[Gi, , drop = FALSE]
+   Ti = raw$controls[group == "NORM_T"][order(name)]$index; Ti = raw$ctrlR[Ti, , drop = FALSE]
+   Ci = raw$controls[group == "NORM_C"][order(name)]$index; Ci = raw$ctrlG[Ci, , drop = FALSE]
 
    J = ncol(raw$M)
 
