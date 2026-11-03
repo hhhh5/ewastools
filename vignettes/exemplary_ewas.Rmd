@@ -182,20 +182,27 @@ P.new
 ```
 
 We used a significance threshold of 0.01 above.
-Moving forward, probes above this threshold should be masked, i.e., set to missing.
+Moving forward, probes above this threshold should be masked, i.e., set to missing, using `ewastools::mask(meth, 0.01)`.
+We will skip this step for now as we want to infer the sex of the sample donors first
+and masking would remove many of the measurements used for that quality check.
 
-```{r}
-meth = ewastools::mask(meth, 0.01)
-```
-
-Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the the single-base extension step. A and T nucleotides use are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias. For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values. (Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.) Dye-bias correction normalizes the red and green color channel. `ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
+Infinium BeadChips use two fluorescent dyes that are linked to the nucleotides used in the single-base extension step.
+A and T nucleotides are linked with a red dye (the red color channel), G and C nucleotides are linked with a green dye (green color channel). Uncorrected data usually feature higher intensities in the red color channel, the so-called dye bias.
+For probes of Infinium type II design, which use separate color channels to measure the methylated and unmethylated signal, this results in a shifted distribution of beta-values.
+(Probes of Infinium design type I are not affected, as they measure both signals in the same color channel.)
+Dye-bias correction normalizes the red and green color channel.
+`ewastools` provides an improved version of RELIC ([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen estimators.
 
 ```{r}
 meth = ewastools::correct_dye_bias(meth)
 ```
-The final step is the conversion of intensities to beta-values. While `ewastools` implements the LOESS normalization [(Heiss and Brenner, 2015)](https://doi.org/10.3389/fgene.2015.00092), I advise against normalization as it does little to protect against batch effects but can result in the removal of genuine biological signal. Instead I recommended to adjust for relevant technical covariates in regression models later.
+
+I advise against normalization as it does little to protect against batch effects but can result in the removal of genuine biological signal.
+Instead I recommend to adjust for relevant technical covariates in regression models later.
+The final step is therefore the conversion of intensities to beta-values.
+
 ```{r}
-beta = ewastools::beta_values(meth)
+beta = meth |> ewastools::mask(0.01) |> ewastools::beta_values()
 ```
 
 Before beginning with the actual epigenome-wide association study, it is advised to check a dataset for problematic samples.
