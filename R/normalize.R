@@ -156,8 +156,8 @@ beta_values = function(raw)
 
 #' Match probe IDs between a query list and matrix row names
 #' 
-#' @description This function parses legacy and EPICv2 probe ID formats to find matching
-#' indices in the dataset. It supports mapping legacy probe IDs to EPICv2 data.
+#' @description This function parses legacy and EPICv2-style probe ID formats to find matching
+#' indices in the dataset. It supports mapping legacy probe IDs to EPICv2/MSA/MOUSE data.
 #' 
 #' @param query Character vector of probe IDs to look up.
 #' @param rownames Character vector of row names (probe IDs) of the target matrix.
@@ -168,8 +168,8 @@ find_matching_rows = function(query, rownames)
 {
    # Regex for legacy Illumina probe formats (cg/rs/ch followed by numbers)
    legacy_regex = stringr::regex("^cg\\d{8,8}$|^rs\\d+$|^ch\\.\\w+\\.\\d+[FR]$")
-   # Regex for EPICv2 probe formats (containing strand and replicate tags like _BC11)
-   epicv2_regex = stringr::regex("^(?:cg|ch|rs|nv).*_[TB][CO]\\d+$")
+   # Regex for EPICv2/MSA/MOUSE probe formats (containing strand and replicate tags like _BC11)
+   epicv2_regex = stringr::regex("^(?:cg|ch|rs|nv|mu|rp).*_[TB][CO]\\d+$")
 
    if (all(stringr::str_detect(query, pattern = legacy_regex))) {
       query_type = "legacy"
@@ -191,11 +191,10 @@ find_matching_rows = function(query, rownames)
       # Directly match if formats are identical
       return(match(query, rownames))
    } else if (query_type == "legacy" & row_type == "epicv2") {
-      # Find for each user-provided `ilmn_id` the `probe_id` with `probe_rep` == 1
-      df_map = data.table(read_manifest("EPICv2")$manifest[,c("ilmn_id", "probe_id")])
-      setkey(df_map, probe_id)
-      query = df_map[query, nomatch = NA, mult = "first"]$ilmn_id
-      return(match(query, rownames))
+      # Strip strand/design/replicate suffix (e.g. `_BC11`) from row names to match legacy `probe_id`
+      # (`match()` returns the first matching replicate in manifest order)
+      base_rownames = sub("_[TB][CO]\\d+$", "", rownames)
+      return(match(query, base_rownames))
    } else if (query_type == "epicv2" & row_type == "legacy") {
       stop("Query contains EPICv2 probe IDs but dataset is of legacy type")
    } else {
