@@ -98,14 +98,24 @@ pheno[gsm == "GSM2260573", sex := "f"]
 write.csv(pheno, file = "pheno.csv", row.names = FALSE)
 ```
 
-This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data. After loading the required packages, analysis would start with gathering the phenotype data. In this example using a public dataset from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository, the phenotype data is stored in a file named `pheno.csv`
+This vignette exemplifies how to use the `ewastools` package to clean and pre-process DNA methylation data.
+After loading the required packages, analysis would start with gathering the phenotype data.
+In this example using a public dataset from the [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) repository,
+the phenotype data is stored in a file named `pheno.csv`
 
 ```{r}
 pheno = data.table::fread("pheno.csv")
 head(pheno)
 ```
 
-`pheno` contains a column `gsm`, which in this case represents also the prefix of the .idat file names. Usually, however, the file names are a combination of the Sentrix barcode, Sentrix position and color channel and will look something like this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel, and analogously `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel. `read_idats` can be used to import methylation data. It's first argument is a character vector containing the absolute or relative file paths and names but without the color channel and file extension, e.g. `C:/folder/subfolder/200379120004_R01C01`. Both red and green .idat files of a particular sample need to be in the same folder.
+`pheno` contains a column `gsm`, which in this case represents also the prefix of the .idat file names.
+Usually, however, the file names are a combination of the Sentrix barcode, Sentrix position and color channel
+and will look something like this `200379120004_R01C01_Red.idat` for the .idat containing the red color channel,
+and analogously `200379120004_R01C01_Grn.idat` for the .idat containing the green color channel.
+`read_idats` can be used to import methylation data.
+It's first argument is a character vector containing the absolute or relative file paths and names
+but without the color channel and file extension, e.g. `C:/folder/subfolder/200379120004_R01C01`.
+Both red and green .idat files of a particular sample need to be in the same folder.
 
 ```{r}
 # `quiet=TRUE` supresses the progress bar
@@ -121,7 +131,13 @@ beta = meth |> detectionP() |> mask(0.01) |> correct_dye_bias() |> beta_values()
 
 ... but we will break it up in order to describe the various steps.
 
-The first step should be to filter out unreliable data points which result from low fluorescence intensities. These can be the result of insufficiently amplified DNA. Filtering is done using so-called **detection p-values**, calculated from comparing fluorescence intensities to a noise distribution. Probes below a chosen significance threshold are deemed detected, otherwise undetected. The conventional way of calculating these p-values, as implemented in the GenomeStudio software, lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected. `ewastools` implements an improved estimation of noise levels that improves accuracy.
+The first step should be to filter out unreliable data points which result from low fluorescence intensities.
+These can be the result of insufficiently amplified DNA.
+Filtering is done using so-called **detection p-values**, calculated from comparing fluorescence intensities to a noise distribution.
+Probes below a chosen significance threshold are deemed detected, otherwise undetected.
+The conventional way of calculating these p-values, as implemented in the GenomeStudio software,
+lets many unreliable data points pass, demonstrated by the fact that many probes targeting the Y chromosome are classified as detected.
+`ewastools` implements an improved estimation of noise levels that improves accuracy.
 
 ```{r}
 meth = ewastools::detectionP(meth)
@@ -188,7 +204,10 @@ Before beginning with the actual epigenome-wide association study, it is advised
 
 **Control metrics**
 
-The first quality check evaluates 21 control metrics which are described in the [BeadArray Controls Reporter Software Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf) from Illumina. Exemplary, the "Bisulfite Conversion II" metric is plotted below. Three samples fall below the Illumina-recommended cut-off of 1. Input for `control_metrics()` is the output of `read_idats()`, e.g. the object holding raw or dye-bias-corrected intensities.
+The first quality check evaluates 21 control metrics which are described in the [BeadArray Controls Reporter Software Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf) from Illumina.
+Exemplary, the "Bisulfite Conversion II" metric is plotted below.
+Three samples fall below the Illumina-recommended cut-off of 1.
+Input for `control_metrics()` is the output of `read_idats()`, e.g. the object holding raw or dye-bias-corrected intensities.
      
 ```{r fig.width=6,fig.height=3.5}
 ctrls = ewastools::control_metrics(meth)
@@ -207,9 +226,15 @@ table(pheno$failed)
 
 **Sex mismatches**
 
-The sex of the sample donor can reliable be inferred from the methylation data. This functionality is implemented by the combination of `check_sex()` and `predict_sex()`. `check_sex()` computes the normalized average total fluorescence intensities of the probes targeting the X and Y chromosome. `predict_sex()` uses the output of `check_sex()` and recorded sex in order to identify mislabeled samples. The function `check_sex()` should be applied to dye-bias corrected intensities.
+The sex of the sample donor can reliable be inferred from the methylation data.
+This functionality is implemented by the combination of `check_sex()` and `predict_sex()`.
+`check_sex()` computes the normalized average total fluorescence intensities of the probes targeting the X and Y chromosome.
+`predict_sex()` uses the output of `check_sex()` and recorded sex in order to identify mislabeled samples.
+The function `check_sex()` should be applied to dye-bias corrected intensities.
 
-*Important:* This test should be performed using dye-bias corrected intensities **before** masking undetected probes, as this step would mask many of the Y chromosome probes used here.
+*Important:*
+This test should be performed using dye-bias corrected intensities **before** masking undetected probes,
+as this step would mask many of the Y chromosome probes used here.
 
 Plotted below are the normalized average total fluorescence intensities of X and Y chromosome probes.
 
@@ -256,7 +281,10 @@ snps = meth$manifest[probe_type == "rs", index]
 snps = beta[snps,]
 ```
 
-These SNPs are then used as input for `call_genotypes()`. This function estimates the parameters of a mixture model consisting of three Beta distributions representing the heterozygous and the two homozygous genotypes, and a fourth component, a uniform distribution, representing outliers.  The functions returns posterior probabilities used for soft classification. When setting the argument `learn=FALSE`, a pre-specified mixture model is used. In this case, we use the pre-specified model as the dataset is quite small and maximum likelihood estimation might be unstable.
+These SNPs are then used as input for `call_genotypes()`.
+This function estimates the parameters of a mixture model consisting of three Beta distributions representing the heterozygous and the two homozygous genotypes, and a fourth component, a uniform distribution, representing outliers. 
+The functions returns posterior probabilities used for soft classification. When setting the argument `learn=FALSE`, a pre-specified mixture model is used.
+In this case, we use the pre-specified model as the dataset is quite small and maximum likelihood estimation might be unstable.
 
 ```{r}
 genotypes = ewastools::call_genotypes(snps, learn = FALSE)
@@ -270,9 +298,14 @@ pheno[outlier > -4 ,.(gsm, X, Y, outlier)]
 pheno[outlier > -4 ,exclude := TRUE] # flag sample
 ```
 
-The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above. This is strong evidence that this sample is indeed contaminated. While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely. Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
+The one sample failing this check is the same sample that did not belong to either the male or female cluster in the plot above.
+This is strong evidence that this sample is indeed contaminated.
+While SNP outliers can also result from poorly performing assays, the sample passed the first quality check looking at the control metrics, therefore rendering this possibility unlikely.
+Another cause for a high outlier score is sample degradation (e.g., FFPE samples).
 
-Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`. The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree; the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets.
+Other useful functions to be mentioned are `check_snp_agreement()` and `enumerate_sample_donors()`.
+The former checks whether the genotypes of samples supposed to come from the same donor (or from monozygotic twins) do in fact agree;
+the latter returns unique IDs for unique genotypes and can, for example, be used to find technical replicates in public datasets.
 
 [Note] *When calling `check_snp_agreement()` I recommend to run the function on all samples with and outlier metric below -2, i.e., greater than the cut-off of -4 used to exclude contaminated samples, but still small enough to guarantee that the SNP calls are accurate.*
 
@@ -291,7 +324,9 @@ Here samples GSM2260485 and GSM2260543 come from the same donor.
 
 **PCA**
 
-Principal component analysis is a popular feature reduction method: it projects high-dimensional data into a lower-dimensional representation while trying to retain as much variability as possible. This is especially useful when either individual features are highly correlated and it is therefore reasonable to summarize them, or when (sometimes subtle) traces of background effects can be found across of large number of features.
+Principal component analysis is a popular feature reduction method:
+it projects high-dimensional data into a lower-dimensional representation while trying to retain as much variability as possible.
+This is especially useful when either individual features are highly correlated and it is therefore reasonable to summarize them, or when (sometimes subtle) traces of background effects can be found across of large number of features.
 
 We will drop the X and Y chromosome as we would like to find important drivers of methylation beyond sex.
 
@@ -321,15 +356,20 @@ pheno[pc1 < -0.8, exclude := TRUE]
 pheno[pc1 < -0.8, .(gsm, pc1, pc2)]
 ```
 
-GSM2219539 is actually a lung tissue sample from another GEO dataset (included here for educational purposes). It dominates the first principal component and should be excluded as it otherwise could drastically change the results of downstream analyses.
+GSM2219539 is actually a lung tissue sample from another GEO dataset (included here for educational purposes).
+It dominates the first principal component and should be excluded as it otherwise could drastically change the results of downstream analyses.
 
-PCA may be applied iteratively. After excluding samples that manifest as outliers, repeating PCA can give very different principal components.
+PCA may be applied iteratively.
+After excluding samples that manifest as outliers, repeating PCA can give very different principal components.
 
 ---
 
 **Leukocyte composition**
 
-This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues). The function `estimateLC()` implements the [Houseman method](https://doi.org/10.1186/1471-2105-13-86) to predict the leukocyte composition. The user has the choice between various sets of model parameters trained on various reference datasets (see `?estimateLC` for a list of options). The function operates on the matrix of beta-values.
+This quality check will only apply in case of blood samples (blood is, however, one of the most commonly studied tissues).
+The function `estimateLC()` implements the [Houseman method](https://doi.org/10.1186/1471-2105-13-86) to predict the leukocyte composition.
+The user has the choice between various sets of model parameters trained on various reference datasets (see `?estimateLC` for a list of options).
+The function operates on the matrix of beta-values.
 
 ```{r}
 LC = ewastools::estimateLC(beta, ref="HRS")
@@ -339,7 +379,8 @@ round(head(LC), 3)
 
 `LC` contains estimated proportions for seven cell types (dependent on the chosen reference dataset).
 
-A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes. Plotting `NE` + `EO` + `BA` this sample can easily be spotted.
+A second foreign sample from another GEO dataset has been hidden in the dataset, consisting of a purified fraction of granulocytes.
+Plotting `NE` + `EO` + `BA` this sample can easily be spotted.
 
 ```{r fig.width=6,fig.height=4}
 plot(pheno[,NE+EO+BA]*100,ylab="Granulocyte fraction (%)")
@@ -382,7 +423,9 @@ pheno = pheno[,.(
 )]
 ```
 
-We want test all CpG sites for their association with smoking. Unfortunately, the phenotype data is very sparse, as it is typcial for public datasets. Aside from smoking, only sex and the estimated proportions of the seven cell types will be including in the model. The following code snippet is optimized for readability not speed.
+We want test all CpG sites for their association with smoking. Unfortunately, the phenotype data is very sparse, as it is typcial for public datasets.
+Aside from smoking, only sex and the estimated proportions of the seven cell types will be including in the model.
+The following code snippet is optimized for readability not speed.
 
 ```{r}
 f = function(cpg){
@@ -408,7 +451,8 @@ Two of the significant CpGs (cg01940273, cg05575921) are known biomarkers overla
 
 ## Final comments
 
-Depending on the dataset, many other types of quality checks might be applicable. If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:heiss.jonathan@gmail.com), or file an issue or submit a pull request on GitHub (https://github.com/hhhh5/ewastools).
+Depending on the dataset, many other types of quality checks might be applicable.
+If you have suggestions or comments regarding `ewastools`, please send an [email](mailto:heiss.jonathan@gmail.com), or file an issue or submit a pull request on GitHub (https://github.com/hhhh5/ewastools).
 
 ```{r cleanup, include=FALSE, echo=FALSE, eval = TRUE}
 idats = list.files(pattern = ".idat.gz$")
