@@ -45,7 +45,7 @@ detectionP = function(raw)
 
    with(raw, {
 
-      if (ff::is.ff(M)) {
+      if (inherits(M, "ff")) {
          detP = ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
       } else {
          detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
@@ -127,7 +127,7 @@ detectionP.neg = function(raw)
       muR = apply(bkgR,2,median,na.rm=TRUE) 
       sdR = apply(bkgR,2,mad   ,na.rm=TRUE) 
 
-      if (ff::is.ff(M)) {
+      if (inherits(M, "ff")) {
          detP = ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
       } else {
          detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))

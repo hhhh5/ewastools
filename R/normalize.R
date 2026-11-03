@@ -134,7 +134,7 @@ beta_values = function(raw)
    I = nrow(raw$M)
    J = ncol(raw$M)
 
-   if (ff::is.ff(raw$M)) {
+   if (inherits(raw$M, "ff")) {
       meth = ff::ff(NA_real_, dim = c(I, J))
    } else {
       meth = matrix(NA_real_, nrow = I, ncol = J)

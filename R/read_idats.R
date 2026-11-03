@@ -310,7 +310,7 @@ drop_samples = function(raw, j = NULL){
    if (is.logical(j)) j = which(j)
    if (is.null(j) || length(j) == 0L) return(raw)
 
-   if (ff::is.ff(raw$M)) {
+   if (inherits(raw$M, "ff")) {
 
       drop_cols = function(x, j) { # x must be an ff matrix
          cols_to_keep = setdiff(seq_len(ncol(x)), j)
