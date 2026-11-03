@@ -10,7 +10,7 @@ estimateLC(meth, ref, constrained = FALSE)
 \item{meth}{Matrix of beta values}
 
 \item{ref}{Choice of reference dataset: available options are `HRS` (Health and Retirement Study),
-`Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541],
+`Reinius` [2], `Bakulski` [3], `deGoede` [4], `Gervin` [5], `Lin` [6], `Mill` [GSE103541],
 `Salas` [7], `Lolipop` [8]. Furthermore, the option `saliva` and `salivaEPIC` are available [9].}
 
 \item{constrained}{Force that all cell proportions sum up to 1.}
