@@ -10,7 +10,7 @@
 #'
 #' \code{predict_sex()} determines cutoffs for the X and Y chromosome intensities as the
 #' Hodges-Lehmann estimators of the midpoint between recorded male and female samples.
-#' Samples samples with low X and high Y intensities as male,
+#' Samples with low X and high Y intensities are predicted as male,
 #' samples with high X and low Y intensities are predicted as female.
 #'
 #' @rdname check_sex
