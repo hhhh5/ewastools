@@ -9,23 +9,27 @@ Description: Collection of useful functions for working with DNA methylation mic
 Depends: R (>= 4.2.0)
 Imports: 
     data.table,
-    dplyr,
     forcats,
     glue,
+    graphics,
     igraph,
     illuminaio,
     mblm,
-    purrr,
     quadprog,
+    stats,
     stringr,
-    tibble
+    tibble,
+    utils
 Suggests: 
+    dplyr,
     ff,
     knitr,
     minfi,
+    purrr,
     rmarkdown,
     svd,
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    tidyr
 Encoding: UTF-8
 License: Unlimited
 VignetteBuilder: knitr
