@@ -101,3 +101,50 @@ test_that("read_idats imports MOUSE platform", {
   expect_s3_class(res$meta, "data.frame")
   expect_equal(nrow(res$meta), 1)
 })
+
+test_that("read_idats and drop_samples work on bundled 450K and EPICv1 files", {
+  k450 = testthat::test_path("../../data/5640269011_R01C01")
+  epic = testthat::test_path("../../data/200144450018_R04C01")
+  stopifnot(
+    file.exists(paste0(k450, "_Grn.idat")),
+    file.exists(paste0(epic, "_Grn.idat"))
+  )
+
+  res_epic = read_idats(epic, quiet = TRUE)
+  expect_equal(res_epic$platform, "EPICv1")
+  expect_equal(dim(res_epic$M), c(865918, 1))
+  expect_equal(res_epic$meta$sample_id, "200144450018_R04C01")
+
+  res2 = read_idats(c(k450, k450), quiet = TRUE)
+  expect_equal(res2$platform, "450K")
+  expect_equal(dim(res2$M), c(485577, 2))
+  expect_equal(res2$M[, 1], res2$M[, 2])
+
+  # Empty `j` and `NULL` keep all samples
+  expect_equal(ncol(drop_samples(res2, NULL)$M), 2)
+  expect_equal(ncol(drop_samples(res2, integer(0))$M), 2)
+  expect_equal(ncol(drop_samples(res2, c(FALSE, FALSE))$M), 2)
+
+  # Integer and logical `j` drop the specified sample
+  d_int = drop_samples(res2, 1L)
+  d_log = drop_samples(res2, c(TRUE, FALSE))
+  expect_equal(ncol(d_int$M), 1)
+  expect_equal(nrow(d_int$meta), 1)
+  expect_equal(d_int$M, d_log$M)
+})
+
+test_that("read_idats and drop_samples work with on_disk = TRUE", {
+  skip_if_not_installed("ff")
+  k450 = testthat::test_path("../../data/5640269011_R01C01")
+  stopifnot(file.exists(paste0(k450, "_Grn.idat")))
+
+  res_ff = read_idats(c(k450, k450), quiet = TRUE, on_disk = TRUE)
+  expect_s3_class(res_ff$M, "ff")
+  expect_true(is.matrix(res_ff$ctrlG))
+
+  dropped_ff = drop_samples(res_ff, 2L)
+  expect_s3_class(dropped_ff$M, "ff")
+  expect_equal(ncol(dropped_ff$M), 1)
+  expect_true(is.matrix(dropped_ff$ctrlG))
+  expect_equal(ncol(dropped_ff$ctrlG), 1)
+})
