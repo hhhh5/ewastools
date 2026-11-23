@@ -8,8 +8,9 @@ NULL
 #' @param idat_files Character vector of relative or absolute filepaths without
 #' "_Grn.idat" and "_Red.idat" suffixes.
 #' IDATs for red and green channel must have the same prefix and be stored in the same folder.
+#' Gzipped files (".idat.gz") are supported as well.
 #'
-#' E.g., a sample with the files "file/path/sample1_Red.idat" and 
+#' E.g., a sample with the files "file/path/sample1_Red.idat" and
 #' "file/path/sample1_Grn.idat" would be passed as "file/path/sample1".
 #'
 #' All .idat files are assumed to be from the same platform.
@@ -17,17 +18,29 @@ NULL
 #' @param quiet If \code{TRUE}, suppresses the progress bar (useful for RMarkdown scripts).
 #' @param on_disk If \code{TRUE}, data will be stored on disk using the \code{ff} package.
 #'    This will be slower but enables processing datasets larger than memory.
-#' 
+#'
 #' @return A list containing
-#' \item{platform}{Name of the BeadChip (450K/EPICv1/EPICv2/MOUSE)}
+#' \item{platform}{Name of the BeadChip (27K/450K/EPICv1/EPICv2/MSA/MOUSE)}
 #' \item{manifest}{A data.table describing the probes}
-#' \item{M}{intensities of targeting methylated sequences}
-#' \item{U}{intensities of targeting unmethylated sequences}
-#' \item{N}{number of beads from which average intensities in M were derived}
-#' \item{V}{number of beads from which average intensities in U were derived}
+#' \item{M}{Intensities of probes targeting methylated sequences}
+#' \item{U}{Intensities of probes targeting unmethylated sequences}
+#' \item{S}{Standard deviations of the bead intensities underlying \code{M}}
+#' \item{T}{Standard deviations of the bead intensities underlying \code{U}}
+#' \item{N}{Number of beads from which average intensities in \code{M} were derived}
+#' \item{V}{Number of beads from which average intensities in \code{U} were derived}
+#' \item{controls}{A data.table describing the control probes}
 #' \item{ctrlG}{Intensities of the control probes in the green color channel}
 #' \item{ctrlR}{Intensities of the control probes in the red color channel}
-#' \item{meta}{A data.table containing unique sample_ids and metadata}
+#' \item{ctrlN}{Number of beads underlying the control probe intensities}
+#' \item{oobG}{List of matrices \code{M} and \code{U} with out-of-band intensities in the green
+#'   color channel (of Infinium type I probes measured in the red color channel)}
+#' \item{oobR}{List of matrices \code{M} and \code{U} with out-of-band intensities in the red
+#'   color channel (of Infinium type I probes measured in the green color channel)}
+#' \item{meta}{A tibble with sample metadata: \code{sample_id} (file name without path), scan
+#'   \code{date} and \code{time}, Sentrix \code{barcode} and \code{position}}
+#'
+#' The intensity matrices have one row per probe (in the order of \code{manifest}) and one column
+#' per sample. If \code{on_disk = TRUE}, they are \code{ff} objects (except for control probes).
 #' 
 #' @examples
 #' \dontrun{
@@ -43,9 +56,6 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
          stop("Package 'ff' is required but not installed.")
    }
 
-   ## illuminaio can handle gzipped .idats
-   df_idats = tibble::tibble(basename = idat_files)
-
    zipped = !file.exists(paste0(idat_files, "_Grn.idat"))
    suffix = ifelse(zipped, ".idat.gz", ".idat")
 
@@ -56,7 +66,8 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    # All idats are assumed to be from the same platform.
    # (Consider that Type I probes have each two different beads)
    P = illuminaio::readIDAT(paste0(idat_files[1], "_Grn", suffix[1]))$nSNPsRead
-   print(P) # Print this in case someone encounters a new variant of a chip
+   if (!quiet)
+      message(sprintf("Number of features: %d", P))
 
    ## Pick appropriate manifest
    # (numbers are possible #features I have encountered in the wild so far)
@@ -90,8 +101,9 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       stop("Unknown platform")
    }
 
-   manifest = ewastools:::MANIFESTS[[ platform ]]
-   controls = ewastools:::CONTROLS [[ platform ]]
+   m = read_manifest(platform)
+   manifest = copy(m$manifest)
+   controls = copy(m$controls)
 
    setDT(manifest)
    setDT(controls)
@@ -161,6 +173,8 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    positions = rep(NA_character_, J)
    dates     = rep(NA_character_, J)
 
+   prev_idat_order = NULL
+
    for (j in 1:J) {
 
       red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
@@ -173,53 +187,55 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       positions[j] = red$Unknowns$MostlyA
 
       # This information is sometimes not recorded
-      if (nrow(red$RunInfo) >1 ) dates[j] = red$RunInfo[2,1]
+      if (NROW(red$RunInfo) > 1) dates[j] = red$RunInfo[2,1]
 
-      manifest[,Ui := match(addressU, idat_order)]
-      manifest[,Mi := match(addressM, idat_order)]
-      controls[, i := match(address , idat_order)]
+      if (!identical(idat_order, prev_idat_order)) {
+         manifest[,Ui := match(addressU, idat_order)]
+         manifest[,Mi := match(addressM, idat_order)]
+         controls[, i := match(address , idat_order)]
 
-      setindexv(manifest,"channel")
-      manifest["Both", Mi := Ui, on = "channel"]
+         setindexv(manifest,"channel")
+         manifest["Both", Mi := Ui, on = "channel"]
+
+         iR = manifest["Red",  on = "channel"]
+         iG = manifest["Grn",  on = "channel"]
+         i2 = manifest["Both", on = "channel"]
+
+         prev_idat_order = idat_order
+      }
 
       ## Type I Red probes
-      i = manifest["Red", on = "channel"]
-
-      U[ i$index,j ] = red$Quants[ i$Ui, 1] # Mean
-      T[ i$index,j ] = red$Quants[ i$Ui, 2] # SD
-      V[ i$index,j ] = red$Quants[ i$Ui, 3] # NBeads
+      U[ iR$index,j ] = red$Quants[ iR$Ui, 1] # Mean
+      T[ iR$index,j ] = red$Quants[ iR$Ui, 2] # SD
+      V[ iR$index,j ] = red$Quants[ iR$Ui, 3] # NBeads
      
-      M[ i$index,j ] = red$Quants[ i$Mi, 1] # Mean
-      S[ i$index,j ] = red$Quants[ i$Mi, 2] # SD
-      N[ i$index,j ] = red$Quants[ i$Mi, 3] # NBeads
+      M[ iR$index,j ] = red$Quants[ iR$Mi, 1] # Mean
+      S[ iR$index,j ] = red$Quants[ iR$Mi, 2] # SD
+      N[ iR$index,j ] = red$Quants[ iR$Mi, 3] # NBeads
 
-      oobG$U[ i$OOBi,j ] = grn$Quants[ i$Ui,1 ]
-      oobG$M[ i$OOBi,j ] = grn$Quants[ i$Mi,1 ]
+      oobG$U[ iR$OOBi,j ] = grn$Quants[ iR$Ui,1 ]
+      oobG$M[ iR$OOBi,j ] = grn$Quants[ iR$Mi,1 ]
 
       ## Type I Green probes
-      i = manifest["Grn", on = "channel"]
+      U[ iG$index,j ] = grn$Quants[ iG$Ui,1 ] # Mean
+      T[ iG$index,j ] = grn$Quants[ iG$Ui,2 ] # SD
+      V[ iG$index,j ] = grn$Quants[ iG$Ui,3 ] # NBeads
 
-      U[ i$index,j ] = grn$Quants[ i$Ui,1 ] # Mean
-      T[ i$index,j ] = grn$Quants[ i$Ui,2 ] # SD
-      V[ i$index,j ] = grn$Quants[ i$Ui,3 ] # NBeads
+      M[ iG$index,j ] = grn$Quants[ iG$Mi,1 ] # Mean
+      S[ iG$index,j ] = grn$Quants[ iG$Mi,2 ] # SD
+      N[ iG$index,j ] = grn$Quants[ iG$Mi,3 ] # NBeads
 
-      M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
-      S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
-      N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
-
-      oobR$U[ i$OOBi,j ] = red$Quants[ i$Ui,1 ]
-      oobR$M[ i$OOBi,j ] = red$Quants[ i$Mi,1 ]
+      oobR$U[ iG$OOBi,j ] = red$Quants[ iG$Ui,1 ]
+      oobR$M[ iG$OOBi,j ] = red$Quants[ iG$Mi,1 ]
 
       ## Type II probes (measured in both channels: Red for Unmethylated, Green for Methylated)
-      i = manifest["Both", on = "channel"]
+      U[ i2$index,j ] = red$Quants[ i2$Ui,1 ] # Mean
+      T[ i2$index,j ] = red$Quants[ i2$Ui,2 ] # SD
+      V[ i2$index,j ] = red$Quants[ i2$Ui,3 ] # NBeads
 
-      U[ i$index,j ] = red$Quants[ i$Ui,1 ] # Mean
-      T[ i$index,j ] = red$Quants[ i$Ui,2 ] # SD
-      V[ i$index,j ] = red$Quants[ i$Ui,3 ] # NBeads
-
-      M[ i$index,j ] = grn$Quants[ i$Mi,1 ] # Mean
-      S[ i$index,j ] = grn$Quants[ i$Mi,2 ] # SD
-      N[ i$index,j ] = grn$Quants[ i$Mi,3 ] # NBeads
+      M[ i2$index,j ] = grn$Quants[ i2$Mi,1 ] # Mean
+      S[ i2$index,j ] = grn$Quants[ i2$Mi,2 ] # SD
+      N[ i2$index,j ] = grn$Quants[ i2$Mi,3 ] # NBeads
 
       ## Control probes
       # Not keeping the SD for control probes ATM
@@ -242,14 +258,18 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       # Need at least two bead observations to calculate standard deviation
       T[V[, j] < 2, j] = NA
       S[N[, j] < 2, j] = NA
+
+      oobG$U[V[iR$index, j] == 0, j] = NA
+      oobG$M[N[iR$index, j] == 0, j] = NA
+      oobR$U[V[iG$index, j] == 0, j] = NA
+      oobR$M[N[iG$index, j] == 0, j] = NA
    }
 
    ctrlG[ctrlN == 0] = NA
    ctrlR[ctrlN == 0] = NA
 
    # Extract sample IDs from the file names (using the last portion of the path)
-   sample_ids = strsplit(x = idat_files, split = "/")
-   sample_ids = sapply(sample_ids, tail, n = 1L)
+   sample_ids = basename(idat_files)
 
    meta = tibble::tibble(
        sample_id = sample_ids
@@ -278,22 +298,22 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 #'    Used for removing samples that failed quality control before computing
 #'    beta-values.
 #'
-#' @param raw Output of \code{\link{read_idats}}
-#' @param j Indices of the samples to drop
+#' @param raw Output of \code{\link{read_idats}}.
+#' @param j Indices (column numbers) of the samples to drop.
 #'
-#' @return A modified \code{raw} object
+#' @return A modified \code{raw} object without the dropped samples.
 #'
 #' @export
 #'
 drop_samples = function(raw, j = NULL){
 
-   if(is.null(j)) return(raw)
+   if (is.logical(j)) j = which(j)
+   if (is.null(j) || length(j) == 0L) return(raw)
 
-
-   if (ff::is.ff(raw$M)) {
+   if (inherits(raw$M, "ff")) {
 
       drop_cols = function(x, j) { # x must be an ff matrix
-         cols_to_keep = setdiff(1:ncol(x), j)
+         cols_to_keep = setdiff(seq_len(ncol(x)), j)
          res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
          if (length(cols_to_keep) > 0) {
             for (k in seq_along(cols_to_keep))
@@ -312,9 +332,6 @@ drop_samples = function(raw, j = NULL){
 
       raw$V = drop_cols(raw$V, j)
       raw$N = drop_cols(raw$N, j)
-
-      raw$ctrlG = drop_cols(raw$ctrlG, j)
-      raw$ctrlR = drop_cols(raw$ctrlR, j)
 
       raw$oobG$M = drop_cols(raw$oobG$M, j)
       raw$oobG$U = drop_cols(raw$oobG$U, j)
@@ -335,9 +352,6 @@ drop_samples = function(raw, j = NULL){
       raw$V = raw$V[, -j, drop = FALSE]
       raw$N = raw$N[, -j, drop = FALSE]
 
-      raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
-      raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
-
       raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
       raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
       raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
@@ -346,6 +360,10 @@ drop_samples = function(raw, j = NULL){
       if("detP" %in% names(raw))
         raw$detP = raw$detP[, -j, drop = FALSE]
    }
+
+   raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
+   raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
+   raw$ctrlN = raw$ctrlN[, -j, drop = FALSE]
 
    raw$meta = raw$meta[-j,, drop = FALSE]
    

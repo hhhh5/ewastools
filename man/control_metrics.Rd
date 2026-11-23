@@ -5,23 +5,52 @@
 \alias{sample_failure}
 \title{Quality control metrics}
 \usage{
-control_metrics(raw)
+control_metrics(raw, FFPE = FALSE)
 
 sample_failure(metrics)
 }
 \arguments{
-\item{raw}{Output of calling \code{\link{read_idats}}}
+\item{raw}{Output of \code{\link{read_idats}}.}
 
-\item{metrics}{Output of callling \code{control_metrics}}
+\item{FFPE}{Set to \code{TRUE} if the FFPE DNA restoration kit was used.}
+
+\item{metrics}{Output of \code{control_metrics()}.}
 }
 \value{
-For \code{control_metrics}, a list of 17 control metrics, each one a numeric vector equal in length to the sample size
+For \code{control_metrics}, a list of 21 control metrics, each one a numeric vector equal in length to the number of samples.
+Each vector has an attribute \code{"threshold"} holding the cut-off recommended by Illumina (samples below the threshold fail).
+\item{Restoration}{Success of the FFPE DNA restoration. Green signal of the restoration control relative to background.
+  Only evaluated if \code{FFPE = TRUE}.}
+\item{Staining Green}{Biotin staining efficiency. Ratio of Biotin (High) to background green signals.}
+\item{Staining Red}{DNP staining efficiency. Ratio of DNP (High) to background red signals.}
+\item{Extension Green}{Extension efficiency of C/G base pairs. Ratio of green intensities.}
+\item{Extension Red}{Extension efficiency of A/T base pairs. Ratio of red intensities.}
+\item{Hybridization High/Medium}{Hybridization performance. Ratio of high-to-medium green signal intensities.}
+\item{Hybridization Medium/Low}{Hybridization performance. Ratio of medium-to-low green signal intensities.}
+\item{Target Removal 1}{Target removal efficiency 1. Ratio of green intensities (+3000 background offset).}
+\item{Target Removal 2}{Target removal efficiency 2. Ratio of green intensities (+3000 background offset).}
+\item{Bisulfite Conversion I Green}{Bisulfite conversion efficiency for Type I green probes. Ratio of green intensities.}
+\item{Bisulfite Conversion I Green (Bkg)}{Bisulfite conversion green background ratio (+3000 background offset).}
+\item{Bisulfite Conversion I Red}{Bisulfite conversion efficiency for Type I red probes. Ratio of red intensities.}
+\item{Bisulfite Conversion I Red (Bkg)}{Bisulfite conversion red background ratio (+3000 background offset).}
+\item{Bisulfite Conversion II}{Bisulfite conversion efficiency for Type II probes. Ratio of red-to-green intensities.}
+\item{Bisulfite Conversion II (Bkg)}{Bisulfite conversion Type II green background ratio (+3000 background offset).}
+\item{Specificity I Green}{Specificity of hybridization for Type I green probes. Ratio of green intensities.}
+\item{Specificity I Red}{Specificity of hybridization for Type I red probes. Ratio of red intensities.}
+\item{Specificity II}{Specificity of hybridization for Type II probes. Ratio of red-to-green intensities.}
+\item{Specificity II (Bkg)}{Specificity of hybridization green background ratio (+3000 background offset).}
+\item{Non-polymorphic Green}{Non-polymorphic query performance in the green channel.}
+\item{Non-polymorphic Red}{Non-polymorphic query performance in the red channel.}
 
-For \code{sample_failure}, a logical vector, \code{TRUE} if sample at corresponding index failed on any of the 17 control metrics.
+For \code{sample_failure}, a logical vector, \code{TRUE} if the sample at the corresponding index falls below
+the threshold for any of the control metrics.
 }
 \description{
-Calculate the QC metrics as described in the 'BeadArray Controls Reporter Software Guide' from Illumina.
+\code{control_metrics()} calculates the metrics described in the
+'BeadArray Controls Reporter Software Guide' from Illumina.
+\code{sample_failure()} compares these metrics against the thresholds recommended by Illumina.
 }
 \note{
-You can download the Software Guide at https://support.illumina.com/downloads/beadarray-controls-reporter-software-guide-1000000004009.html
+You can download the Software Guide at
+\url{https://support.illumina.com/downloads/beadarray-controls-reporter-software-guide-1000000004009.html}
 }

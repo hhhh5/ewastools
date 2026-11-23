@@ -613,4 +613,8 @@ for(nm in names(CONTROLS)) {
     attr(CONTROLS [[nm]], "spec") = NULL
 }
 
-save(MANIFESTS, CONTROLS, file="./R/sysdata.rda",compress="xz")
+dir.create("./inst/extdata", recursive = TRUE, showWarnings = FALSE)
+for (nm in names(MANIFESTS)) {
+    saveRDS(list(manifest = MANIFESTS[[nm]], controls = CONTROLS[[nm]]),
+            file = sprintf("./inst/extdata/%s.rds", nm), compress = "xz")
+}

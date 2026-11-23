@@ -2,46 +2,52 @@
 % Please edit documentation in R/call_genotypes.R
 \name{call_genotypes}
 \alias{call_genotypes}
-\alias{mxm_}
 \alias{snp_outliers}
-\alias{eBeta}
 \title{Genotype calling}
 \usage{
 call_genotypes(snpmatrix, learn = FALSE, maxiter = 50)
 
-mxm_(genotypes)
-
 snp_outliers(genotypes)
-
-eBeta(x, w)
 }
 \arguments{
-\item{snpmatrix}{Matrix of beta-values for SNP probes. Provide SNPs probes as rows and samples as
+\item{snpmatrix}{Matrix of beta-values for SNP probes. Provide SNP probes as rows and samples as
 columns.}
 
-\item{maxiter}{Maximal number of iterations of the Expectation-Maximization algorithm learning
-the mixture model}
+\item{learn}{Logical. If \code{TRUE}, model parameters are learned from the dataset using the EM algorithm.
+If \code{FALSE} (default), predefined model parameters are used. The predefined parameters are
+recommended for small datasets or datasets containing many outliers.}
 
-\item{genotypes}{Output of \code{call_genotypes}}
+\item{maxiter}{Maximum number of iterations of the EM algorithm. Only used if \code{learn = TRUE}.}
+
+\item{genotypes}{Output of \code{call_genotypes()}.}
 }
 \value{
-For \code{call_genotypes()}, a list containing
-\item{par}{Parameters of the mixture model}
-\item{loglik}{Log-likelihood in each iteration of the EM algorithm}
-\item{outliers}{A-posteriori probability of SNP being an outlier}
-\item{gamma}{A-posteriori probabilities for each of the three genotypes}
+For \code{call_genotypes()}, a list containing:
+\item{snps}{The input \code{snpmatrix}.}
+\item{outliers}{A matrix of a-posteriori probabilities of each SNP observation being an outlier.}
+\item{gamma}{A list of three matrices containing the a-posteriori probabilities for each of the
+   three genotypes (AA, AB, BB) respectively.}
+\item{par}{Parameters of the mixture model (class priors \code{pi}, Beta distribution parameters \code{shapes1} and \code{shapes2}, and outlier prior \code{alpha}).}
+\item{loglik}{Log-likelihood in each iteration of the EM algorithm (\code{NULL} if \code{learn = FALSE}).}
 
-For \code{snp_outliers()}, a metric assessing the outlierness of the SNP beta-values.
-	High values may indicate either contaminated or failed samples.
-
-For \code{mxm_()}, a histogram showing the distribution of beta-values for SNP probes with
-the density function of the mixture model overlaid.
+For \code{snp_outliers()}, a numeric vector with one outlier score per sample
+(average log2 odds of SNP observations being outliers). High values indicate contaminated or failed samples.
 }
 \description{
-Detect SNP probes which do not fit into on of the three categories (AA,AB,BB).
-A mixture model (3 Beta distributions, 1 uniform distribution for outliers) is fitted to all SNP
-probes. After learning the model parameters via EM algorithm, the probability of being an outlier
-is computed for each SNP.
+\code{call_genotypes()} calls genotypes from the SNP probes on the array and
+detects outlying observations. A mixture model (three Beta distributions representing the
+genotypes AA, AB and BB, and one uniform distribution representing outliers) is fitted to the
+beta-values of all SNP probes. Either predefined model parameters are used (default), or the
+parameters are learned from the data via the EM algorithm. Subsequently, the a-posteriori
+probabilities of each genotype and of being an outlier are computed for every SNP observation.
+
+\code{snp_outliers()} summarizes the outlier probabilities per sample as the average log2 odds
+of being an outlier across all SNP probes. Samples with a score greater than -4 should be flagged
+as they are likely contaminated or failed assays.
+}
+\seealso{
+\code{\link{check_snp_agreement}} and \code{\link{enumerate_sample_donors}} for using the
+called genotypes to track samples.
 }
 \author{
 Jonathan Heiss

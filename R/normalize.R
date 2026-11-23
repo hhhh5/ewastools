@@ -3,22 +3,27 @@ NULL
 
 #' Dye-bias correction and beta-values
 #'
-#' @description Preprocessing functions to correct dye-bias using the RELIC method and convert 
-#' intensities to beta-values.
+#' @description \code{correct_dye_bias()} corrects the dye bias between the red and green color
+#' channel. It implements an improved version of RELIC using a robust Theil-Sen estimator
+#' to regress the intensities of the red on those of the green normalization control probes.
+#'
+#' \code{beta_values()} converts the methylated (M) and unmethylated (U) intensities into
+#' beta-values (M / (M + U)). Intensities below 1 are set to 1 before the conversion.
 #'
 #' @author Jonathan Heiss
 #' @name Preprocessing
 #' @rdname Preprocessing
 #' @param raw Output of \code{\link{read_idats}}.
 #'
-#' @return \code{correct_dye_bias} and \code{correct_dye_bias2} return a modified \code{raw} list 
-#'   object with dye-bias corrected intensities in \code{M}, \code{U}, and out-of-band signals.
-#' @return \code{beta_values} returns a matrix of beta-values. If IDATs were imported with 
-#'   \code{on_disk = TRUE}, this returns an \code{ff} object.
-#' 
+#' @return \code{correct_dye_bias} returns a modified \code{raw} list object with dye-bias corrected
+#'   intensities in \code{M}, \code{U}, and the out-of-band signals.
+#' @return \code{beta_values} returns a matrix of beta-values with probe IDs as row names and
+#'   sample IDs as column names. If the data was imported with \code{on_disk = TRUE}, an \code{ff}
+#'   object is returned instead. In this case, it is recommended to transpose the returned ff object
+#'   for fast row-based access.
+#'
 #' @references{Xu Z, Langie SA, De Boever P, Taylor JA, Niu L. RELIC: a novel dye-bias correction method for Illumina Methylation BeadChip. BMC Genomics. 2017 Jan 3;18(1):4.}
-#' @references{Heiss JA, Brenner H. Between-array normalization for 450K data. Frontiers in Genetics. 2015;6.}
-#' 
+#'
 NULL
 
 #' @rdname Preprocessing
@@ -52,7 +57,7 @@ correct_dye_bias <- function(raw)
       keep = !is.na(y) & !is.na(x) & is.finite(x) & is.finite(y)
       x = x[keep]; y = y[keep]
 
-      # Theil-Sen robust linear regression to estimate the slope (intercept is ignored)
+      # Theil-Sen robust linear regression on log-transformed intensities
       m = mblm::mblm(y~x, repeated = FALSE)
 
       # Adjust the intensities in the Green channel using the regression coefficients
@@ -71,8 +76,10 @@ correct_dye_bias <- function(raw)
    return(raw)
 }
 
-#' @rdname Preprocessing
-#' 
+#' Experimental dye-bias correction using separate regressions for A~G and T~C
+#'
+#' @param raw Output of \code{read_idats()}.
+#' @noRd
 correct_dye_bias2 = function (raw) 
 {
    # Experimental version of dye-bias correction. I found that red~green differs for 
@@ -82,10 +89,10 @@ correct_dye_bias2 = function (raw)
    i1g = raw$manifest[channel == "Grn", ]
    i2  = raw$manifest[channel == "Both",]
 
-   Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai,]
-   Gi = raw$controls[group == "NORM_G"][order(name)]$index; Gi = raw$ctrlG[Gi,]
-   Ti = raw$controls[group == "NORM_T"][order(name)]$index; Ti = raw$ctrlR[Ti,]
-   Ci = raw$controls[group == "NORM_C"][order(name)]$index; Ci = raw$ctrlG[Ci,]
+   Ai = raw$controls[group == "NORM_A"][order(name)]$index; Ai = raw$ctrlR[Ai, , drop = FALSE]
+   Gi = raw$controls[group == "NORM_G"][order(name)]$index; Gi = raw$ctrlG[Gi, , drop = FALSE]
+   Ti = raw$controls[group == "NORM_T"][order(name)]$index; Ti = raw$ctrlR[Ti, , drop = FALSE]
+   Ci = raw$controls[group == "NORM_C"][order(name)]$index; Ci = raw$ctrlG[Ci, , drop = FALSE]
 
    J = ncol(raw$M)
 
@@ -117,12 +124,7 @@ correct_dye_bias2 = function (raw)
    return(raw)
 }
 
-#' Convert fluorescence intensities to beta-values
 #' @rdname Preprocessing
-#' @return A matrix of beta-values.
-#'   If IDATs were imported with option \code{on_disk = TRUE}, a \code{ff} object.
-#'   If the data was imported using \code{on_disk = TRUE}, it is recommended to transpose
-#'   the returned ff object for fast row-based access.
 #' @export
 #'
 beta_values = function(raw)
@@ -132,7 +134,7 @@ beta_values = function(raw)
    I = nrow(raw$M)
    J = ncol(raw$M)
 
-   if (ff::is.ff(raw$M)) {
+   if (inherits(raw$M, "ff")) {
       meth = ff::ff(NA_real_, dim = c(I, J))
    } else {
       meth = matrix(NA_real_, nrow = I, ncol = J)
@@ -154,20 +156,20 @@ beta_values = function(raw)
 
 #' Match probe IDs between a query list and matrix row names
 #' 
-#' @description This function parses legacy and EPICv2 probe ID formats to find matching
-#' indices in the dataset. It supports mapping legacy probe IDs to EPICv2 data.
+#' @description This function parses legacy and EPICv2-style probe ID formats to find matching
+#' indices in the dataset. It supports mapping legacy probe IDs to EPICv2/MSA/MOUSE data.
 #' 
 #' @param query Character vector of probe IDs to look up.
 #' @param rownames Character vector of row names (probe IDs) of the target matrix.
 #' 
 #' @return An integer vector of the matching indices of \code{query} in \code{rownames}.
-#'
+#' @noRd
 find_matching_rows = function(query, rownames)
 {
    # Regex for legacy Illumina probe formats (cg/rs/ch followed by numbers)
    legacy_regex = stringr::regex("^cg\\d{8,8}$|^rs\\d+$|^ch\\.\\w+\\.\\d+[FR]$")
-   # Regex for EPICv2 probe formats (containing strand and replicate tags like _BC11)
-   epicv2_regex = stringr::regex("^[cg|ch|rs|nv].*_[TB][CO]\\d+$")
+   # Regex for EPICv2/MSA/MOUSE probe formats (containing strand and replicate tags like _BC11)
+   epicv2_regex = stringr::regex("^(?:cg|ch|rs|nv|mu|rp).*_[TB][CO]\\d+$")
 
    if (all(stringr::str_detect(query, pattern = legacy_regex))) {
       query_type = "legacy"
@@ -189,11 +191,10 @@ find_matching_rows = function(query, rownames)
       # Directly match if formats are identical
       return(match(query, rownames))
    } else if (query_type == "legacy" & row_type == "epicv2") {
-      # Find for each user-provided `ilmn_id` the `probe_id` with `probe_rep` == 1
-      df_map = data.table(ewastools:::MANIFESTS$EPICv2[,c("ilmn_id", "probe_id")])
-      setkey(df_map, probe_id)
-      query = df_map[query, nomatch = NA, mult = "first"]$ilmn_id
-      return(match(query, rownames))
+      # Strip strand/design/replicate suffix (e.g. `_BC11`) from row names to match legacy `probe_id`
+      # (`match()` returns the first matching replicate in manifest order)
+      base_rownames = sub("_[TB][CO]\\d+$", "", rownames)
+      return(match(query, base_rownames))
    } else if (query_type == "epicv2" & row_type == "legacy") {
       stop("Query contains EPICv2 probe IDs but dataset is of legacy type")
    } else {

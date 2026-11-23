@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimateLC.R
 \name{estimateLC}
 \alias{estimateLC}
-\title{Cell composition}
+\title{Cell composition estimation}
 \usage{
 estimateLC(meth, ref, constrained = FALSE)
 }
@@ -10,16 +10,18 @@ estimateLC(meth, ref, constrained = FALSE)
 \item{meth}{Matrix of beta values}
 
 \item{ref}{Choice of reference dataset: available options are `HRS` (Health and Retirement Study),
-`Reinius` [2]`, Bakulski` [3], `deGoede` [4], `Gervin`[5], `Lin` [6], `Mill` [GSE103541],
+`Reinius` [2], `Bakulski` [3], `deGoede` [4], `Gervin` [5], `Lin` [6], `Mill` [GSE103541],
 `Salas` [7], `Lolipop` [8]. Furthermore, the option `saliva` and `salivaEPIC` are available [9].}
 
 \item{constrained}{Force that all cell proportions sum up to 1.}
 }
 \value{
-Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells, granulocytes, monocytes,  natural killer cells (and nucleated red blood cells) using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
+A \code{data.table} of estimated cell proportions (e.g., B-lymphocytes, CD4 T-cells, 
+CD8 T-cells, granulocytes, monocytes, natural killer cells, and nucleated red blood cells) 
+using the Houseman algorithm [1]. Models were trained on various reference datasets of purified cell types.
 }
 \description{
-Estimation of cell proportions for blood and saliva using the Houseman algorithm
+Estimation of cell proportions for blood and saliva using the Houseman algorithm.
 }
 \references{
 {Houseman EA, et al. DNA methylation arrays as surrogate measures of cell mixture distribution. BMC bioinformatics. 2012 Dec 1;13(1):86.}

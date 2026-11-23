@@ -14,20 +14,25 @@
 #' \code{eval_detP_cutoffs()} generates a plot showing the number of undetected chrY probes among
 #' male and female subjects for various p-value thresholds, in order to empirically choose a threshold.
 #'
-#' Finally, \code{mask()} masks all probes with detection p-values above a specified threshold.
+#' Finally, \code{mask()} masks all observations with detection p-values above a specified threshold,
+#' i.e., sets the corresponding intensities in \code{M} and \code{U} to \code{NA}.
 #'
 #' @author Jonathan Heiss
 #' @param raw Output of \code{\link{read_idats}}. Must include component \code{detP} for
 #' \code{mask()} and \code{eval_detP_cutoffs()}.
-#' @param threshold p-value threshold (arithmetic scale) above which observations are set to \code{NA}.
-#' @param male/female Indices of male and female subjects
+#' @param threshold p-value threshold above which observations are set to \code{NA}. Must be on the
+#' same scale as \code{raw$detP}, i.e., on the log10 scale if p-values were computed with \code{detectionP.neg()}.
+#' @param males,females Column indices of male and female subjects.
 #' @param rgSet A \code{minfi} \code{RGChannelSet} object.
-#' 
+#'
 #' @return For \code{detectionP()} and \code{detectionP.neg()}, a modified \code{raw} list object with a
 #' \code{detP} component (a matrix of detection p-values) added. \code{detectionP()} computes p-values
 #' on the linear scale, whereas \code{detectionP.neg()} returns p-values on the log10 scale.
-#' @return For \code{detectionP.minfi()}, a matrix of detection p-values.
-#' @return For \code{mask()}, a modified \code{raw} list object with undetected probes set to \code{NA}.
+#' If the data was imported with \code{on_disk = TRUE}, \code{detP} is an \code{ff} object.
+#' @return For \code{detectionP.minfi()}, a matrix of detection p-values with probe IDs as row names.
+#' @return For \code{mask()}, a modified \code{raw} list object with undetected observations set to \code{NA}.
+#' @return For \code{eval_detP_cutoffs()}, Plot of the 90\% quantile (males) and 10\% quantile (females) of the number of undetected
+#' chrY probes for each p-value cut-off.
 #'
 #' @references{Heiss JA, Just AC. Improved filtering of DNA methylation microarray data by detection
 #' p-values and its impact on downstream analyses. Clinical Epigenetics (2019) 11:15}
@@ -40,7 +45,7 @@ detectionP = function(raw)
 
    with(raw, {
 
-      if (ff::is.ff(M)) {
+      if (inherits(M, "ff")) {
          detP = ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
       } else {
          detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
@@ -107,6 +112,8 @@ detectionP = function(raw)
 #'
 detectionP.neg = function(raw)
 {
+   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+
    with(raw, {
 
       bkgR = bkgG = controls[group == "NEGATIVE",index] 
@@ -120,31 +127,32 @@ detectionP.neg = function(raw)
       muR = apply(bkgR,2,median,na.rm=TRUE) 
       sdR = apply(bkgR,2,mad   ,na.rm=TRUE) 
 
-      if (ff::is.ff(M)) {
-         raw$detP <<- ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
+      if (inherits(M, "ff")) {
+         detP = ff::ff(NA_real_, dim = c(nrow(U), ncol(U)))
       } else {
-         raw$detP <<- matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
+         detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
       }
 
       # Red channel probes
       i = manifest[channel == "Red" ,index] 
       for(j in 1:ncol(M))  
-         raw$detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muR[j], sd = sqrt(2) * sdR[j],
-                               lower.tail = FALSE, log.p = TRUE) / log(10)
+         detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muR[j], sd = sqrt(2) * sdR[j],
+                           lower.tail = FALSE, log.p = TRUE) / log(10)
      
       # Green channel probes
       i = manifest[channel == "Grn" ,index] 
       for(j in 1:ncol(M))  
-         raw$detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muG[j], sd = sqrt(2) * sdG[j],
-                               lower.tail = FALSE, log.p = TRUE) / log(10)
+         detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muG[j], sd = sqrt(2) * sdG[j],
+                           lower.tail = FALSE, log.p = TRUE) / log(10)
      
       # Type II probes (both channels)
       i = manifest[channel == "Both",index] 
       for(j in 1:ncol(M)) 
-         raw$detP[i,j] = pnorm(U[i, j] + M[i, j], mean = muR[j] + muG[j], sd = sqrt(sdR[j]^2 + sdG[j]^2),
-                               lower.tail = FALSE, log.p = TRUE) / log(10)
+         detP[i,j] = pnorm(U[i, j] + M[i, j], mean = muR[j] + muG[j], sd = sqrt(sdR[j]^2 + sdG[j]^2),
+                           lower.tail = FALSE, log.p = TRUE) / log(10)
 
-     return(raw)
+      raw$detP = detP
+      return(raw)
    })
 }
 
@@ -175,13 +183,13 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
    if(!'detP'%in%names(raw)) stop('detP component missing')
 
    chrY = raw$manifest[forcats::fct_match(chr, "chrY"), index]
-   chrY = raw$detP[chrY,]
+   chrY = raw$detP[chrY, , drop = FALSE]
 
    cutoffs = c(1, 0.5, 0.1, 0.05, 0.01, 0.001, 0.0001)
 
    tmp = sapply(cutoffs,function(t){ colSums(chrY > t,na.rm=TRUE) })
-     males = apply(tmp[  males,], 2, quantile, prob = 0.9)
-   females = apply(tmp[females,], 2, quantile, prob = 0.1)
+     males = apply(tmp[  males, , drop = FALSE], 2, quantile, prob = 0.9)
+   females = apply(tmp[females, , drop = FALSE], 2, quantile, prob = 0.1)
 
    # Plot the quantiles of undetected chr Y probes
    plot  (-log10(cutoffs),females,ylim=c(0,nrow(chrY)),ylab='Chr Y # undetected ',xlab='p-value cutoff',xaxt="n")
@@ -196,9 +204,13 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
 #'
 detectionP.minfi = function(rgSet)
 {
-   minfi:::.isRGOrStop(rgSet)
+   if (!requireNamespace("minfi", quietly = TRUE))
+      stop("Package 'minfi' is required for 'detectionP.minfi()'.")
 
-   locusNames = getManifestInfo(rgSet, "locusNames")
+   if (!inherits(rgSet, "RGChannelSet"))
+      stop("Argument 'rgSet' must be an 'RGChannelSet' object.")
+
+   locusNames = minfi::getManifestInfo(rgSet, "locusNames")
    detP = matrix(NA_real_,ncol=ncol(rgSet),nrow=length(locusNames),dimnames = list(locusNames, colnames(rgSet)))
 
    i2 = minfi::getProbeInfo(rgSet, type = "II")
@@ -210,8 +222,8 @@ detectionP.minfi = function(rgSet)
    iG = as.data.table(as.data.frame(iG))
 
    betas   = minfi::getBeta(rgSet)
-   betasIr = betas[iR$Name,]
-   betasIg = betas[iG$Name,]
+   betasIr = betas[iR$Name, , drop = FALSE]
+   betasIg = betas[iG$Name, , drop = FALSE]
    rm(betas)
 
    reds   = minfi::getRed(rgSet)
@@ -227,8 +239,8 @@ detectionP.minfi = function(rgSet)
       sG = summits(betasIg[,j])
 
       # Red channel
-      bkgU = order(abs(betasIr[,j]-sR[2]))[1:1000]
-      bkgM = order(abs(betasIr[,j]-sR[1]))[1:1000]
+      bkgU = head(order(abs(betasIr[,j]-sR[2])), n = 1000)
+      bkgM = head(order(abs(betasIr[,j]-sR[1])), n = 1000)
 
       bkgU = iR$AddressA[bkgU]
       bkgM = iR$AddressB[bkgM]
@@ -243,8 +255,8 @@ detectionP.minfi = function(rgSet)
       sdMR[j] = mad(bkgM,na.rm=TRUE)
 
       # Green channel
-      bkgU = order(abs(betasIg[,j]-sG[2]))[1:1000]
-      bkgM = order(abs(betasIg[,j]-sG[1]))[1:1000]
+      bkgU = head(order(abs(betasIg[,j]-sG[2])), n = 1000)
+      bkgM = head(order(abs(betasIg[,j]-sG[1])), n = 1000)
 
       bkgU = iG$AddressA[bkgU]
       bkgM = iG$AddressB[bkgM]
@@ -273,9 +285,9 @@ detectionP.minfi = function(rgSet)
 #' of the beta-value distribution.
 #'
 #' @param beta Numeric vector of beta-values.
-#' @return A numeric vector of length 2 containing the locations of the lower (unmethylated) 
+#' @return A numeric vector of length 2 containing the locations of the lower (unmethylated)
 #' and upper (methylated) summits.
-#'
+#' @noRd
 summits = function (beta)
 {
    # Compute kernel density estimation with fixed bandwidth

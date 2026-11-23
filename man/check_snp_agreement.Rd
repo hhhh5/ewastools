@@ -2,38 +2,43 @@
 % Please edit documentation in R/check_snp_agreement.R
 \name{check_snp_agreement}
 \alias{check_snp_agreement}
-\alias{agreement_}
 \alias{enumerate_sample_donors}
-\title{Agreement of SNPs}
+\title{Check agreement of genetic fingerprint between samples}
 \usage{
 check_snp_agreement(genotypes, donor_ids, sample_ids)
-
-agreement_(genotypes, donor_ids, sample_ids, ...)
 
 enumerate_sample_donors(genotypes)
 }
 \arguments{
-\item{genotypes}{Output of \code{call_genotypes}}
+\item{genotypes}{Output of \code{\link{call_genotypes}}.}
 
-\item{donor_ids}{Vector of donor IDs, should include duplicates}
+\item{donor_ids}{Vector of donor IDs corresponding to the samples (columns of the SNP matrix).
+Contains duplicates if several samples come from the same donor.}
 
-\item{sample_ids}{Vector of unique sample IDs}
+\item{sample_ids}{Vector of unique sample IDs corresponding to the samples.}
 }
 \value{
-\code{check_snp_agreement} returns all conflicts found between user-supplied donor IDs
-and those derived from the genetic fingerprint. Either \code{NULL} if not conflicts were found,
-or a list of \code{data.table}s, each representing one connected component of the conflict graph.
+\code{check_snp_agreement} returns \code{NULL} if no conflicts were found. Otherwise a list
+of \code{data.table}s, each representing one connected component of the conflict graph (i.e.,
+a group of related conflicts), with columns \code{donor1}, \code{sample1}, \code{donor2},
+\code{sample2}, and \code{agreement}.
 
-\code{enumerate_sample_donors} returns for each sample the donor IDs.
+\code{enumerate_sample_donors} returns an integer vector of inferred donor IDs, one for
+each sample. Samples with the same ID share the same genetic fingerprint.
 }
 \description{
-These function check the agreement of genetic fingerprints between samples
-(after genotype calling with \code{call_genotypes}). In case of \code{check_snp_agreement},
+These functions check the agreement of genetic fingerprints between samples
+(after genotype calling with \code{\link{call_genotypes}}). In case of \code{check_snp_agreement},
 the user supplies for each sample the assumed donor ID and the function returns all conflicts,
 meaning either samples that are supposed to come from the same donor but have distinct genetic
 fingerprints, or samples from supposedly different donors with the same fingerprint.
-\code{enumerate_sample_donors} on the other hand is inferring donor IDs in case they are unknown
-(useful for example to detect technical replicates in a public dataset).
+\code{enumerate_sample_donors} on the other hand infers donor IDs in case they are unknown
+(useful, for example, to detect technical replicates in a public dataset).
+}
+\details{
+Two samples are considered to have the same genetic fingerprint if their agreement score
+(the probability of sharing the same genotype, averaged across SNP probes and weighted by the
+probability of the observations not being outliers) exceeds 0.9.
 }
 \author{
 Jonathan Heiss
