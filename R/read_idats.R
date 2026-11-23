@@ -314,62 +314,43 @@ drop_samples = function(raw, j = NULL){
    if (is.logical(j)) j = which(j)
    if (is.null(j) || length(j) == 0L) return(raw)
 
-   if (inherits(raw$M, "ff")) {
-
-      drop_cols = function(x, j) { # x must be an ff matrix
-         cols_to_keep = setdiff(seq_len(ncol(x)), j)
-         res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
-         if (length(cols_to_keep) > 0) {
-            for (k in seq_along(cols_to_keep))
-               res[, k] = x[, cols_to_keep[k]]
-         }
-         rownames(res) = rownames(x)
-         colnames(res) = colnames(x)[cols_to_keep]
-         return(res)
+   drop_cols = function(x, j) {
+      if (!inherits(x, "ff")) {
+         return(x[, -j, drop = FALSE])
       }
 
-      raw$U = drop_cols(raw$U, j)
-      raw$M = drop_cols(raw$M, j)
-
-      raw$T = drop_cols(raw$T, j)
-      raw$S = drop_cols(raw$S, j)
-
-      raw$V = drop_cols(raw$V, j)
-      raw$N = drop_cols(raw$N, j)
-
-      raw$oobG$M = drop_cols(raw$oobG$M, j)
-      raw$oobG$U = drop_cols(raw$oobG$U, j)
-      raw$oobR$M = drop_cols(raw$oobR$M, j)
-      raw$oobR$U = drop_cols(raw$oobR$U, j)
-
-      if("detP" %in% names(raw))
-         raw$detP = drop_cols(raw$detP, j)
-
-   } else {
-      # Standard in-memory matrix column removal
-      raw$U = raw$U[, -j, drop = FALSE]
-      raw$M = raw$M[, -j, drop = FALSE]
-
-      raw$T = raw$T[, -j, drop = FALSE]
-      raw$S = raw$S[, -j, drop = FALSE]
-
-      raw$V = raw$V[, -j, drop = FALSE]
-      raw$N = raw$N[, -j, drop = FALSE]
-
-      raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
-      raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
-      raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
-      raw$oobR$U = raw$oobR$U[, -j, drop = FALSE]
-
-      if("detP" %in% names(raw))
-        raw$detP = raw$detP[, -j, drop = FALSE]
+      cols_to_keep = setdiff(seq_len(ncol(x)), j)
+      res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
+      for (k in seq_along(cols_to_keep)) {
+         res[, k] = x[, cols_to_keep[k]]
+      }
+      rownames(res) = rownames(x)
+      colnames(res) = colnames(x)[cols_to_keep]
+      return(res)
    }
 
-   raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
-   raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
-   raw$ctrlN = raw$ctrlN[, -j, drop = FALSE]
+   raw$U = drop_cols(raw$U, j)
+   raw$M = drop_cols(raw$M, j)
 
-   raw$meta = raw$meta[-j,, drop = FALSE]
-   
+   raw$T = drop_cols(raw$T, j)
+   raw$S = drop_cols(raw$S, j)
+
+   raw$V = drop_cols(raw$V, j)
+   raw$N = drop_cols(raw$N, j)
+
+   raw$ctrlG = drop_cols(raw$ctrlG, j)
+   raw$ctrlR = drop_cols(raw$ctrlR, j)
+   raw$ctrlN = drop_cols(raw$ctrlN, j)
+
+   raw$oobG$M = drop_cols(raw$oobG$M, j)
+   raw$oobG$U = drop_cols(raw$oobG$U, j)
+   raw$oobR$M = drop_cols(raw$oobR$M, j)
+   raw$oobR$U = drop_cols(raw$oobR$U, j)
+
+   if ("detP" %in% names(raw))
+      raw$detP = drop_cols(raw$detP, j)
+
+   raw$meta = raw$meta[-j, , drop = FALSE]
+
    return(raw)
 }
