@@ -174,6 +174,10 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    positions = rep(NA_character_, J)
    dates     = rep(NA_character_, J)
 
+   COL_MEAN   = 1L
+   COL_SD     = 2L
+   COL_NBEADS = 3L
+
    prev_idat_order = NULL
 
    for (j in seq_len(J)) {
@@ -206,43 +210,43 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       }
 
       ## Type I Red probes
-      U[ iR$index,j ] = red$Quants[ iR$Ui, 1] # Mean
-      T[ iR$index,j ] = red$Quants[ iR$Ui, 2] # SD
-      V[ iR$index,j ] = red$Quants[ iR$Ui, 3] # NBeads
+      U[iR$index, j] = red$Quants[iR$Ui, COL_MEAN]
+      T[iR$index, j] = red$Quants[iR$Ui, COL_SD]
+      V[iR$index, j] = red$Quants[iR$Ui, COL_NBEADS]
      
-      M[ iR$index,j ] = red$Quants[ iR$Mi, 1] # Mean
-      S[ iR$index,j ] = red$Quants[ iR$Mi, 2] # SD
-      N[ iR$index,j ] = red$Quants[ iR$Mi, 3] # NBeads
+      M[iR$index, j] = red$Quants[iR$Mi, COL_MEAN]
+      S[iR$index, j] = red$Quants[iR$Mi, COL_SD]
+      N[iR$index, j] = red$Quants[iR$Mi, COL_NBEADS]
 
-      oobG$U[ iR$OOBi,j ] = grn$Quants[ iR$Ui,1 ]
-      oobG$M[ iR$OOBi,j ] = grn$Quants[ iR$Mi,1 ]
+      oobG$U[iR$OOBi, j] = grn$Quants[iR$Ui, COL_MEAN]
+      oobG$M[iR$OOBi, j] = grn$Quants[iR$Mi, COL_MEAN]
 
       ## Type I Green probes
-      U[ iG$index,j ] = grn$Quants[ iG$Ui,1 ] # Mean
-      T[ iG$index,j ] = grn$Quants[ iG$Ui,2 ] # SD
-      V[ iG$index,j ] = grn$Quants[ iG$Ui,3 ] # NBeads
+      U[iG$index, j] = grn$Quants[iG$Ui, COL_MEAN]
+      T[iG$index, j] = grn$Quants[iG$Ui, COL_SD]
+      V[iG$index, j] = grn$Quants[iG$Ui, COL_NBEADS]
 
-      M[ iG$index,j ] = grn$Quants[ iG$Mi,1 ] # Mean
-      S[ iG$index,j ] = grn$Quants[ iG$Mi,2 ] # SD
-      N[ iG$index,j ] = grn$Quants[ iG$Mi,3 ] # NBeads
+      M[iG$index, j] = grn$Quants[iG$Mi, COL_MEAN]
+      S[iG$index, j] = grn$Quants[iG$Mi, COL_SD]
+      N[iG$index, j] = grn$Quants[iG$Mi, COL_NBEADS]
 
-      oobR$U[ iG$OOBi,j ] = red$Quants[ iG$Ui,1 ]
-      oobR$M[ iG$OOBi,j ] = red$Quants[ iG$Mi,1 ]
+      oobR$U[iG$OOBi, j] = red$Quants[iG$Ui, COL_MEAN]
+      oobR$M[iG$OOBi, j] = red$Quants[iG$Mi, COL_MEAN]
 
       ## Type II probes (measured in both channels: Red for Unmethylated, Green for Methylated)
-      U[ i2$index,j ] = red$Quants[ i2$Ui,1 ] # Mean
-      T[ i2$index,j ] = red$Quants[ i2$Ui,2 ] # SD
-      V[ i2$index,j ] = red$Quants[ i2$Ui,3 ] # NBeads
+      U[i2$index, j] = red$Quants[i2$Ui, COL_MEAN]
+      T[i2$index, j] = red$Quants[i2$Ui, COL_SD]
+      V[i2$index, j] = red$Quants[i2$Ui, COL_NBEADS]
 
-      M[ i2$index,j ] = grn$Quants[ i2$Mi,1 ] # Mean
-      S[ i2$index,j ] = grn$Quants[ i2$Mi,2 ] # SD
-      N[ i2$index,j ] = grn$Quants[ i2$Mi,3 ] # NBeads
+      M[i2$index, j] = grn$Quants[i2$Mi, COL_MEAN]
+      S[i2$index, j] = grn$Quants[i2$Mi, COL_SD]
+      N[i2$index, j] = grn$Quants[i2$Mi, COL_NBEADS]
 
       ## Control probes
       # Not keeping the SD for control probes ATM
-      ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
-      ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
-      ctrlN[ controls$index,j ] = red$Quants[ controls$i,3 ]
+      ctrlR[controls$index, j] = red$Quants[controls$i, COL_MEAN]
+      ctrlG[controls$index, j] = grn$Quants[controls$i, COL_MEAN]
+      ctrlN[controls$index, j] = red$Quants[controls$i, COL_NBEADS]
 
       if(!quiet) setTxtProgressBar(pb, j)
 
