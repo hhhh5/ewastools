@@ -1,15 +1,18 @@
-# Functions for preprocessing
+# Dye-bias correction and beta-values
 
-Functions for preprocessing
+`correct_dye_bias()` corrects the dye bias between the red and green
+color channel. It implements an improved version of RELIC using a robust
+Theil-Sen estimator to regress the intensities of the red on those of
+the green normalization control probes.
 
-Convert fluorescence intensities to beta-values
+`beta_values()` converts the methylated (M) and unmethylated (U)
+intensities into beta-values (M / (M + U)). Intensities below 1 are set
+to 1 before the conversion.
 
 ## Usage
 
 ``` r
 correct_dye_bias(raw)
-
-correct_dye_bias2(raw)
 
 beta_values(raw)
 ```
@@ -18,28 +21,25 @@ beta_values(raw)
 
 - raw:
 
-  Output of calling
-  [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
+  Output of
+  [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md).
 
 ## Value
 
-A modified `raw` object with dye-bias corrected intensities using RELIC
-for `correct_dye_bias`. A matrix of beta-values, either normalized (for
-`normalize`) or not (for `dont_normalize`).
+`correct_dye_bias` returns a modified `raw` list object with dye-bias
+corrected intensities in `M`, `U`, and the out-of-band signals.
 
-A matrix of beta-values. If IDATs were imported with option
-`on_disk = TRUE`, a {codeff object. If the data was imported using
-`on_disk = TRUE`, it is recommended to transpose the returned ff object
-for fast row-based access.
+`beta_values` returns a matrix of beta-values with probe IDs as row
+names and sample IDs as column names. If the data was imported with
+`on_disk = TRUE`, an `ff` object is returned instead. In this case, it
+is recommended to transpose the returned ff object for fast row-based
+access.
 
 ## References
 
 Xu Z, Langie SA, De Boever P, Taylor JA, Niu L. RELIC: a novel dye-bias
 correction method for Illumina Methylation BeadChip. BMC Genomics. 2017
 Jan 3;18(1):4.
-
-Heiss JA, Brenner H. Between-array normalization for 450K data.
-Frontiers in Genetics. 2015;6.
 
 ## Author
 

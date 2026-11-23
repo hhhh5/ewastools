@@ -1,7 +1,7 @@
 # ewas_tools: a quality control toolset for the Illumina Infinium DNA methylation platforms [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7329019.svg)](https://doi.org/10.5281/zenodo.7329019)
 
-The following functionality is offered for the 450K, EPIC(v1/v2) and
-Mouse (experimental) BeadChips:
+The following functionality is offered for the 27K, 450K, EPIC(v1/v2),
+MSA and Mouse (experimental) BeadChips:
 
 - Screen for problematic samples, e.g. failed assays, mislabeled or
   contaminated samples (`control_metrics, check_sex, snp_outliers`).

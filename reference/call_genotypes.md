@@ -1,65 +1,88 @@
 # Genotype calling
 
-Detect SNP probes which do not fit into on of the three categories
-(AA,AB,BB). A mixture model (3 Beta distributions, 1 uniform
-distribution for outliers) is fitted to all SNP probes. After learning
-the model parameters via EM algorithm, the probability of being an
-outlier is computed for each SNP.
+`call_genotypes()` calls genotypes from the SNP probes on the array and
+detects outlying observations. A mixture model (three Beta distributions
+representing the genotypes AA, AB and BB, and one uniform distribution
+representing outliers) is fitted to the beta-values of all SNP probes.
+Either predefined model parameters are used (default), or the parameters
+are learned from the data via the EM algorithm. Subsequently, the
+a-posteriori probabilities of each genotype and of being an outlier are
+computed for every SNP observation.
+
+`snp_outliers()` summarizes the outlier probabilities per sample as the
+average log2 odds of being an outlier across all SNP probes. Samples
+with a score greater than -4 should be flagged as they are likely
+contaminated or failed assays.
 
 ## Usage
 
 ``` r
 call_genotypes(snpmatrix, learn = FALSE, maxiter = 50)
 
-mxm_(genotypes)
-
 snp_outliers(genotypes)
-
-eBeta(x, w)
 ```
 
 ## Arguments
 
 - snpmatrix:
 
-  Matrix of beta-values for SNP probes. Provide SNPs probes as rows and
+  Matrix of beta-values for SNP probes. Provide SNP probes as rows and
   samples as columns.
+
+- learn:
+
+  Logical. If `TRUE`, model parameters are learned from the dataset
+  using the EM algorithm. If `FALSE` (default), predefined model
+  parameters are used. The predefined parameters are recommended for
+  small datasets or datasets containing many outliers.
 
 - maxiter:
 
-  Maximal number of iterations of the Expectation-Maximization algorithm
-  learning the mixture model
+  Maximum number of iterations of the EM algorithm. Only used if
+  `learn = TRUE`.
 
 - genotypes:
 
-  Output of `call_genotypes`
+  Output of `call_genotypes()`.
 
 ## Value
 
-For `call_genotypes()`, a list containing
+For `call_genotypes()`, a list containing:
 
-- par:
+- snps:
 
-  Parameters of the mixture model
-
-- loglik:
-
-  Log-likelihood in each iteration of the EM algorithm
+  The input `snpmatrix`.
 
 - outliers:
 
-  A-posteriori probability of SNP being an outlier
+  A matrix of a-posteriori probabilities of each SNP observation being
+  an outlier.
 
 - gamma:
 
-  A-posteriori probabilities for each of the three genotypes
+  A list of three matrices containing the a-posteriori probabilities for
+  each of the three genotypes (AA, AB, BB) respectively.
 
-For `snp_outliers()`, a metric assessing the outlierness of the SNP
-beta-values. High values may indicate either contaminated or failed
-samples.
+- par:
 
-For `mxm_()`, a histogram showing the distribution of beta-values for
-SNP probes with the density function of the mixture model overlaid.
+  Parameters of the mixture model (class priors `pi`, Beta distribution
+  parameters `shapes1` and `shapes2`, and outlier prior `alpha`).
+
+- loglik:
+
+  Log-likelihood in each iteration of the EM algorithm (`NULL` if
+  `learn = FALSE`).
+
+For `snp_outliers()`, a numeric vector with one outlier score per sample
+(average log2 odds of SNP observations being outliers). High values
+indicate contaminated or failed samples.
+
+## See also
+
+[`check_snp_agreement`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
+and
+[`enumerate_sample_donors`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
+for using the called genotypes to track samples.
 
 ## Author
 

@@ -15,13 +15,13 @@ drop_samples(raw, j = NULL)
 
 - raw:
 
-  Output of calling
-  [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
+  Output of
+  [`read_idats`](https://hhhh5.github.io/ewastools/reference/read_idats.md).
 
 - j:
 
-  Indices of the samples to drop
+  Indices (column numbers) of the samples to drop.
 
 ## Value
 
-A modified `raw` object
+A modified `raw` object without the dropped samples.

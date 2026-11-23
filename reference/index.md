@@ -5,23 +5,19 @@
 - [`methylation_score()`](https://hhhh5.github.io/ewastools/reference/MethylationScores.md)
   : Various methylation scores
 - [`correct_dye_bias()`](https://hhhh5.github.io/ewastools/reference/Preprocessing.md)
-  [`correct_dye_bias2()`](https://hhhh5.github.io/ewastools/reference/Preprocessing.md)
   [`beta_values()`](https://hhhh5.github.io/ewastools/reference/Preprocessing.md)
-  : Functions for preprocessing
+  : Dye-bias correction and beta-values
 - [`call_genotypes()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
-  [`mxm_()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
   [`snp_outliers()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
-  [`eBeta()`](https://hhhh5.github.io/ewastools/reference/call_genotypes.md)
   : Genotype calling
 - [`estimateLC()`](https://hhhh5.github.io/ewastools/reference/cell_composition.md)
-  : Cell composition
+  : Cell composition estimation
 - [`check_sex()`](https://hhhh5.github.io/ewastools/reference/check_sex.md)
   [`predict_sex()`](https://hhhh5.github.io/ewastools/reference/check_sex.md)
-  : Infer the sex of sample donor
+  : Infer the sex of sample donors
 - [`check_snp_agreement()`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
-  [`agreement_()`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
   [`enumerate_sample_donors()`](https://hhhh5.github.io/ewastools/reference/check_snp_agreement.md)
-  : Agreement of SNPs
+  : Check agreement of genetic fingerprint between samples
 - [`control_metrics()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
   [`sample_failure()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
   : Quality control metrics
@@ -35,5 +31,3 @@
   : Drop samples
 - [`read_idats()`](https://hhhh5.github.io/ewastools/reference/read_idats.md)
   : Read .idat files
-- [`summits()`](https://hhhh5.github.io/ewastools/reference/summits.md)
-  : Return peaks of beta-value distribution

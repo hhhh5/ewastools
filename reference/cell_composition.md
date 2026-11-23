@@ -1,7 +1,7 @@
-# Cell composition
+# Cell composition estimation
 
 Estimation of cell proportions for blood and saliva using the Houseman
-algorithm
+algorithm.
 
 ## Usage
 
@@ -18,8 +18,8 @@ estimateLC(meth, ref, constrained = FALSE)
 - ref:
 
   Choice of reference dataset: available options are \`HRS\` (Health and
-  Retirement Study), \`Reinius\` \[2\]\`, Bakulski\` \[3\], \`deGoede\`
-  \[4\], \`Gervin\`\[5\], \`Lin\` \[6\], \`Mill\` \[GSE103541\],
+  Retirement Study), \`Reinius\` \[2\], \`Bakulski\` \[3\], \`deGoede\`
+  \[4\], \`Gervin\` \[5\], \`Lin\` \[6\], \`Mill\` \[GSE103541\],
   \`Salas\` \[7\], \`Lolipop\` \[8\]. Furthermore, the option \`saliva\`
   and \`salivaEPIC\` are available \[9\].
 
@@ -29,10 +29,10 @@ estimateLC(meth, ref, constrained = FALSE)
 
 ## Value
 
-Estimated cell proportions B-lymphocytes, CD4 T-cells, CD8 T-cells,
-granulocytes, monocytes, natural killer cells (and nucleated red blood
-cells) using the Houseman algorithm \[1\]. Models were trained on
-various reference datasets of purified cell types.
+A `data.table` of estimated cell proportions (e.g., B-lymphocytes, CD4
+T-cells, CD8 T-cells, granulocytes, monocytes, natural killer cells, and
+nucleated red blood cells) using the Houseman algorithm \[1\]. Models
+were trained on various reference datasets of purified cell types.
 
 ## References
 

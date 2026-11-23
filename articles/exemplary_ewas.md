@@ -83,7 +83,7 @@ probes that are called detected for a male and a female samples.
 
 chrY = meth$manifest[chr=='chrY', index]
 
-P.neg = colSums(P.neg[chrY,] < 0.01, na.rm = TRUE) |>
+P.neg = colSums(P.neg[chrY,] < log10(0.01), na.rm = TRUE) |>
    split(pheno$sex) |>
    purrr::map(mean)
 
@@ -93,14 +93,14 @@ P.new = colSums(P.new[chrY,] < 0.01, na.rm = TRUE) |>
 ```
 
 Using the conventional detection p-value, for the female samples and
-average of 412 Y chromosome probes are called detected and a number
+average of 180 Y chromosome probes are called detected and a number
 close to all 416 Y chromosome probes as for the male sample.
 
 ``` r
 
 P.neg
 ## $f
-## [1] 411.8571
+## [1] 180.0714
 ## 
 ## $m
 ## [1] 415.7143
@@ -123,44 +123,39 @@ P.new
 ```
 
 We used a significance threshold of 0.01 above. Moving forward, probes
-above this threshold should be masked, i.e., set to missing.
-
-``` r
-
-meth = ewastools::mask(meth, 0.01)
-```
+above this threshold should be masked, i.e., set to missing, using
+`ewastools::mask(meth, 0.01)`. We will skip this step for now as we want
+to infer the sex of the sample donors first and masking would remove
+many of the measurements used for that quality check.
 
 Infinium BeadChips use two fluorescent dyes that are linked to the
-nucleotides used in the the single-base extension step. A and T
-nucleotides use are linked with a red dye (the red color channel), G and
-C nucleotides are linked with a green dye (green color channel).
-Uncorrected data usually feature higher intensities in the red color
-channel, the so-called dye bias. For probes of Infinium type II design,
-which use separate color channels to measure the methylated and
-unmethylated signal, this results in a shifted distribution of
-beta-values. (Probes of Infinium design type I are not affected, as they
-measure both signals in the same color channel.) Dye-bias correction
-normalizes the red and green color channel. `ewastools` provides an
-improved version of RELIC ([Xu et al.,
-2017](https://doi.org/10.1186/s12864-016-3426-3)) using robust Theil-Sen
-estimators.
+nucleotides used in the single-base extension step. A and T nucleotides
+are linked with a red dye (the red color channel), G and C nucleotides
+are linked with a green dye (green color channel). Uncorrected data
+usually feature higher intensities in the red color channel, the
+so-called dye bias. For probes of Infinium type II design, which use
+separate color channels to measure the methylated and unmethylated
+signal, this results in a shifted distribution of beta-values. (Probes
+of Infinium design type I are not affected, as they measure both signals
+in the same color channel.) Dye-bias correction normalizes the red and
+green color channel. `ewastools` provides an improved version of RELIC
+([Xu et al., 2017](https://doi.org/10.1186/s12864-016-3426-3)) using
+robust Theil-Sen estimators.
 
 ``` r
 
 meth = ewastools::correct_dye_bias(meth)
 ```
 
-The final step is the conversion of intensities to beta-values. While
-`ewastools` implements the LOESS normalization [(Heiss and Brenner,
-2015)](https://doi.org/10.3389/fgene.2015.00092), I advise against
-normalization as it does little to protect against batch effects but can
-result in the removal of genuine biological signal. Instead I
-recommended to adjust for relevant technical covariates in regression
-models later.
+I advise against normalization as it does little to protect against
+batch effects but can result in the removal of genuine biological
+signal. Instead I recommend to adjust for relevant technical covariates
+in regression models later. The final step is therefore the conversion
+of intensities to beta-values.
 
 ``` r
 
-beta = ewastools::beta_values(meth)
+beta = meth |> ewastools::mask(0.01) |> ewastools::beta_values()
 ```
 
 Before beginning with the actual epigenome-wide association study, it is
@@ -170,7 +165,7 @@ advised to check a dataset for problematic samples.
 
 **Control metrics**
 
-The first quality check evaluates 17 control metrics which are describe
+The first quality check evaluates 21 control metrics which are described
 in the [BeadArray Controls Reporter Software
 Guide](https://support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/infinium_assays/infinium_hd_methylation/beadarray-controls-reporter-user-guide-1000000004009-00.pdf)
 from Illumina. Exemplary, the “Bisulfite Conversion II” metric is
@@ -188,7 +183,7 @@ stripchart(ctrls$`Bisulfite Conversion II`, method = "jitter", pch = 4, xlab = '
 abline(v = 1, col = 2, lty = 3)
 ```
 
-![](exemplary_ewas_files/figure-html/unnamed-chunk-12-1.png)
+![](exemplary_ewas-control_metrics_plot-1.png)
 
 A logical vector of passed/failed is returned by
 [`sample_failure()`](https://hhhh5.github.io/ewastools/reference/control_metrics.md)
@@ -243,7 +238,7 @@ points(Y ~ X, data = tmp, pch = ifelse(tmp$sex == "f", 1, 4), col = 2)
 legend("topright", pch = c(1, 4), legend = c("female", "male"))
 ```
 
-![](exemplary_ewas_files/figure-html/unnamed-chunk-14-1.png)
+![](exemplary_ewas-sex_plot-1.png)
 
 Samples form two cluster of males (top left) and females (bottom left).
 The one mislabeled sample here (in red) can easily be identified and
@@ -263,9 +258,9 @@ Another sample falls outside the two clusters.
 ``` r
 
 pheno[X %between% c(0.85,0.95) & Y %between% c(0.65,0.75), .(gsm, X, Y, sex, predicted_sex)]
-##           gsm         X        Y    sex predicted_sex
-##        <char>     <num>    <num> <char>        <fctr>
-## 1: GSM2260653 0.9172741 0.710014      m             m
+##           gsm         X         Y    sex predicted_sex
+##        <char>     <num>     <num> <char>        <fctr>
+## 1: GSM2260653 0.9175293 0.7060754      m             m
 ```
 
 There are several possible explanations for samples not clustering with
@@ -347,9 +342,9 @@ than -4 for exclusion.
 
 pheno$outlier = ewastools::snp_outliers(genotypes)
 pheno[outlier > -4 ,.(gsm, X, Y, outlier)]
-##           gsm         X        Y    outlier
-##        <char>     <num>    <num>      <num>
-## 1: GSM2260653 0.9172741 0.710014 -0.8460863
+##           gsm         X         Y    outlier
+##        <char>     <num>     <num>      <num>
+## 1: GSM2260653 0.9175293 0.7060754 -0.8460863
 pheno[outlier > -4 ,exclude := TRUE] # flag sample
 ```
 
@@ -429,7 +424,7 @@ plot(pc2 ~ pc1, pch=ifelse(sex=="f", 1, 4), pheno, asp = 1, xlab = "PC #1", ylab
 legend("topright", pch = c(1, 4), legend = c("female", "male"))
 ```
 
-![](exemplary_ewas_files/figure-html/unnamed-chunk-23-1.png)
+![](exemplary_ewas-pca_plot-1.png)
 
 There is one clear outlier.
 
@@ -500,7 +495,7 @@ dataset, consisting of a purified fraction of granulocytes. Plotting
 plot(pheno[,NE+EO+BA]*100,ylab="Granulocyte fraction (%)")
 ```
 
-![](exemplary_ewas_files/figure-html/unnamed-chunk-26-1.png)
+![](exemplary_ewas-lc_plot-1.png)
 
 It is the third to last sample, GSM1185585.
 
