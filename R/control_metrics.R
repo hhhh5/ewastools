@@ -144,9 +144,9 @@ control_metrics = function(raw, FFPE = FALSE){
       # The target removal controls are present in the Hybridization Buffer (IBX).
       # Performance of target removal controls can only be monitored in the red channel.
       ii = controls[name == "Target Removal 1", index]
-      metrics$`Target Removal 1` =  (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / ctrlG[ii,]
+      metrics$`Target Removal 1` =  (apply(ctrlR[at,,drop=FALSE],2,max)+3000) / ctrlR[ii,]
       ii = controls[name == "Target Removal 2", index]
-      metrics$`Target Removal 2` =  (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / ctrlG[ii,]
+      metrics$`Target Removal 2` =  (apply(ctrlR[at,,drop=FALSE],2,max)+3000) / ctrlR[ii,]
       attr(metrics$`Target Removal 1`, "threshold") <- 1
       attr(metrics$`Target Removal 2`, "threshold") <- 1
 
