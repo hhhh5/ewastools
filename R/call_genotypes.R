@@ -39,8 +39,7 @@
 #'
 call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 {
-   snps = snpmatrix
-   dim(snps) = NULL
+   snps = as.vector(snpmatrix)
 
    # Drop NAs to be able to compute likelihoods, but keep
    # track of which indices are NA to re-insert them later
@@ -48,7 +47,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
    snps = na.omit(snps)
    n = length(snps)
 
-   if(learn==FALSE){
+   if (!learn) {
 
       # Use predefined model parameters
       # (might work better if training set is small or contains many outliers)
@@ -121,7 +120,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 
          gamma = gamma * (1-outliers)
 
-         # Maximum Likelihood Estimation (MLE) of Beta distribution parameters for each class
+         # Method of moments estimation of Beta distribution parameters for each class
          s1 = eBeta(snps,gamma[,1])
          s2 = eBeta(snps,gamma[,2])
          s3 = eBeta(snps,gamma[,3])

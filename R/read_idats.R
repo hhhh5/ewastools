@@ -1,6 +1,3 @@
-#' @import data.table
-NULL
-
 #' Read .idat files
 #' 
 #' @description Import and annotate the data from .idat files.
@@ -175,7 +172,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
    prev_idat_order = NULL
 
-   for (j in 1:J) {
+   for (j in seq_len(J)) {
 
       red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
       grn = illuminaio::readIDAT(paste0(idat_files[j], "_Grn", suffix[j]))
@@ -251,7 +248,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
    # Probes with zero beads on the chip (result of random chip assembly)
    # are set to intensity zero in the .idat files. Mark them as missing (NA).
-   for (j in 1:J) {
+   for (j in seq_len(J)) {
       U[V[, j] == 0, j] = NA
       M[N[, j] == 0, j] = NA
       

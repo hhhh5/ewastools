@@ -107,7 +107,7 @@ enumerate_sample_donors = function(genotypes){
 
    J = ncol(genotypes$snps)
 
-   samesame = CJ(1:J,1:J,sorted=FALSE)
+   samesame = CJ(seq_len(J), seq_len(J), sorted = FALSE)
    setnames(samesame,1:2,c('sample1','sample2'))
 
    ## Compute the agreement between all sample pairs
@@ -120,7 +120,7 @@ enumerate_sample_donors = function(genotypes){
    samesame = samesame[agreement>0.90]
 
    # If there are no highly agreeing pairs, every sample belongs to a unique donor
-   if(nrow(samesame)==0) return(1:J)
+   if(nrow(samesame)==0) return(seq_len(J))
 
    ## Find the strongly connected components of the graph (consider samesame pairs as edges in a graph)
    e = rep(NA,times=2*nrow(samesame))

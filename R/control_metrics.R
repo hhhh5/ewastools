@@ -1,6 +1,3 @@
-#' @import data.table
-NULL
-
 #' Quality control metrics
 #'
 #' \code{control_metrics()} calculates the metrics described in the

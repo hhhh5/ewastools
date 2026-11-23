@@ -44,11 +44,11 @@ estimateLC = function(meth,ref,constrained=FALSE) {
    }
 
    # Estimate cell proportions for each sample using quadratic programming
-   EST = sapply(1:J, \(j) {
+   EST = sapply(seq_len(J), \(j) {
       tmp = meth[markers,j]
       i = !is.na(tmp)
 
-      if(constrained == FALSE){
+      if(!constrained){
          # Unconstrained optimization: solve.QP finds cell proportions >= 0
          # Dm = t(coefs) %*% coefs, dvec = t(coefs) %*% tmp, constraints: diag(n) %*% beta >= 0
          return(

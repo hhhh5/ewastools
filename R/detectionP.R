@@ -55,7 +55,7 @@ detectionP = function(raw)
       iG = manifest[channel == "Grn" , index]
       i2 = manifest[channel == "Both", index]
         
-      for(j in 1:ncol(M)){
+      for(j in seq_len(ncol(M))){
 
          beta = M[,j]/(U[,j]+M[,j])
             
@@ -135,19 +135,19 @@ detectionP.neg = function(raw)
 
       # Red channel probes
       i = manifest[channel == "Red" ,index] 
-      for(j in 1:ncol(M))  
+      for(j in seq_len(ncol(M)))  
          detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muR[j], sd = sqrt(2) * sdR[j],
                            lower.tail = FALSE, log.p = TRUE) / log(10)
      
       # Green channel probes
       i = manifest[channel == "Grn" ,index] 
-      for(j in 1:ncol(M))  
+      for(j in seq_len(ncol(M)))  
          detP[i,j] = pnorm(U[i, j] + M[i, j], mean = 2 * muG[j], sd = sqrt(2) * sdG[j],
                            lower.tail = FALSE, log.p = TRUE) / log(10)
      
       # Type II probes (both channels)
       i = manifest[channel == "Both",index] 
-      for(j in 1:ncol(M)) 
+      for(j in seq_len(ncol(M))) 
          detP[i,j] = pnorm(U[i, j] + M[i, j], mean = muR[j] + muG[j], sd = sqrt(sdR[j]^2 + sdG[j]^2),
                            lower.tail = FALSE, log.p = TRUE) / log(10)
 
@@ -165,7 +165,7 @@ mask = function(raw,threshold)
 {
    if(!all(c("M", "U", "detP") %in% names(raw))) stop("Invalid argument")
     
-   for (j in 1:ncol(raw$M)) {
+   for (j in seq_len(ncol(raw$M))) {
      undetected = which(raw$detP[, j] > threshold)
      raw$U[undetected, j] = NA_real_
      raw$M[undetected, j] = NA_real_
@@ -233,7 +233,7 @@ detectionP.minfi = function(rgSet)
    muUR = muMR = muUG = muMG = numeric(ncol(detP))
    sdUR = sdMR = sdUG = sdMG = numeric(ncol(detP))
 
-   for(j in 1:ncol(detP)){
+   for(j in seq_len(ncol(detP))){
 
       sR = summits(betasIr[,j])
       sG = summits(betasIg[,j])

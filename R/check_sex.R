@@ -36,7 +36,7 @@ check_sex = function(raw) {
       auto = numeric(J)
 
       # Calculate mean total intensity (M + U) for X, Y, and autosomes per sample
-      for (j in 1:J) {
+      for (j in seq_len(J)) {
          chrX[j] = mean(M[i_chrX, j] + U[i_chrX, j], na.rm = TRUE)
          chrY[j] = mean(M[i_chrY, j] + U[i_chrY, j], na.rm = TRUE)
          auto[j] = mean(M[i_auto, j] + U[i_auto, j], na.rm = TRUE)
