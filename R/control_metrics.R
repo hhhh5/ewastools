@@ -1,6 +1,3 @@
-#' @import data.table
-NULL
-
 #' Quality control metrics
 #'
 #' \code{control_metrics()} calculates the metrics described in the
@@ -45,7 +42,9 @@ NULL
 #'
 control_metrics = function(raw, FFPE = FALSE){
 
-   if(!all(c("controls", "ctrlG", "ctrlR") %in% names(raw))) stop("Invalid argument")
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("controls", "ctrlG", "ctrlR"))
+   checkmate::assert_flag(FFPE)
 
    with(raw,{
 
@@ -147,9 +146,9 @@ control_metrics = function(raw, FFPE = FALSE){
       # The target removal controls are present in the Hybridization Buffer (IBX).
       # Performance of target removal controls can only be monitored in the red channel.
       ii = controls[name == "Target Removal 1", index]
-      metrics$`Target Removal 1` =  (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / ctrlG[ii,]
+      metrics$`Target Removal 1` =  (apply(ctrlR[at,,drop=FALSE],2,max)+3000) / ctrlR[ii,]
       ii = controls[name == "Target Removal 2", index]
-      metrics$`Target Removal 2` =  (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / ctrlG[ii,]
+      metrics$`Target Removal 2` =  (apply(ctrlR[at,,drop=FALSE],2,max)+3000) / ctrlR[ii,]
       attr(metrics$`Target Removal 1`, "threshold") <- 1
       attr(metrics$`Target Removal 2`, "threshold") <- 1
 
@@ -191,6 +190,7 @@ control_metrics = function(raw, FFPE = FALSE){
 #' @export
 #' 
 sample_failure = function(metrics){
+   checkmate::assert_list(metrics, min.len = 1)
    # Returns TRUE for any sample that falls below the quality control threshold for at least one metric
    Reduce(`|`, lapply(metrics, \(m) !is.na(m) & m < attr(m, "threshold")))
 }

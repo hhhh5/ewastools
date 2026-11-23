@@ -39,135 +39,122 @@
 #'
 call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 {
-   snps = snpmatrix
-   dim(snps) = NULL
+   checkmate::assert_matrix(snpmatrix, mode = "numeric")
+   checkmate::assert_flag(learn)
+   checkmate::assert_count(maxiter, positive = TRUE)
+
+   snps = as.vector(snpmatrix)
 
    # Drop NAs to be able to compute likelihoods, but keep
    # track of which indices are NA to re-insert them later
    NAs = which(is.na(snps))
    snps = na.omit(snps)
-   n = length(snps)
 
-   if(learn==FALSE){
+   # Expectation Step (E-step)
+   # Computes posterior probabilities for genotype classes and outlier status, plus log-likelihood
+   e_step = function(snps, par) {
+      p_outlier = 1 # Uniform(0, 1) density representing outliers
+
+      gamma = cbind(
+          par$pi[1] * dbeta(snps, shape1 = par$shapes1[1], shape2 = par$shapes2[1])
+         ,par$pi[2] * dbeta(snps, shape1 = par$shapes1[2], shape2 = par$shapes2[2])
+         ,par$pi[3] * dbeta(snps, shape1 = par$shapes1[3], shape2 = par$shapes2[3])
+      )
+
+      # Scale by non-outlier prior probability
+      gamma = (1 - par$alpha) * gamma
+      non_outlier_lik = rowSums(gamma)
+      gamma = gamma / non_outlier_lik
+
+      # A-posteriori probability of each observation being an outlier
+      outliers = (par$alpha * p_outlier) / ((par$alpha * p_outlier) + non_outlier_lik)
+
+      # Overall log-likelihood
+      loglik = sum(log((par$alpha * p_outlier) + non_outlier_lik))
+
+      list(gamma = gamma, outliers = outliers, loglik = loglik)
+   }
+
+   # Maximization Step (M-step)
+   # Updates model parameters (class priors, Beta shapes, outlier prior) from current posteriors
+   m_step = function(snps, post) {
+      weights = post$gamma * (1 - post$outliers)
+
+      # Method of moments estimation of Beta distribution parameters for each class
+      s1 = eBeta(snps, weights[, 1])
+      s2 = eBeta(snps, weights[, 2])
+      s3 = eBeta(snps, weights[, 3])
+
+      # MLE of class priors and outlier proportion
+      class_priors = colSums(weights)
+      class_priors = class_priors / sum(class_priors)
+
+      list(
+          pi      = class_priors
+         ,shapes1 = c(s1$shape1, s2$shape1, s3$shape1)
+         ,shapes2 = c(s1$shape2, s2$shape2, s3$shape2)
+         ,alpha   = mean(post$outliers)
+      )
+   }
+
+   if (!learn) {
 
       # Use predefined model parameters
       # (might work better if training set is small or contains many outliers)
+      par = list(
+          pi      = c(0.2818387, 0.4330363, 0.2851250) # homozygous AA, heterozygous AB, homozygous BB
+         ,shapes1 = c(2.206479, 80.830012, 40.640821)
+         ,shapes2 = c(38.043029, 84.411900, 3.315509)
+         ,alpha   = 0.06646095 # Class probability for outliers
+      )
 
-      # Class probability for outliers
-      alpha = 0.06646095
-
-      # Class probabilities for the three genotypes: homozygous AA, heterozygous AB, homozygous BB
-      pi = c(0.2818387,0.4330363,0.2851250)
-
-      # Beta distribution parameters
-      shapes1 = c(2.206479,80.830012,40.640821)
-      shapes2 = c(38.043029,84.411900,3.315509)
-
-      # Uniform distribution representing outliers
-      p = 1
-
+      post = e_step(snps, par)
       loglik = NULL
-
-      # Expectation step: Compute posterior probabilities (gamma) for each of the three genotype classes
-      gamma = cbind(
-          pi[1] * dbeta(snps,shape1=shapes1[1],shape2=shapes2[1])
-         ,pi[2] * dbeta(snps,shape1=shapes1[2],shape2=shapes2[2])
-         ,pi[3] * dbeta(snps,shape1=shapes1[3],shape2=shapes2[3])
-         )
-
-      # Scale by non-outlier prior probability
-      gamma = (1-alpha) * gamma
-      tmp = rowSums(gamma)
-      gamma = gamma/tmp
-
-      # Compute a-posteriori probability of each observation being an outlier
-      outliers = (alpha*p) / ((alpha*p) + tmp)
 
    } else { # Learn dataset-specific model parameters using the EM algorithm
 
-      alpha = 1e-2
-      outliers = rep(alpha,times=n)
-      pi = c(1/3,1/3,1/3) # Initial class probabilities for the three genotypes
-      shapes1 = c(10,80,80) # Initial shape1 values
-      shapes2 = c(80,80,10) # Initial shape2 values
-      p = 1 # Uniform distribution for outliers
-      gamma = NA
+      par = list(
+          pi      = c(1/3, 1/3, 1/3) # Initial class probabilities for the three genotypes
+         ,shapes1 = c(10, 80, 80)    # Initial shape1 values
+         ,shapes2 = c(80, 80, 10)    # Initial shape2 values
+         ,alpha   = 1e-2             # Initial outlier prior probability
+      )
 
-      # Expectation Step (E-step)
-      # Computes the posterior probabilities for genotype classes and outlier status
-      e_step = function(){
-         gamma = cbind(
-             pi[1] * dbeta(snps,shape1=shapes1[1],shape2=shapes2[1])
-            ,pi[2] * dbeta(snps,shape1=shapes1[2],shape2=shapes2[2])
-            ,pi[3] * dbeta(snps,shape1=shapes1[3],shape2=shapes2[3])
-            )
+      loglik = rep(NA_real_, times = maxiter)
+      post = e_step(snps, par)
+      loglik[1] = post$loglik
 
-         gamma = (1-alpha) * gamma
-         tmp = rowSums(gamma)
-         gamma <<- gamma/tmp
+      i = 2
+      gain = Inf
 
-         outliers <<- (alpha*p) / ((alpha*p) + tmp)
-
-         # Calculate overall log-likelihood
-         loglik = (alpha*p) + tmp
-         loglik = sum(log(loglik))
-
-         return(loglik)
-      }
-
-      # Maximization Step (M-step)
-      # Estimates the model parameters (class priors, beta shapes) that maximize the expected log-likelihood
-      m_step = function(){
-
-         gamma = gamma * (1-outliers)
-
-         # Maximum Likelihood Estimation (MLE) of Beta distribution parameters for each class
-         s1 = eBeta(snps,gamma[,1])
-         s2 = eBeta(snps,gamma[,2])
-         s3 = eBeta(snps,gamma[,3])
-
-         shapes1 <<- c(s1$shape1,s2$shape1,s3$shape1)
-         shapes2 <<- c(s1$shape2,s2$shape2,s3$shape2)
-
-         # MLE of class priors
-         pi = apply(gamma,2,sum)
-         pi <<- pi/sum(pi)
-         alpha <<- sum(outliers)/n
-
-         invisible(NULL)
-      }
-
-      loglik = rep(NA_real_,times=maxiter)
-      loglik[1] = e_step()
-
-      i = 2; gain=Inf;
-
-      while (i < maxiter & gain > 1e-4) { # stop if maxiter reached or improvement is below threshold
-         m_step()
-         loglik[i] = e_step()
-         gain = loglik[i]-loglik[i-1]
+      while (i < maxiter && gain > 1e-4) { # stop if maxiter reached or improvement is below threshold
+         par = m_step(snps, post)
+         post = e_step(snps, par)
+         loglik[i] = post$loglik
+         gain = loglik[i] - loglik[i - 1]
          i = i + 1
       }
 
-      loglik=loglik[1:(i-1)]
+      loglik = loglik[seq_len(i - 1)]
    }
 
    ## Re-insert missing values (NAs) that were dropped initially
+   outliers = post$outliers
    if (length(NAs) != 0) {
-      tmp = rep(NA_real_,times=length(snpmatrix))
+      tmp = rep(NA_real_, times = length(snpmatrix))
       tmp[-NAs] = outliers
       outliers = tmp
    }
 
    dim(outliers) = dim(snpmatrix)
 
-   gamma = lapply(1:3,function(k){
+   gamma = lapply(1:3, function(k) {
 
       if (length(NAs) != 0) {
          tmp = rep(NA_real_, times = length(snpmatrix))
-         tmp[-NAs] = gamma[, k]
+         tmp[-NAs] = post$gamma[, k]
       } else {
-         tmp = gamma[, k]
+         tmp = post$gamma[, k]
       }
 
       dim(tmp) = dim(snpmatrix)
@@ -176,11 +163,11 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 
 
    return(list(
-       snps=snpmatrix
-      ,outliers=outliers
-      ,gamma=gamma
-      ,par=list(pi=pi,shapes1=shapes1,shapes2=shapes2,alpha=alpha)
-      ,loglik=loglik
+       snps = snpmatrix
+      ,outliers = outliers
+      ,gamma = gamma
+      ,par = par
+      ,loglik = loglik
    ))
 }
 
@@ -211,7 +198,8 @@ mxm_ = function(genotypes)
 #'
 snp_outliers = function(genotypes)
 {
-   stopifnot("outliers" %in% names(genotypes))
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = "outliers")
 
    # Average log odds of beta-values being outliers across all SNP probes
    log_odds = genotypes$outliers / (1-genotypes$outliers)

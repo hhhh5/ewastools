@@ -1,6 +1,3 @@
-#' @import data.table
-NULL
-
 #' Dye-bias correction and beta-values
 #'
 #' @description \code{correct_dye_bias()} corrects the dye bias between the red and green color
@@ -31,7 +28,8 @@ NULL
 #' 
 correct_dye_bias <- function(raw)
 {
-   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "controls", "ctrlG", "ctrlR"))
 
    i1g = raw$manifest[channel == "Grn" ,]
    i2  = raw$manifest[channel == "Both",]
@@ -47,7 +45,7 @@ correct_dye_bias <- function(raw)
 
    J = ncol(raw$M)
 
-   for(j in 1:J){
+   for(j in seq_len(J)){
       # Regress intensities in the red color channel on those in the green color channel.
       # The relation is assumed to be linear on the log scale.
       x = log(raw$ctrlG[c(Gi, Ci), j])
@@ -84,7 +82,8 @@ correct_dye_bias2 = function (raw)
 {
    # Experimental version of dye-bias correction. I found that red~green differs for 
    # ... G~A and C~T. They are however not independent. I have not understood this relation yet.
-   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "controls", "ctrlG", "ctrlR"))
 
    i1g = raw$manifest[channel == "Grn", ]
    i2  = raw$manifest[channel == "Both",]
@@ -96,7 +95,7 @@ correct_dye_bias2 = function (raw)
 
    J = ncol(raw$M)
 
-   for (j in 1:J) {
+   for (j in seq_len(J)) {
       # Regress A on G
       x = log(Gi[, j])
       y = log(Ai[, j])
@@ -129,7 +128,8 @@ correct_dye_bias2 = function (raw)
 #'
 beta_values = function(raw)
 {
-   stopifnot(c("manifest", "M", "U", "meta") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "meta"))
 
    I = nrow(raw$M)
    J = ncol(raw$M)
@@ -142,13 +142,13 @@ beta_values = function(raw)
 
    # Calculate beta = M / (M + U).
    # Floor intensity values at 1 to prevent division by zero
-   for (j in 1:J) {
+   for (j in seq_len(J)) {
       Uj = raw$U[, j]; Uj[Uj < 1] = 1
       Mj = raw$M[, j]; Mj[Mj < 1] = 1
       meth[, j] = Mj / (Uj + Mj)
    }
      
-   rownames(meth) = paste0(raw$manifest$ilmn_id)
+   rownames(meth) = as.character(raw$manifest$ilmn_id)
    colnames(meth) = raw$meta$sample_id
 
    return(meth)

@@ -1,6 +1,3 @@
-#' @import data.table
-NULL
-
 #' Read .idat files
 #' 
 #' @description Import and annotate the data from .idat files.
@@ -51,6 +48,10 @@ NULL
 #'
 read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 {
+   checkmate::assert_character(idat_files, min.len = 1, any.missing = FALSE)
+   checkmate::assert_flag(quiet)
+   checkmate::assert_flag(on_disk)
+
    if (on_disk) {
       if(!requireNamespace("ff", quietly = TRUE))
          stop("Package 'ff' is required but not installed.")
@@ -173,9 +174,13 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    positions = rep(NA_character_, J)
    dates     = rep(NA_character_, J)
 
+   COL_MEAN   = 1L
+   COL_SD     = 2L
+   COL_NBEADS = 3L
+
    prev_idat_order = NULL
 
-   for (j in 1:J) {
+   for (j in seq_len(J)) {
 
       red = illuminaio::readIDAT(paste0(idat_files[j], "_Red", suffix[j]))
       grn = illuminaio::readIDAT(paste0(idat_files[j], "_Grn", suffix[j]))
@@ -205,43 +210,43 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       }
 
       ## Type I Red probes
-      U[ iR$index,j ] = red$Quants[ iR$Ui, 1] # Mean
-      T[ iR$index,j ] = red$Quants[ iR$Ui, 2] # SD
-      V[ iR$index,j ] = red$Quants[ iR$Ui, 3] # NBeads
+      U[iR$index, j] = red$Quants[iR$Ui, COL_MEAN]
+      T[iR$index, j] = red$Quants[iR$Ui, COL_SD]
+      V[iR$index, j] = red$Quants[iR$Ui, COL_NBEADS]
      
-      M[ iR$index,j ] = red$Quants[ iR$Mi, 1] # Mean
-      S[ iR$index,j ] = red$Quants[ iR$Mi, 2] # SD
-      N[ iR$index,j ] = red$Quants[ iR$Mi, 3] # NBeads
+      M[iR$index, j] = red$Quants[iR$Mi, COL_MEAN]
+      S[iR$index, j] = red$Quants[iR$Mi, COL_SD]
+      N[iR$index, j] = red$Quants[iR$Mi, COL_NBEADS]
 
-      oobG$U[ iR$OOBi,j ] = grn$Quants[ iR$Ui,1 ]
-      oobG$M[ iR$OOBi,j ] = grn$Quants[ iR$Mi,1 ]
+      oobG$U[iR$OOBi, j] = grn$Quants[iR$Ui, COL_MEAN]
+      oobG$M[iR$OOBi, j] = grn$Quants[iR$Mi, COL_MEAN]
 
       ## Type I Green probes
-      U[ iG$index,j ] = grn$Quants[ iG$Ui,1 ] # Mean
-      T[ iG$index,j ] = grn$Quants[ iG$Ui,2 ] # SD
-      V[ iG$index,j ] = grn$Quants[ iG$Ui,3 ] # NBeads
+      U[iG$index, j] = grn$Quants[iG$Ui, COL_MEAN]
+      T[iG$index, j] = grn$Quants[iG$Ui, COL_SD]
+      V[iG$index, j] = grn$Quants[iG$Ui, COL_NBEADS]
 
-      M[ iG$index,j ] = grn$Quants[ iG$Mi,1 ] # Mean
-      S[ iG$index,j ] = grn$Quants[ iG$Mi,2 ] # SD
-      N[ iG$index,j ] = grn$Quants[ iG$Mi,3 ] # NBeads
+      M[iG$index, j] = grn$Quants[iG$Mi, COL_MEAN]
+      S[iG$index, j] = grn$Quants[iG$Mi, COL_SD]
+      N[iG$index, j] = grn$Quants[iG$Mi, COL_NBEADS]
 
-      oobR$U[ iG$OOBi,j ] = red$Quants[ iG$Ui,1 ]
-      oobR$M[ iG$OOBi,j ] = red$Quants[ iG$Mi,1 ]
+      oobR$U[iG$OOBi, j] = red$Quants[iG$Ui, COL_MEAN]
+      oobR$M[iG$OOBi, j] = red$Quants[iG$Mi, COL_MEAN]
 
       ## Type II probes (measured in both channels: Red for Unmethylated, Green for Methylated)
-      U[ i2$index,j ] = red$Quants[ i2$Ui,1 ] # Mean
-      T[ i2$index,j ] = red$Quants[ i2$Ui,2 ] # SD
-      V[ i2$index,j ] = red$Quants[ i2$Ui,3 ] # NBeads
+      U[i2$index, j] = red$Quants[i2$Ui, COL_MEAN]
+      T[i2$index, j] = red$Quants[i2$Ui, COL_SD]
+      V[i2$index, j] = red$Quants[i2$Ui, COL_NBEADS]
 
-      M[ i2$index,j ] = grn$Quants[ i2$Mi,1 ] # Mean
-      S[ i2$index,j ] = grn$Quants[ i2$Mi,2 ] # SD
-      N[ i2$index,j ] = grn$Quants[ i2$Mi,3 ] # NBeads
+      M[i2$index, j] = grn$Quants[i2$Mi, COL_MEAN]
+      S[i2$index, j] = grn$Quants[i2$Mi, COL_SD]
+      N[i2$index, j] = grn$Quants[i2$Mi, COL_NBEADS]
 
       ## Control probes
       # Not keeping the SD for control probes ATM
-      ctrlR[ controls$index,j ] = red$Quants[ controls$i,1 ]
-      ctrlG[ controls$index,j ] = grn$Quants[ controls$i,1 ]
-      ctrlN[ controls$index,j ] = red$Quants[ controls$i,3 ]
+      ctrlR[controls$index, j] = red$Quants[controls$i, COL_MEAN]
+      ctrlG[controls$index, j] = grn$Quants[controls$i, COL_MEAN]
+      ctrlN[controls$index, j] = red$Quants[controls$i, COL_NBEADS]
 
       if(!quiet) setTxtProgressBar(pb, j)
 
@@ -251,7 +256,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
    # Probes with zero beads on the chip (result of random chip assembly)
    # are set to intensity zero in the .idat files. Mark them as missing (NA).
-   for (j in 1:J) {
+   for (j in seq_len(J)) {
       U[V[, j] == 0, j] = NA
       M[N[, j] == 0, j] = NA
       
@@ -307,65 +312,49 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 #'
 drop_samples = function(raw, j = NULL){
 
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("U", "M", "T", "S", "V", "N", "ctrlG", "ctrlR", "ctrlN", "oobG", "oobR", "meta"))
+
    if (is.logical(j)) j = which(j)
    if (is.null(j) || length(j) == 0L) return(raw)
 
-   if (inherits(raw$M, "ff")) {
-
-      drop_cols = function(x, j) { # x must be an ff matrix
-         cols_to_keep = setdiff(seq_len(ncol(x)), j)
-         res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
-         if (length(cols_to_keep) > 0) {
-            for (k in seq_along(cols_to_keep))
-               res[, k] = x[, cols_to_keep[k]]
-         }
-         rownames(res) = rownames(x)
-         colnames(res) = colnames(x)[cols_to_keep]
-         return(res)
+   drop_cols = function(x, j) {
+      if (!inherits(x, "ff")) {
+         return(x[, -j, drop = FALSE])
       }
 
-      raw$U = drop_cols(raw$U, j)
-      raw$M = drop_cols(raw$M, j)
-
-      raw$T = drop_cols(raw$T, j)
-      raw$S = drop_cols(raw$S, j)
-
-      raw$V = drop_cols(raw$V, j)
-      raw$N = drop_cols(raw$N, j)
-
-      raw$oobG$M = drop_cols(raw$oobG$M, j)
-      raw$oobG$U = drop_cols(raw$oobG$U, j)
-      raw$oobR$M = drop_cols(raw$oobR$M, j)
-      raw$oobR$U = drop_cols(raw$oobR$U, j)
-
-      if("detP" %in% names(raw))
-         raw$detP = drop_cols(raw$detP, j)
-
-   } else {
-      # Standard in-memory matrix column removal
-      raw$U = raw$U[, -j, drop = FALSE]
-      raw$M = raw$M[, -j, drop = FALSE]
-
-      raw$T = raw$T[, -j, drop = FALSE]
-      raw$S = raw$S[, -j, drop = FALSE]
-
-      raw$V = raw$V[, -j, drop = FALSE]
-      raw$N = raw$N[, -j, drop = FALSE]
-
-      raw$oobG$M = raw$oobG$M[, -j, drop = FALSE]
-      raw$oobG$U = raw$oobG$U[, -j, drop = FALSE]
-      raw$oobR$M = raw$oobR$M[, -j, drop = FALSE]
-      raw$oobR$U = raw$oobR$U[, -j, drop = FALSE]
-
-      if("detP" %in% names(raw))
-        raw$detP = raw$detP[, -j, drop = FALSE]
+      cols_to_keep = setdiff(seq_len(ncol(x)), j)
+      res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
+      for (k in seq_along(cols_to_keep)) {
+         res[, k] = x[, cols_to_keep[k]]
+      }
+      rownames(res) = rownames(x)
+      colnames(res) = colnames(x)[cols_to_keep]
+      return(res)
    }
 
-   raw$ctrlG = raw$ctrlG[, -j, drop = FALSE]
-   raw$ctrlR = raw$ctrlR[, -j, drop = FALSE]
-   raw$ctrlN = raw$ctrlN[, -j, drop = FALSE]
+   raw$U = drop_cols(raw$U, j)
+   raw$M = drop_cols(raw$M, j)
 
-   raw$meta = raw$meta[-j,, drop = FALSE]
-   
+   raw$T = drop_cols(raw$T, j)
+   raw$S = drop_cols(raw$S, j)
+
+   raw$V = drop_cols(raw$V, j)
+   raw$N = drop_cols(raw$N, j)
+
+   raw$ctrlG = drop_cols(raw$ctrlG, j)
+   raw$ctrlR = drop_cols(raw$ctrlR, j)
+   raw$ctrlN = drop_cols(raw$ctrlN, j)
+
+   raw$oobG$M = drop_cols(raw$oobG$M, j)
+   raw$oobG$U = drop_cols(raw$oobG$U, j)
+   raw$oobR$M = drop_cols(raw$oobR$M, j)
+   raw$oobR$U = drop_cols(raw$oobR$U, j)
+
+   if ("detP" %in% names(raw))
+      raw$detP = drop_cols(raw$detP, j)
+
+   raw$meta = raw$meta[-j, , drop = FALSE]
+
    return(raw)
 }

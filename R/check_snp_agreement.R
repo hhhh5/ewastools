@@ -31,71 +31,59 @@
 #'
 check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = c("snps", "outliers", "gamma"))
+
    J = ncol(genotypes$snps)
 
-   stopifnot(anyDuplicated(sample_ids) == 0) # Stop if sample IDs are not unique
-   stopifnot(length(sample_ids) == J)
+   checkmate::assert_atomic(donor_ids, len = J)
+   checkmate::assert_atomic(sample_ids, len = J, unique = TRUE)
 
-   ## Generate all pairwise combinations of samples/donors
-   conflicts = cbind(
-      CJ(donor_ids,  donor_ids,  sorted = FALSE),
-      CJ(sample_ids, sample_ids, sorted = FALSE))
-   setcolorder(conflicts, c(1, 3, 2, 4)) # Rearrange columns
-   setnames(conflicts, 1:4, c('donor1','sample1','donor2','sample2'))
+   AGREEMENT_THRESHOLD = 0.90
 
-   ## Compute the agreement between all sample pairs
-   d = snp_agreement_matrix_(genotypes)
-   conflicts$agreement = as.numeric(d)
-   rm(d)
-   conflicts = conflicts[!is.na(agreement)]
+   pairs = pairwise_snp_agreement_(genotypes, donor_ids = donor_ids, sample_ids = sample_ids)
+
+   # Keep pairs that conflict with recorded donor labels:
+   # - Different recorded donors with high genetic agreement (>= 0.90)
+   # - Same recorded donor with low genetic agreement (<= 0.90)
+   conflicts = pairs[
+      (donor1 != donor2 & agreement >= AGREEMENT_THRESHOLD) |
+      (donor1 == donor2 & agreement <= AGREEMENT_THRESHOLD)
+   ]
+
+   if (nrow(conflicts) == 0) return(NULL)
    
-   ## Drop expected/non-conflict cases:
-   # - Samples from different donors expected to have low agreement (< 0.90)
-   # - Samples from the same donor expected to have high agreement (> 0.90)
-   conflicts = conflicts[!(donor1!=donor2 & agreement<0.90)]
-   conflicts = conflicts[!(donor1==donor2 & agreement>0.90)]
+   # Group related conflicts into weakly connected components of the conflict graph
+   edges = data.frame(
+      from = as.character(conflicts$sample1),
+      to   = as.character(conflicts$sample2)
+   )
+   conflict_graph = igraph::graph_from_data_frame(edges, directed = FALSE)
+   membership = igraph::components(conflict_graph, mode = "weak")$membership
 
-   if(nrow(conflicts)==0) return(NULL)
-   
-   ## Find the weakly connected components of the graph
-   # (consider conflicts as edges in a graph to group related issues together)
-   e = rep(NA_character_, times = 2 * nrow(conflicts))
-   e[c(TRUE,FALSE)] = as.character(conflicts$sample1)
-   e[c(FALSE,TRUE)] = as.character(conflicts$sample2)
-
-   g = igraph::make_graph(edges=e,directed=FALSE)
-   g = igraph::components(g,mode="weak")$membership
-
-   conflicts$group = g[as.character(conflicts$sample1)]
-   conflicts = split(conflicts,by='group',keep.by=FALSE)
-   return(conflicts)
+   conflicts$group = membership[as.character(conflicts$sample1)]
+   conflict_groups = split(conflicts, by = "group", keep.by = FALSE)
+   return(conflict_groups)
 }
 
 #' Boxplot of agreement scores for pairs of samples from the same vs. different donors
 #'
 #' @param ... Additional arguments passed to \code{\link[graphics]{boxplot}}.
 #' @noRd
-agreement_ = function(genotypes,donor_ids,sample_ids,...){
+agreement_ = function(genotypes, donor_ids, sample_ids, ...) {
+
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = c("snps", "outliers", "gamma"))
 
    J = ncol(genotypes$snps)
    
-   stopifnot(anyDuplicated(sample_ids)==0) # Stop if sample IDs are not unique
-   stopifnot(length(sample_ids) == J)
+   checkmate::assert_atomic(donor_ids, len = J)
+   checkmate::assert_atomic(sample_ids, len = J, unique = TRUE)
 
-   conflicts = cbind(
-      CJ(donor_ids,  donor_ids,  sorted = FALSE),
-      CJ(sample_ids, sample_ids, sorted = FALSE))
-   setcolorder(conflicts, c(1,3,2,4))
-   setnames(conflicts, 1:4, c('donor1','sample1','donor2','sample2'))
-
-   ## Compute the agreement between all sample pairs
-   d = snp_agreement_matrix_(genotypes)
-   conflicts$agreement = as.numeric(d)
-   rm(d)
-   conflicts = conflicts[!is.na(agreement)]
+   pairs = pairwise_snp_agreement_(genotypes, donor_ids = donor_ids, sample_ids = sample_ids)
 
    # Plot a boxplot comparing agreement distribution for same vs. different donors
-   boxplot(agreement ~ I(donor1==donor2),data=conflicts,horizontal=TRUE,ylim=c(0,1),xlab='Agreement',...)
+   boxplot(agreement ~ I(donor1 == donor2), data = pairs, horizontal = TRUE, ylim = c(0, 1), xlab = "Agreement", ...)
    
    return(invisible(NULL))
 }
@@ -103,32 +91,49 @@ agreement_ = function(genotypes,donor_ids,sample_ids,...){
 #' @rdname check_snp_agreement
 #' @export
 #' 
-enumerate_sample_donors = function(genotypes){
+enumerate_sample_donors = function(genotypes) {
 
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = c("snps", "outliers", "gamma"))
+
+   AGREEMENT_THRESHOLD = 0.90
    J = ncol(genotypes$snps)
 
-   samesame = CJ(1:J,1:J,sorted=FALSE)
-   setnames(samesame,1:2,c('sample1','sample2'))
+   pairs = pairwise_snp_agreement_(genotypes, sample_ids = seq_len(J))
 
-   ## Compute the agreement between all sample pairs
-   d = snp_agreement_matrix_(genotypes)
-   samesame$agreement = as.numeric(d)
-   rm(d)
-   samesame = samesame[!is.na(agreement)]
-   
-   ## Select sample pairs with the same fingerprint/high agreement (> 0.90)
-   samesame = samesame[agreement>0.90]
+   # Select sample pairs sharing the same genetic fingerprint (high agreement)
+   matching_pairs = pairs[agreement > AGREEMENT_THRESHOLD]
 
    # If there are no highly agreeing pairs, every sample belongs to a unique donor
-   if(nrow(samesame)==0) return(1:J)
+   if (nrow(matching_pairs) == 0) return(seq_len(J))
 
-   ## Find the strongly connected components of the graph (consider samesame pairs as edges in a graph)
-   e = rep(NA,times=2*nrow(samesame))
-   e[c(TRUE,FALSE)] = samesame$sample1
-   e[c(FALSE,TRUE)] = samesame$sample2
+   # Connected components of the matching-pairs graph define the inferred donors
+   edges = data.frame(from = matching_pairs$sample1, to = matching_pairs$sample2)
+   donor_graph = igraph::graph_from_data_frame(
+      d        = edges,
+      vertices = data.frame(name = seq_len(J)),
+      directed = FALSE
+   )
+   unname(igraph::components(donor_graph, mode = "strong")$membership)
+}
 
-   g = igraph::make_graph(edges=e,n=J,directed=FALSE)
-   return(igraph::components(g,mode="strong")$membership)
+#' Build a data.table of unique sample pairs with their pairwise SNP agreement scores
+#' @noRd
+pairwise_snp_agreement_ = function(genotypes, donor_ids = NULL, sample_ids = seq_len(ncol(genotypes$snps))) {
+   if (is.null(donor_ids)) {
+      pairs = CJ(sample_ids, sample_ids, sorted = FALSE)
+      setnames(pairs, 1:2, c("sample1", "sample2"))
+   } else {
+      pairs = cbind(
+         CJ(donor_ids,  donor_ids,  sorted = FALSE),
+         CJ(sample_ids, sample_ids, sorted = FALSE)
+      )
+      setcolorder(pairs, c(1, 3, 2, 4))
+      setnames(pairs, 1:4, c("donor1", "sample1", "donor2", "sample2"))
+   }
+
+   pairs$agreement = as.numeric(snp_agreement_matrix_(genotypes))
+   pairs[!is.na(agreement)]
 }
 
 #' Compute lower-triangular matrix of pairwise SNP agreement scores
