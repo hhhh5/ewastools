@@ -46,34 +46,33 @@ estimateLC = function(meth,ref,constrained=FALSE) {
       markers = na.omit(markers)
    }
 
+   # Set up quadratic programming constraints:
+   # - Unconstrained: all cell proportions >= 0 (diag(n) %*% beta >= 0)
+   # - Constrained:   also prepend equality constraint (meq = 1) requiring sum(beta) == 1
+   Amat = diag(n_celltypes)
+   bvec = rep(0, n_celltypes)
+   meq  = 0L
+
+   if (constrained) {
+      Amat = cbind(1, Amat)
+      bvec = c(1, bvec)
+      meq  = 1L
+   }
+
    # Estimate cell proportions for each sample using quadratic programming
    EST = sapply(seq_len(J), \(j) {
-      tmp = meth[markers,j]
-      i = !is.na(tmp)
+      sample_beta = meth[markers, j]
+      observed = !is.na(sample_beta)
+      X = coefs[observed, , drop = FALSE]
 
-      if(!constrained){
-         # Unconstrained optimization: solve.QP finds cell proportions >= 0
-         # Dm = t(coefs) %*% coefs, dvec = t(coefs) %*% tmp, constraints: diag(n) %*% beta >= 0
-         return(
-            quadprog::solve.QP(
-             t(coefs[i,]) %*% coefs[i,]
-            ,t(coefs[i,]) %*% tmp[i]
-            ,diag(n_celltypes)
-            ,rep(0,n_celltypes)
-         )$sol)
-      } else {
-         # Constrained optimization: solve.QP finds cell proportions >= 0 AND sum(proportions) == 1
-         # meq = 1 means the first constraint (sum equals 1) is an equality constraint
-         return(
-            quadprog::solve.QP(
-             t(coefs[i,]) %*% coefs[i,]
-            ,t(coefs[i,]) %*% tmp[i]
-            ,cbind(1,diag(n_celltypes))
-            ,c(1,rep(0,n_celltypes))
-            ,meq=1
-         )$sol)
-      }
-      })
+      quadprog::solve.QP(
+         Dmat = t(X) %*% X,
+         dvec = t(X) %*% sample_beta[observed],
+         Amat = Amat,
+         bvec = bvec,
+         meq  = meq
+      )$sol
+   })
    EST = t(EST)
    colnames(EST) = colnames(coefs)
    EST = data.table(EST)
