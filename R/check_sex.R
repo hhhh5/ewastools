@@ -21,7 +21,8 @@
 #' @export
 check_sex = function(raw) {
    
-   if(!all(c('M', 'U', 'manifest') %in% names(raw))) stop('Invalid argument')
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("M", "U", "manifest"))
 
    with(raw, {
 
@@ -57,6 +58,9 @@ check_sex = function(raw) {
 #'   Samples that cannot be determined conclusively are assigned \code{NA}.
 #' @export
 predict_sex = function(X, Y, male, female){
+
+   checkmate::assert_numeric(X, min.len = 1)
+   checkmate::assert_numeric(Y, len = length(X))
 
    # Compute the robust Hodges-Lehmann estimator to determine the midpoint of X chromosome intensities
    # between known male and female samples.

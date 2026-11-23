@@ -29,6 +29,9 @@
 
 estimateLC = function(meth,ref,constrained=FALSE) {
    
+   checkmate::assert_string(ref)
+   checkmate::assert_flag(constrained)
+
    J = ncol(meth)
 
    # Load the regression coefficients/reference panel matrix

@@ -48,6 +48,10 @@
 #'
 read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 {
+   checkmate::assert_character(idat_files, min.len = 1, any.missing = FALSE)
+   checkmate::assert_flag(quiet)
+   checkmate::assert_flag(on_disk)
+
    if (on_disk) {
       if(!requireNamespace("ff", quietly = TRUE))
          stop("Package 'ff' is required but not installed.")
@@ -303,6 +307,9 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 #' @export
 #'
 drop_samples = function(raw, j = NULL){
+
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("U", "M", "T", "S", "V", "N", "ctrlG", "ctrlR", "ctrlN", "oobG", "oobR", "meta"))
 
    if (is.logical(j)) j = which(j)
    if (is.null(j) || length(j) == 0L) return(raw)

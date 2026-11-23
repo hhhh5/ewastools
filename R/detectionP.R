@@ -41,7 +41,8 @@
 #'
 detectionP = function(raw)
 {
-   stopifnot(c("manifest", "M", "U") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U"))
 
    with(raw, {
 
@@ -112,7 +113,8 @@ detectionP = function(raw)
 #'
 detectionP.neg = function(raw)
 {
-   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "controls", "ctrlG", "ctrlR"))
 
    with(raw, {
 
@@ -163,7 +165,9 @@ detectionP.neg = function(raw)
 #'
 mask = function(raw,threshold)
 {
-   if(!all(c("M", "U", "detP") %in% names(raw))) stop("Invalid argument")
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("M", "U", "detP"))
+   checkmate::assert_number(threshold)
     
    for (j in seq_len(ncol(raw$M))) {
      undetected = which(raw$detP[, j] > threshold)
@@ -179,8 +183,10 @@ mask = function(raw,threshold)
 #'
 eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
 
-   if(is.null(males) | is.null(females)) stop('Please specify the column indices for male and female subjects')
-   if(!'detP'%in%names(raw)) stop('detP component missing')
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "detP"))
+   checkmate::assert_integerish(males, lower = 1, upper = ncol(raw$detP), min.len = 1, any.missing = FALSE)
+   checkmate::assert_integerish(females, lower = 1, upper = ncol(raw$detP), min.len = 1, any.missing = FALSE)
 
    chrY = raw$manifest[forcats::fct_match(chr, "chrY"), index]
    chrY = raw$detP[chrY, , drop = FALSE]
@@ -207,8 +213,7 @@ detectionP.minfi = function(rgSet)
    if (!requireNamespace("minfi", quietly = TRUE))
       stop("Package 'minfi' is required for 'detectionP.minfi()'.")
 
-   if (!inherits(rgSet, "RGChannelSet"))
-      stop("Argument 'rgSet' must be an 'RGChannelSet' object.")
+   checkmate::assert_class(rgSet, "RGChannelSet")
 
    locusNames = minfi::getManifestInfo(rgSet, "locusNames")
    detP = matrix(NA_real_,ncol=ncol(rgSet),nrow=length(locusNames),dimnames = list(locusNames, colnames(rgSet)))

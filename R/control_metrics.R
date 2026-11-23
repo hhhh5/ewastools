@@ -42,7 +42,9 @@
 #'
 control_metrics = function(raw, FFPE = FALSE){
 
-   if(!all(c("controls", "ctrlG", "ctrlR") %in% names(raw))) stop("Invalid argument")
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("controls", "ctrlG", "ctrlR"))
+   checkmate::assert_flag(FFPE)
 
    with(raw,{
 
@@ -188,6 +190,7 @@ control_metrics = function(raw, FFPE = FALSE){
 #' @export
 #' 
 sample_failure = function(metrics){
+   checkmate::assert_list(metrics, min.len = 1)
    # Returns TRUE for any sample that falls below the quality control threshold for at least one metric
    Reduce(`|`, lapply(metrics, \(m) !is.na(m) & m < attr(m, "threshold")))
 }

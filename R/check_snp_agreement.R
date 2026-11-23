@@ -31,10 +31,13 @@
 #'
 check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = c("snps", "outliers", "gamma"))
+
    J = ncol(genotypes$snps)
 
-   stopifnot(anyDuplicated(sample_ids) == 0) # Stop if sample IDs are not unique
-   stopifnot(length(sample_ids) == J)
+   checkmate::assert_atomic(donor_ids, len = J)
+   checkmate::assert_atomic(sample_ids, len = J, unique = TRUE)
 
    ## Generate all pairwise combinations of samples/donors
    conflicts = cbind(
@@ -77,10 +80,13 @@ check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 #' @noRd
 agreement_ = function(genotypes,donor_ids,sample_ids,...){
 
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = c("snps", "outliers", "gamma"))
+
    J = ncol(genotypes$snps)
    
-   stopifnot(anyDuplicated(sample_ids)==0) # Stop if sample IDs are not unique
-   stopifnot(length(sample_ids) == J)
+   checkmate::assert_atomic(donor_ids, len = J)
+   checkmate::assert_atomic(sample_ids, len = J, unique = TRUE)
 
    conflicts = cbind(
       CJ(donor_ids,  donor_ids,  sorted = FALSE),
@@ -104,6 +110,9 @@ agreement_ = function(genotypes,donor_ids,sample_ids,...){
 #' @export
 #' 
 enumerate_sample_donors = function(genotypes){
+
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = c("snps", "outliers", "gamma"))
 
    J = ncol(genotypes$snps)
 

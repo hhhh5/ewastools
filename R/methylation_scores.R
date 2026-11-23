@@ -23,6 +23,8 @@
 #'
 methylation_score = function(beta, model) {
 
+   checkmate::assert_string(model)
+
    if (model == "cord_blood:maternal_smoking") {
 
       # Model based on Table S5 from Reese et al. (2017) available at doi.org/10.1289/EHP333

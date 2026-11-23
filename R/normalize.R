@@ -28,7 +28,8 @@ NULL
 #' 
 correct_dye_bias <- function(raw)
 {
-   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "controls", "ctrlG", "ctrlR"))
 
    i1g = raw$manifest[channel == "Grn" ,]
    i2  = raw$manifest[channel == "Both",]
@@ -81,7 +82,8 @@ correct_dye_bias2 = function (raw)
 {
    # Experimental version of dye-bias correction. I found that red~green differs for 
    # ... G~A and C~T. They are however not independent. I have not understood this relation yet.
-   stopifnot(c("manifest", "M", "U", "controls", "ctrlG", "ctrlR") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "controls", "ctrlG", "ctrlR"))
 
    i1g = raw$manifest[channel == "Grn", ]
    i2  = raw$manifest[channel == "Both",]
@@ -126,7 +128,8 @@ correct_dye_bias2 = function (raw)
 #'
 beta_values = function(raw)
 {
-   stopifnot(c("manifest", "M", "U", "meta") %in% names(raw))
+   checkmate::assert_list(raw)
+   checkmate::assert_names(names(raw), must.include = c("manifest", "M", "U", "meta"))
 
    I = nrow(raw$M)
    J = ncol(raw$M)

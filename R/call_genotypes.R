@@ -39,6 +39,10 @@
 #'
 call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
 {
+   checkmate::assert_matrix(snpmatrix, mode = "numeric")
+   checkmate::assert_flag(learn)
+   checkmate::assert_count(maxiter, positive = TRUE)
+
    snps = as.vector(snpmatrix)
 
    # Drop NAs to be able to compute likelihoods, but keep
@@ -210,7 +214,8 @@ mxm_ = function(genotypes)
 #'
 snp_outliers = function(genotypes)
 {
-   stopifnot("outliers" %in% names(genotypes))
+   checkmate::assert_list(genotypes)
+   checkmate::assert_names(names(genotypes), must.include = "outliers")
 
    # Average log odds of beta-values being outliers across all SNP probes
    log_odds = genotypes$outliers / (1-genotypes$outliers)
