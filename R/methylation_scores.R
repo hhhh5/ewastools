@@ -25,49 +25,11 @@ methylation_score = function(beta, model) {
 
    checkmate::assert_string(model)
 
-   if (model == "cord_blood:maternal_smoking") {
+   spec = load_score_model(model)
+   if (is.null(spec)) return(NULL)
 
-      # Model based on Table S5 from Reese et al. (2017) available at doi.org/10.1289/EHP333
-      # Predicts newborn maternal smoking exposure from cord blood DNA methylation.
-      markers = data.table(
-          probe_id = c("cg02256631","cg02482603","cg04103532","cg04180046","cg04506190","cg05549655","cg05575921","cg08698721","cg09743950","cg10799846","cg12186702","cg13834112","cg13893782","cg14179389","cg14351425","cg14633298","cg14743346","cg17397069","cg19381766","cg22154659","cg22802102","cg23304605","cg25189904","cg25949550","cg26764244","cg27291468")
-         ,coef = c(-0.191,2.706,1.786,14.027,2.318,6.210,-10.909,1.142,-6.330,-4.963,3.847,1.514,-0.963,-6.304,6.361,5.050,2.286,-2.912,5.245,-0.773,-0.254,0.011,-3.903,-46.991,-0.246,0.836)
-         )
-      intercept = 0
-
-   } else if (model == "cord_blood:gestational_age"){
-
-      # Knight, A.K., Craig, J.M., Theda, C. et al.
-      # An epigenetic clock for gestational age at birth based on blood methylation data.
-      # Genome Biol 17, 206 (2016).
-      # Reference: doi.org/10.1186/s13059-016-1068-z
-      markers = system.file("data/13059_2016_1068_MOESM3_ESM.csv", package="ewastools")
-      markers = fread(markers)
-      setnames(markers, 1:2, c("probe_id","coef"))
-      markers = markers[-1]
-      intercept = 41.72579759
-
-   } else if (model == "placenta:gestational_age"){
-
-      # Placental epigenetic clocks: estimating gestational age using placental DNA methylation levels
-      # Reference: https://doi.org/10.18632/aging.102049
-      markers = system.file("data/102049-SupFile1.csv", package="ewastools")
-      markers = fread(markers)
-      setnames(markers, 1:2, c("probe_id", "coef"))
-      markers = markers[-1]
-      intercept = 24.99772133
-
-   } else if (model == "horvath_clock"){
-
-      # Multi-tissue epigenetic age clock from Horvath (2013).
-      # Reference: https://doi.org/10.1186/gb-2013-14-10-r115
-      markers = system.file("data/horvath_clock.csv", package="ewastools")
-      markers = fread(markers, header=TRUE)
-      intercept = 0.695507258
-
-   } else {
-      return(NULL)
-   }
+   markers   = spec$markers
+   intercept = spec$intercept
 
    i = find_matching_rows(markers$probe_id, rownames(beta))
    if (any(is.na(i))) {
@@ -95,14 +57,86 @@ methylation_score = function(beta, model) {
    # Samples with only `NA` values across matched probes should receive `NA`, not `intercept`
    y[all_missing] = NA_real_
 
-   if (model == "horvath_clock") {
-      # Epigenetic age predictor uses a transformation function to handle young ages.
-      # Below is the inverse of the transformation function applied to linear predictions.
-      inverse_transformation = function(x, adult.age = 20) {
-         ifelse(x<0, (1+adult.age)*exp(x)-1, (1+adult.age)*x+adult.age) }
-
-      y = inverse_transformation(y)
-   }
-
+   y = spec$transform(y)
    return(y)
+}
+
+#' Load probe weights, intercept, and post-transformation for a methylation score model
+#' @noRd
+load_score_model = function(model) {
+   switch(
+      model,
+
+      "cord_blood:maternal_smoking" = {
+         # Model based on Table S5 from Reese et al. (2017) available at doi.org/10.1289/EHP333
+         # Predicts newborn maternal smoking exposure from cord blood DNA methylation.
+         markers = fread(text = "
+            probe_id,   coef
+            cg02256631,  -0.191
+            cg02482603,   2.706
+            cg04103532,   1.786
+            cg04180046,  14.027
+            cg04506190,   2.318
+            cg05549655,   6.210
+            cg05575921, -10.909
+            cg08698721,   1.142
+            cg09743950,  -6.330
+            cg10799846,  -4.963
+            cg12186702,   3.847
+            cg13834112,   1.514
+            cg13893782,  -0.963
+            cg14179389,  -6.304
+            cg14351425,   6.361
+            cg14633298,   5.050
+            cg14743346,   2.286
+            cg17397069,  -2.912
+            cg19381766,   5.245
+            cg22154659,  -0.773
+            cg22802102,  -0.254
+            cg23304605,   0.011
+            cg25189904,  -3.903
+            cg25949550, -46.991
+            cg26764244,  -0.246
+            cg27291468,   0.836
+         ")
+         list(markers = markers, intercept = 0, transform = identity)
+      },
+
+      "cord_blood:gestational_age" = {
+         # Knight, A.K., Craig, J.M., Theda, C. et al.
+         # An epigenetic clock for gestational age at birth based on blood methylation data.
+         # Genome Biol 17, 206 (2016). Reference: doi.org/10.1186/s13059-016-1068-z
+         csv_path = system.file("data/13059_2016_1068_MOESM3_ESM.csv", package = "ewastools")
+         markers = fread(csv_path)
+         setnames(markers, 1:2, c("probe_id", "coef"))
+         markers = markers[-1] # Row 1 holds the intercept
+         list(markers = markers, intercept = 41.72579759, transform = identity)
+      },
+
+      "placenta:gestational_age" = {
+         # Placental epigenetic clocks: estimating gestational age using placental DNA methylation levels
+         # Reference: https://doi.org/10.18632/aging.102049
+         csv_path = system.file("data/102049-SupFile1.csv", package = "ewastools")
+         markers = fread(csv_path)
+         setnames(markers, 1:2, c("probe_id", "coef"))
+         markers = markers[-1] # Row 1 holds the intercept
+         list(markers = markers, intercept = 24.99772133, transform = identity)
+      },
+
+      "horvath_clock" = {
+         # Multi-tissue epigenetic age clock from Horvath (2013).
+         # Reference: https://doi.org/10.1186/gb-2013-14-10-r115
+         csv_path = system.file("data/horvath_clock.csv", package = "ewastools")
+         markers = fread(csv_path, header = TRUE)
+
+         # Inverse of Horvath's age transformation (handles young ages < adult.age)
+         inverse_transformation = function(x, adult.age = 20) {
+            ifelse(x < 0, (1 + adult.age) * exp(x) - 1, (1 + adult.age) * x + adult.age)
+         }
+
+         list(markers = markers, intercept = 0.695507258, transform = inverse_transformation)
+      },
+
+      NULL
+   )
 }
