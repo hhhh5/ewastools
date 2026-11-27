@@ -107,7 +107,7 @@ test_that("call_genotypes (learn = FALSE/TRUE), snp_outliers, and SNP donor agre
   out = snp_outliers(gt_fixed)
   expect_length(out, 6)
   expect_true(all(out[1:5] < -4))
-  expect_true(out[6] > -4)
+  expect_true(out[[6]] > -4)
 
   # enumerate_sample_donors() and check_snp_agreement() on clean samples 1:5
   gt_clean = call_genotypes(snps[, 1:5], learn = FALSE)
@@ -160,8 +160,8 @@ test_that("find_matching_rows and methylation_score edge cases work without IDAT
     sc_partial <- methylation_score(tiny_beta, "cord_blood:maternal_smoking"),
     "not found"
   )
-  expect_false(is.na(sc_partial["ok"]))
-  expect_true(is.na(sc_partial["all_na"]))
+  expect_false(is.na(sc_partial[["ok"]]))
+  expect_true(is.na(sc_partial[["all_na"]]))
 
   no_match_beta = tiny_beta[1, , drop = FALSE]
   expect_warning(
@@ -191,6 +191,6 @@ test_that("estimateLC and methylation_score work on real 450K beta values", {
     sc = suppressWarnings(methylation_score(beta, mdl))
     expect_type(sc, "double")
     expect_length(sc, 1)
-    expect_false(is.na(sc))
+    expect_false(is.na(sc[[1]]))
   }
 })
