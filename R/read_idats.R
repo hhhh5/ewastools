@@ -275,11 +275,12 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
 
    # Extract sample IDs from the file names (using the last portion of the path)
    sample_ids = basename(idat_files)
+   ts = lubridate::mdy_hms(dates, tz = "UTC", locale = "C", quiet = TRUE)
 
    meta = tibble::tibble(
        sample_id = sample_ids
-      ,date = as.IDate(dates, "%m/%d/%Y %r")
-      ,time = as.ITime(dates, "%m/%d/%Y %r")
+      ,date = as.IDate(ts, tz = "UTC")
+      ,time = as.ITime(ts, tz = "UTC")
       ,barcode = barcodes
       ,position = positions
       )

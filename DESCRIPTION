@@ -15,6 +15,7 @@ Imports:
     graphics,
     igraph,
     illuminaio,
+    lubridate,
     mblm,
     quadprog,
     stats,
