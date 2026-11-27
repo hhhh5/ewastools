@@ -4,3 +4,4 @@ docs/
 ^docs$
 ^pkgdown$
 ^\.github$
+\.orig$
