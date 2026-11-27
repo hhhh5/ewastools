@@ -71,8 +71,10 @@ control_metrics = function(raw, FFPE = FALSE){
    bkgR = cmax(R("EXTENSION", "^Extension \\([CG]\\)$")) + 3000
 
    specs = CONTROL_METRICS[CONTROL_METRICS$platform == raw$platform, ]
-   J = ncol(raw$ctrlG)
+   # Threshold 0 disables failure flagging in `sample_failure()` for non-FFPE samples
+   if (FFPE) specs$threshold[specs$name == "Restoration"] = 1
 
+   J = ncol(raw$ctrlG)
    metrics = vector("list", nrow(specs))
    names(metrics) = specs$name
 
@@ -82,8 +84,7 @@ control_metrics = function(raw, FFPE = FALSE){
          stop(sprintf("Control metric '%s' produced %d values for %d samples.",
                       specs$name[k], length(val), J), call. = FALSE)
       }
-      # Threshold 0 disables failure flagging in `sample_failure()` for non-FFPE samples
-      attr(val, "threshold") = if (specs$name[k] == "Restoration" && FFPE) 1 else specs$threshold[k]
+      attr(val, "threshold") = specs$threshold[k]
       metrics[[k]] = val
    }
 
