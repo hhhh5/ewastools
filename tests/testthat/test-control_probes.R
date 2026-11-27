@@ -1,6 +1,7 @@
 testthat::test_that("control probe metrics return correct results", {
-  k450 = testthat::test_path("../../data/5640269011_R01C01")
-  epic = testthat::test_path("../../data/200144450018_R04C01")
+  testthat::skip_on_ci()
+  k450 = testthat::test_path("testdata/5640269011_R01C01")
+  epic = testthat::test_path("testdata/200144450018_R04C01")
   ref  = testthat::test_path("metrics.rds")
 
   stopifnot(
@@ -21,7 +22,8 @@ testthat::test_that("control probe metrics return correct results", {
 })
 
 testthat::test_that("sample_failure flags samples below threshold and ignores NAs", {
-  k450 = testthat::test_path("../../data/5640269011_R01C01")
+  testthat::skip_on_ci()
+  k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 
   raw2 = read_idats(c(k450, k450), quiet = TRUE)

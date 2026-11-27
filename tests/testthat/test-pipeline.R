@@ -1,5 +1,6 @@
 test_that("detectionP, detectionP.neg, mask, eval_detP_cutoffs, correct_dye_bias, and beta_values work", {
-  k450 = testthat::test_path("../../data/5640269011_R01C01")
+  skip_on_ci()
+  k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 
   raw = read_idats(c(k450, k450), quiet = TRUE)
@@ -41,8 +42,9 @@ test_that("detectionP, detectionP.neg, mask, eval_detP_cutoffs, correct_dye_bias
   expect_true(all(b_vals > 0 & b_vals < 1))
 })
 
-test_that("check_sex and predict_sex infer sex and flag outliers", {
-  k450 = testthat::test_path("../../data/5640269011_R01C01")
+test_that("check_sex computes normalized X and Y intensities", {
+  skip_on_ci()
+  k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 
   raw = read_idats(k450, quiet = TRUE)
@@ -50,7 +52,9 @@ test_that("check_sex and predict_sex infer sex and flag outliers", {
   expect_named(xy, c("X", "Y"))
   expect_length(xy$X, 1)
   expect_length(xy$Y, 1)
+})
 
+test_that("predict_sex infers sex and flags outliers", {
   X = c(0.55, 0.57, 1.02, 1.05, 0.56, 1.03, 0.98)
   Y = c(1.10, 1.08, 0.15, 0.12, 1.12, 0.14, 0.95)
   pred = predict_sex(X, Y, male = 1:2, female = 3:4)
@@ -137,7 +141,7 @@ test_that("call_genotypes (learn = FALSE/TRUE), snp_outliers, and SNP donor agre
   expect_false(any(is.na(conflicts_int[[1]]$sample1)))
 })
 
-test_that("find_matching_rows, estimateLC, and methylation_score work across formats and edge cases", {
+test_that("find_matching_rows and methylation_score edge cases work without IDAT files", {
   # Probe ID matching for legacy, EPICv2, MSA, and MOUSE styles
   expect_equal(
     ewastools:::find_matching_rows(
@@ -147,7 +151,29 @@ test_that("find_matching_rows, estimateLC, and methylation_score work across for
     c(2L, 1L)
   )
 
-  k450 = testthat::test_path("../../data/5640269011_R01C01")
+  # Edge cases: zero matching probes or all-NA sample returns NA_real_ (not bare intercept)
+  tiny_beta = matrix(c(0.5, NA_real_, 0.3, NA_real_), nrow = 2, ncol = 2, byrow = TRUE,
+                     dimnames = list(c("cg00000029", "cg02256631"), c("ok", "all_na")))
+  expect_null(methylation_score(tiny_beta, "nonexistent_model"))
+
+  expect_warning(
+    sc_partial <- methylation_score(tiny_beta, "cord_blood:maternal_smoking"),
+    "not found"
+  )
+  expect_false(is.na(sc_partial["ok"]))
+  expect_true(is.na(sc_partial["all_na"]))
+
+  no_match_beta = tiny_beta[1, , drop = FALSE]
+  expect_warning(
+    sc_none <- methylation_score(no_match_beta, "horvath_clock"),
+    "not found"
+  )
+  expect_equal(unname(sc_none), c(NA_real_, NA_real_))
+})
+
+test_that("estimateLC and methylation_score work on real 450K beta values", {
+  skip_on_ci()
+  k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 
   beta = read_idats(k450, quiet = TRUE) |> correct_dye_bias() |> beta_values()
@@ -167,22 +193,4 @@ test_that("find_matching_rows, estimateLC, and methylation_score work across for
     expect_length(sc, 1)
     expect_false(is.na(sc))
   }
-  expect_null(methylation_score(beta, "nonexistent_model"))
-
-  # Edge cases: zero matching probes or all-NA sample returns NA_real_ (not bare intercept)
-  tiny_beta = matrix(c(0.5, NA_real_, 0.3, NA_real_), nrow = 2, ncol = 2, byrow = TRUE,
-                     dimnames = list(c("cg00000029", "cg02256631"), c("ok", "all_na")))
-  expect_warning(
-    sc_partial <- methylation_score(tiny_beta, "cord_blood:maternal_smoking"),
-    "not found"
-  )
-  expect_false(is.na(sc_partial["ok"]))
-  expect_true(is.na(sc_partial["all_na"]))
-
-  no_match_beta = tiny_beta[1, , drop = FALSE]
-  expect_warning(
-    sc_none <- methylation_score(no_match_beta, "horvath_clock"),
-    "not found"
-  )
-  expect_equal(unname(sc_none), c(NA_real_, NA_real_))
 })
