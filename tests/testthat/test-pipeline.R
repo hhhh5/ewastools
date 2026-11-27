@@ -1,5 +1,5 @@
 test_that("detectionP, detectionP.neg, mask, eval_detP_cutoffs, correct_dye_bias, and beta_values work", {
-  skip_on_ci()
+  skip_if_not(dir.exists(testthat::test_path("testdata")), "Local demo IDAT files not present.")
   k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 
@@ -43,7 +43,7 @@ test_that("detectionP, detectionP.neg, mask, eval_detP_cutoffs, correct_dye_bias
 })
 
 test_that("check_sex computes normalized X and Y intensities", {
-  skip_on_ci()
+  skip_if_not(dir.exists(testthat::test_path("testdata")), "Local demo IDAT files not present.")
   k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 
@@ -172,7 +172,7 @@ test_that("find_matching_rows and methylation_score edge cases work without IDAT
 })
 
 test_that("estimateLC and methylation_score work on real 450K beta values", {
-  skip_on_ci()
+  skip_if_not(dir.exists(testthat::test_path("testdata")), "Local demo IDAT files not present.")
   k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
 

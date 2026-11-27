@@ -103,7 +103,7 @@ test_that("read_idats imports MOUSE platform", {
 })
 
 test_that("read_idats and drop_samples work on bundled 450K and EPICv1 files", {
-  skip_on_ci()
+  skip_if_not(dir.exists(testthat::test_path("testdata")), "Local demo IDAT files not present.")
   k450 = testthat::test_path("testdata/5640269011_R01C01")
   epic = testthat::test_path("testdata/200144450018_R04C01")
   stopifnot(
@@ -135,7 +135,7 @@ test_that("read_idats and drop_samples work on bundled 450K and EPICv1 files", {
 })
 
 test_that("read_idats and drop_samples work with on_disk = TRUE", {
-  skip_on_ci()
+  skip_if_not(dir.exists(testthat::test_path("testdata")), "Local demo IDAT files not present.")
   skip_if_not_installed("ff")
   k450 = testthat::test_path("testdata/5640269011_R01C01")
   stopifnot(file.exists(paste0(k450, "_Grn.idat")))
