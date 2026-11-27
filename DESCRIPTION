@@ -24,6 +24,7 @@ Imports:
     utils
 Suggests: 
     dplyr,
+    ENmix,
     ff,
     knitr,
     minfi,
