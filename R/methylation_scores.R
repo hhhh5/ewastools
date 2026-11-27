@@ -70,7 +70,7 @@ load_score_model = function(model) {
       "cord_blood:maternal_smoking" = {
          # Model based on Table S5 from Reese et al. (2017) available at doi.org/10.1289/EHP333
          # Predicts newborn maternal smoking exposure from cord blood DNA methylation.
-         csv_path = system.file("data/reese_maternal_smoking.csv", package = "ewastools")
+         csv_path = system.file("extdata", "reese_maternal_smoking.csv", package = "ewastools")
          markers = fread(csv_path, header = TRUE)
          list(markers = markers, intercept = 0, transform = identity)
       },
@@ -79,7 +79,7 @@ load_score_model = function(model) {
          # Knight, A.K., Craig, J.M., Theda, C. et al.
          # An epigenetic clock for gestational age at birth based on blood methylation data.
          # Genome Biol 17, 206 (2016). Reference: doi.org/10.1186/s13059-016-1068-z
-         csv_path = system.file("data/13059_2016_1068_MOESM3_ESM.csv", package = "ewastools")
+         csv_path = system.file("extdata", "13059_2016_1068_MOESM3_ESM.csv", package = "ewastools")
          markers = fread(csv_path)
          setnames(markers, 1:2, c("probe_id", "coef"))
          markers = markers[-1] # Row 1 holds the intercept
@@ -89,7 +89,7 @@ load_score_model = function(model) {
       "placenta:gestational_age" = {
          # Placental epigenetic clocks: estimating gestational age using placental DNA methylation levels
          # Reference: https://doi.org/10.18632/aging.102049
-         csv_path = system.file("data/102049-SupFile1.csv", package = "ewastools")
+         csv_path = system.file("extdata", "102049-SupFile1.csv", package = "ewastools")
          markers = fread(csv_path)
          setnames(markers, 1:2, c("probe_id", "coef"))
          markers = markers[-1] # Row 1 holds the intercept
@@ -99,7 +99,7 @@ load_score_model = function(model) {
       "horvath_clock" = {
          # Multi-tissue epigenetic age clock from Horvath (2013).
          # Reference: https://doi.org/10.1186/gb-2013-14-10-r115
-         csv_path = system.file("data/horvath_clock.csv", package = "ewastools")
+         csv_path = system.file("extdata", "horvath_clock.csv", package = "ewastools")
          markers = fread(csv_path, header = TRUE)
 
          # Inverse of Horvath's age transformation (handles young ages < adult.age)

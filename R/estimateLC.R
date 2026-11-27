@@ -35,7 +35,10 @@ estimateLC = function(meth,ref,constrained=FALSE) {
    J = ncol(meth)
 
    # Load the regression coefficients/reference panel matrix
-   coefs = read.table(system.file(paste0("data/",ref,".txt"),package="ewastools"))
+   ref_file = system.file("extdata", paste0(ref, ".txt"), package = "ewastools")
+   if (!nzchar(ref_file) || !file.exists(ref_file))
+      stop(sprintf("Reference dataset '%s' not found.", ref), call. = FALSE)
+   coefs = read.table(ref_file)
    coefs = as.matrix(coefs)
    n_celltypes = ncol(coefs)
 
