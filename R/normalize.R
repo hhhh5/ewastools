@@ -63,7 +63,7 @@ correct_dye_bias <- function(raw)
 
       rescale = function(intensities) exp(stats::coef(m)[1] + log(intensities) * stats::coef(m)[2])
 
-      # Adjust the intensities in the green channel using the regression coefficients
+      # Adjust only green-channel intensities toward the red channel
       i = i2$index
       raw$M[i,j] = rescale(raw$M[i,j])
 
@@ -71,7 +71,7 @@ correct_dye_bias <- function(raw)
       raw$M[i,j] = rescale(raw$M[i,j])
       raw$U[i,j] = rescale(raw$U[i,j])
 
-      # Also adjust the out-of-band green signals
+      # Also adjust the out-of-band green signals (from Type I Red probes)
       raw$oobG$U[,j] = rescale(raw$oobG$U[,j])
       raw$oobG$M[,j] = rescale(raw$oobG$M[,j])
    }

@@ -63,6 +63,7 @@ estimateLC = function(meth,ref,constrained=FALSE) {
    }
 
    # Estimate cell proportions for each sample using quadratic programming
+   # Subsetting by `observed` excludes probes masked/missing in each individual sample.
    EST = sapply(seq_len(J), \(j) {
       sample_beta = meth[markers, j]
       observed = !is.na(sample_beta)

@@ -4,6 +4,7 @@
 #' @importFrom utils head read.table setTxtProgressBar txtProgressBar
 NULL
 
+# Silence R CMD check NOTEs for data.table NSE column names and `with(raw, ...)` bindings
 utils::globalVariables(c(
    "M", "Mi", "OOBi", "U", "Ui",
    "address", "addressM", "addressU", "agreement",

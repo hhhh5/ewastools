@@ -51,12 +51,16 @@ control_metrics = function(raw, FFPE = FALSE){
       ### Calculate the control probe metrics
       metrics = list()
 
+      # Extension probes incorporate C/G (green channel) or A/T (red channel).
+      # Their opposite-channel intensities — A/T in green (`ctrlG[at,]`) and C/G in red (`ctrlR[cg,]`) —
+      # have no expected signal and serve as channel-specific background references (with a +3000 offset
+      # per Illumina's BeadArray Controls Reporter guide) across multiple metrics below.
       cg = controls[group == "EXTENSION" & name %like% "^Extension \\([CG]\\)$", index]
       at = controls[group == "EXTENSION" & name %like% "^Extension \\([AT]\\)$", index]
 
       # Restoration
       # If using the FFPE DNA Restore Kit, identifies success of the FFPE restoration chemistry.
-      # Change the threshold from 0 to 1; 
+      # Threshold 0 disables failure flagging in `sample_failure()` for non-FFPE samples.
       ii  = controls[group == 'RESTORATION', index]
       metrics$Restoration = as.numeric(ctrlG[ii,,drop=FALSE] / (apply(ctrlG[at,,drop=FALSE],2,max)+3000))
       attr(metrics$Restoration, "threshold") <- if(FFPE) 1 else 0;
@@ -191,6 +195,7 @@ control_metrics = function(raw, FFPE = FALSE){
 #' 
 sample_failure = function(metrics){
    checkmate::assert_list(metrics, min.len = 1)
-   # Returns TRUE for any sample that falls below the quality control threshold for at least one metric
+   # Returns TRUE if any metric falls below its threshold (ignoring NA metrics so missing probes
+   # neither mask failures in other metrics nor trigger false positives)
    Reduce(`|`, lapply(metrics, \(m) !is.na(m) & m < attr(m, "threshold")))
 }

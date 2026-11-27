@@ -102,6 +102,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       stop("Unknown platform")
    }
 
+   # Deep-copy cached tables so in-place mutations below do not alter `.manifest_cache`
    m = read_manifest(platform)
    manifest = copy(m$manifest)
    controls = copy(m$controls)
@@ -116,6 +117,7 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
    manifest[, index := 1L:.N]
    controls[, index := 1L:.N]
 
+   # Row indices within the channel-specific out-of-band matrices (`oobR` for Grn, `oobG` for Red)
    manifest[channel == "Grn", OOBi := 1:.N]
    manifest[channel == "Red", OOBi := 1:.N]
 
@@ -189,16 +191,18 @@ read_idats = function(idat_files, quiet = FALSE, on_disk = FALSE)
       if(!identical(idat_order, grn$MidBlock)) stop("Red and green .idat files do not agree!")
 
       barcodes [j] = red$Barcode
-      positions[j] = red$Unknowns$MostlyA
+      positions[j] = red$Unknowns$MostlyA # illuminaio stores Sentrix position (e.g. "R01C01") here
 
-      # This information is sometimes not recorded
+      # Row 2 of RunInfo holds the scan timestamp (row 1 is decode); sometimes absent
       if (NROW(red$RunInfo) > 1) dates[j] = red$RunInfo[2,1]
 
+      # Recompute address-to-row indices only when a sample's bead order (`MidBlock`) changes
       if (!identical(idat_order, prev_idat_order)) {
          manifest[,Ui := match(addressU, idat_order)]
          manifest[,Mi := match(addressM, idat_order)]
          controls[, i := match(address , idat_order)]
 
+         # Type II probes ("Both") use one bead (`addressU`) read in both channels, so Mi shares Ui
          setindexv(manifest,"channel")
          manifest["Both", Mi := Ui, on = "channel"]
 
@@ -324,6 +328,8 @@ drop_samples = function(raw, j = NULL){
          return(x[, -j, drop = FALSE])
       }
 
+      # ff matrices do not support negative column subsetting directly, so copy kept columns
+      # into a newly allocated on-disk matrix
       cols_to_keep = setdiff(seq_len(ncol(x)), j)
       res = ff::ff(vmode = ff::vmode(x), dim = c(nrow(x), length(cols_to_keep)))
       for (k in seq_along(cols_to_keep)) {
