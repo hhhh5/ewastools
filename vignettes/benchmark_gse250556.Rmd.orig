@@ -16,7 +16,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "benchmark_gse250556-",
-  fig.align = "center")
+  fig.cap = "",
+  fig.align = "center",
+  dpi = 192,
+  out.width = "100%")
 ```
 
 This vignette demonstrates two key quality control benchmarks using the public dataset **GSE250556**, which contains repeated technical replicates across multiple subjects:

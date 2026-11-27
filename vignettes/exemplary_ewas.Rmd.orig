@@ -16,7 +16,9 @@ knitr::opts_chunk$set(
   fig.align = "center",
   collapse = TRUE,
   fig.path = "exemplary_ewas-",
-  fig.cap = ""
+  fig.cap = "",
+  dpi = 192,
+  out.width = "100%"
 )
 ```
 
