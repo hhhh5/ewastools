@@ -5,4 +5,5 @@ docs/
 ^pkgdown$
 ^\.github$
 ^tests/testthat/testdata$
+^LICENSE\.md$
 \.orig$
