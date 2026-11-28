@@ -118,8 +118,8 @@ cmax = function(x) if (nrow(x) == 1L) x[1, ] else apply(x, 2, max)
 CONTROL_METRICS = tibble::tribble(
    ~platform, ~name,                                ~threshold, ~fn,
    # 27K (15 metrics; no Restoration, BS Conversion II, Target Removal 2, or Specificity II)
-   "27K",     "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
-   "27K",     "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "27K",     "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[123]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
+   "27K",     "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
    "27K",     "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[456]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
    "27K",     "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
    "27K",     "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
@@ -134,10 +134,10 @@ CONTROL_METRICS = tibble::tribble(
    "27K",     "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
    "27K",     "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)$")),
 
-   # 450K (21 metrics)
+   # 450K (21 metrics; BS Conversion I Green = C1-C3/U1-U3, Red = C4-C6/U4-U6)
    "450K",    "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
-   "450K",    "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
-   "450K",    "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "450K",    "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[123]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
+   "450K",    "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
    "450K",    "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[456]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
    "450K",    "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
    "450K",    "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
@@ -157,12 +157,13 @@ CONTROL_METRICS = tibble::tribble(
    "450K",    "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
    "450K",    "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)$")),
 
-   # EPICv1 (21 metrics; BS Conversion I Red has C4-C5/U4-U5, Non-polymorphic includes NP (G) 1-5)
+   # EPICv1 (21 metrics; BS Conversion I Green = C1-C2/U1-U2, Red = C3-C5/U3-U5 because Illumina
+   # dropped 450K's C1 (address 22711390) and U1 (address 46651360) and shifted subsequent probe numbers down by 1)
    "EPICv1",  "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
    "EPICv1",  "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
    "EPICv1",  "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
-   "EPICv1",  "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[45]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
-   "EPICv1",  "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
+   "EPICv1",  "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[345]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
+   "EPICv1",  "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
    "EPICv1",  "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
    "EPICv1",  "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
    "EPICv1",  "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
@@ -184,8 +185,8 @@ CONTROL_METRICS = tibble::tribble(
    "EPICv2",  "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
    "EPICv2",  "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
    "EPICv2",  "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
-   "EPICv2",  "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[45]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
-   "EPICv2",  "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
+   "EPICv2",  "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[345]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
+   "EPICv2",  "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
    "EPICv2",  "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
    "EPICv2",  "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
    "EPICv2",  "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
