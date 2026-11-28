@@ -220,10 +220,7 @@ pheno_df |>
 #> range (`geom_point()`).
 ```
 
-![plot of chunk
-plot_replicates](benchmark_gse250556-plot_replicates-1.png)
-
-plot of chunk plot_replicates
+![](benchmark_gse250556-plot_replicates-1.png)
 
 The plot illustrates high consistency across technical replicates within
 each subject, demonstrating robust reproducibility for

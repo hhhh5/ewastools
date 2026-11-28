@@ -59,7 +59,7 @@
                         <h4 data-toc-skip class="author">Jonathan
 Heiss</h4>
             
-            <h4 data-toc-skip class="date">2026-11-22</h4>
+            <h4 data-toc-skip class="date">2026-11-26</h4>
       
 
       <div class="d-none name"><code>exemplary_ewas.Rmd</code></div>
@@ -207,7 +207,7 @@ dye-bias-corrected intensities.</p>
 <code class="sourceCode R"><span><span class="va">ctrls</span> <span class="op">=</span> <span class="fu">ewastools</span><span class="fu">::</span><span class="fu"><a href="../reference/control_metrics.html">control_metrics</a></span><span class="op">(</span><span class="va">meth</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/stripchart.html" class="external-link">stripchart</a></span><span class="op">(</span><span class="va">ctrls</span><span class="op">$</span><span class="va">`Bisulfite Conversion II`</span>, method <span class="op">=</span> <span class="st">"jitter"</span>, pch <span class="op">=</span> <span class="fl">4</span>, xlab <span class="op">=</span> <span class="st">'Bisulfite Conversion II'</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span>v <span class="op">=</span> <span class="fl">1</span>, col <span class="op">=</span> <span class="fl">2</span>, lty <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas-control_metrics_plot-1.png" alt="" style="display: block; margin: auto;"></p>
+<p><img src="exemplary_ewas-control_metrics_plot-1.png" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>A logical vector of passed/failed is returned by
 <code><a href="../reference/control_metrics.html">sample_failure()</a></code> which compares all 21 metrics against the
 thresholds recommended by Illumina. In this case several samples
@@ -243,7 +243,7 @@ intensities of X and Y chromosome probes.</p>
 <span><span class="va">tmp</span> <span class="op">=</span> <span class="va">pheno</span><span class="op">[</span><span class="va">predicted_sex</span> <span class="op">!=</span> <span class="va">sex</span><span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/points.html" class="external-link">points</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">X</span>, data <span class="op">=</span> <span class="va">tmp</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">tmp</span><span class="op">$</span><span class="va">sex</span> <span class="op">==</span> <span class="st">"f"</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, col <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>, <span class="st">"male"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas-sex_plot-1.png" alt="" style="display: block; margin: auto;"></p>
+<p><img src="exemplary_ewas-sex_plot-1.png" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>Samples form two cluster of males (top left) and females (bottom
 left). The one mislabeled sample here (in red) can easily be identified
 and should be flagged.</p>
@@ -380,7 +380,7 @@ important drivers of methylation beyond sex.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pc2</span> <span class="op">~</span> <span class="va">pc1</span>, pch<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">sex</span><span class="op">==</span><span class="st">"f"</span>, <span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, <span class="va">pheno</span>, asp <span class="op">=</span> <span class="fl">1</span>, xlab <span class="op">=</span> <span class="st">"PC #1"</span>, ylab <span class="op">=</span> <span class="st">"PC #2"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/legend.html" class="external-link">legend</a></span><span class="op">(</span><span class="st">"topright"</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">4</span><span class="op">)</span>, legend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"female"</span>, <span class="st">"male"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas-pca_plot-1.png" alt="" style="display: block; margin: auto;"></p>
+<p><img src="exemplary_ewas-pca_plot-1.png" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>There is one clear outlier.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="va">pc1</span> <span class="op">&lt;</span> <span class="op">-</span><span class="fl">0.8</span>, <span class="va">exclude</span> <span class="op">:=</span> <span class="cn">TRUE</span><span class="op">]</span></span>
@@ -432,7 +432,7 @@ the dataset, consisting of a purified fraction of granulocytes. Plotting
 easily be spotted.</p>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pheno</span><span class="op">[</span>,<span class="va">NE</span><span class="op">+</span><span class="va">EO</span><span class="op">+</span><span class="va">BA</span><span class="op">]</span><span class="op">*</span><span class="fl">100</span>,ylab<span class="op">=</span><span class="st">"Granulocyte fraction (%)"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="exemplary_ewas-lc_plot-1.png" alt="" style="display: block; margin: auto;"></p>
+<p><img src="exemplary_ewas-lc_plot-1.png" alt="" width="100%" style="display: block; margin: auto;"></p>
 <p>It is the third to last sample, GSM1185585.</p>
 <div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pheno</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/which.min.html" class="external-link">which.max</a></span><span class="op">(</span><span class="va">NE</span><span class="op">)</span>, <span class="fu">.</span><span class="op">(</span><span class="va">gsm</span>, <span class="va">NE</span><span class="op">)</span><span class="op">]</span></span>

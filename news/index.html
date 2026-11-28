@@ -38,11 +38,38 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.8.2" id="ewastools-182">ewastools 1.8.2<a class="anchor" aria-label="anchor" href="#ewastools-182"></a></h2>
-<ul><li>Added support for Infinium Methylation Screening Array (MSA) BeadChip</li>
-<li>Refactored calculation of control metrics</li>
-<li>Added benchmark vignette using GSE250556 technical replicates for sample tracking and cell type deconvolution</li>
-<li>Added additional unit tests</li>
+<div class="section level3">
+<h3 id="new-1-8-2">New<a class="anchor" aria-label="anchor" href="#new-1-8-2"></a></h3>
+<ul><li>Add support for Infinium Methylation Screening Array (MSA) BeadChip</li>
+<li>Add a benchmark vignette using a dataset with technical replicates (GSE250556). Vignette covers sample donor identification and cell type deconvolution.</li>
 </ul></div>
+<div class="section level3">
+<h3 id="fixes-1-8-2">Fixes<a class="anchor" aria-label="anchor" href="#fixes-1-8-2"></a></h3>
+<ul><li>Replace <code><a href="https://rdrr.io/pkg/ff/man/is.ff.html" class="external-link">ff::is.ff()</a></code> calls with <code>inherits(..., "ff")</code> so in-memory workflows no longer fail if the optional package <code>ff</code> is not installed.</li>
+<li>Fix <code>call_genotypes(..., learn = TRUE)</code>, which previously failed in <code>eBeta()</code> due to checking an undefined <code>weights</code> variable</li>
+<li>Anonymized IDATs with missing/empty <code>RunInfo</code> previously errored on <code>nrow(red$RunInfo) &gt; 1</code>
+</li>
+<li>Zero-bead out-of-band intensities (<code>oobG</code>/<code>oobR</code>) are assigned <code>NA</code> instead being left as <code>0</code>
+</li>
+<li>Extracting <code>sample_id</code> via <code>strsplit(..., "/")</code> failed on Windows backslash paths. It now uses <code><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename()</a></code>.</li>
+<li>Fix order of calling pre-processing functions in <code>exemplary_ewas</code>: <code><a href="../reference/check_sex.html">check_sex()</a></code> should be called before <code><a href="../reference/detectionP.html">mask()</a></code>.</li>
+<li>Use <code>log10(0.01)</code> threshold instead of <code>0.01</code> in <code><a href="../reference/detectionP.html">detectionP.neg()</a></code>
+</li>
+<li>Fix <code><a href="../reference/MethylationScores.html">methylation_score()</a></code> in case of missing probes: previously, <code>NA</code>s caused errors for on-disk (<code>ff</code>) matrices, and samples with no observed model probes silently returned the bare model intercept instead of <code>NA</code>.</li>
+<li>Fix single-sample / single-sex dimension dropping (<code>drop = FALSE</code>) in <code><a href="../reference/detectionP.html">eval_detP_cutoffs()</a></code>, <code><a href="../reference/detectionP.html">detectionP.minfi()</a></code>, and <code>correct_dye_bias2()</code>
+</li>
+<li>Fix <code><a href="../reference/drop_samples.html">drop_samples()</a></code> when passing an empty index (<code>integer(0)</code>, e.g. when no samples fail QC). This previously dropped all samples instead of keeping them</li>
+</ul></div>
+<div class="section level3">
+<h3 id="improvements-1-8-2">Improvements<a class="anchor" aria-label="anchor" href="#improvements-1-8-2"></a></h3>
+<ul><li>Reduce memory usage by loading platform manifests lazily</li>
+<li>Pre-knit vignettes so that package/website builds do not re-download large GEO datasets</li>
+<li>Improved <code><a href="../reference/read_idats.html">read_idats()</a></code> performance by caching bead address matching and manifest channel subsets across samples with identical <code>MidBlock</code> ordering</li>
+<li>Standardize argument validation across exported functions using <code>checkmate</code>
+</li>
+<li>Expand unit tests covering QC, preprocessing, genotyping, deconvolution, and methylation score pipeline.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.8.1" id="ewastools-181">ewastools 1.8.1<a class="anchor" aria-label="anchor" href="#ewastools-181"></a></h2>
 <ul><li>Added experimental support for Mouse Methylation BeadChip (feedback welcome)</li>
