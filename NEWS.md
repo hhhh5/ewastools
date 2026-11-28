@@ -5,7 +5,6 @@
 * Add a benchmark vignette using a dataset with technical replicates (GSE250556). Vignette covers sample donor identification and cell type deconvolution.
 
 ## Fixes
-* Correct calculation of Target Removal control metric: it used the green instead of red intensities
 * Replace `ff::is.ff()` calls with `inherits(..., "ff")` so in-memory workflows no longer fail if the optional package `ff` is not installed.
 * Fix `call_genotypes(..., learn = TRUE)`, which previously failed in `eBeta()` due to checking an undefined `weights` variable
 * Anonymized IDATs with missing/empty `RunInfo` previously errored on `nrow(red$RunInfo) > 1`
