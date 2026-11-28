@@ -35,9 +35,10 @@ correct_dye_bias <- function(raw)
    i2  = raw$manifest[channel == "Both",]
 
    ## Normalization control probes.
-   # These normalization controls are paired: G is paird with A, C is paired with T.
+   # These normalization controls are paired: G is paired with A, C is paired with T.
    # TODO: Check that the indices of the paired probes match.
-   # Green channel intensities of NORM_G/NORM_C are regressed on Red channel intensities of NORM_A/NORM_T.
+   # Green channel intensities of NORM_G/NORM_C are corrected
+   #  using the Red channel intensities of NORM_A/NORM_T as reference.
    Ai = raw$controls[group == "NORM_A"][order(name)]$index
    Ti = raw$controls[group == "NORM_T"][order(name)]$index
    Ci = raw$controls[group == "NORM_C"][order(name)]$index
@@ -47,6 +48,8 @@ correct_dye_bias <- function(raw)
 
    for(j in seq_len(J)){
       # Regress intensities in the red color channel on those in the green color channel.
+      # In the next step, the green intensities are plugged into the learned function
+      #  and adjusted towards the red intensities.
       # The relation is assumed to be linear on the log scale.
       x = log(raw$ctrlG[c(Gi, Ci), j])
       y = log(raw$ctrlR[c(Ai, Ti), j])
@@ -58,17 +61,19 @@ correct_dye_bias <- function(raw)
       # Theil-Sen robust linear regression on log-transformed intensities
       m = mblm::mblm(y~x, repeated = FALSE)
 
-      # Adjust the intensities in the Green channel using the regression coefficients
+      rescale = function(intensities) exp(stats::coef(m)[1] + log(intensities) * stats::coef(m)[2])
+
+      # Adjust only green-channel intensities toward the red channel
       i = i2$index
-      raw$M[i,j] = exp(stats::coef(m)[1] + log(raw$M[i,j]) * stats::coef(m)[2])
+      raw$M[i,j] = rescale(raw$M[i,j])
 
       i = i1g$index
-      raw$M[i,j] = exp(stats::coef(m)[1] + log(raw$M[i,j]) * stats::coef(m)[2])
-      raw$U[i,j] = exp(stats::coef(m)[1] + log(raw$U[i,j]) * stats::coef(m)[2])
+      raw$M[i,j] = rescale(raw$M[i,j])
+      raw$U[i,j] = rescale(raw$U[i,j])
 
-      # Also adjust the out-of-band green signals
-      raw$oobG$U[,j] = exp(stats::coef(m)[1] + log(raw$oobG$U[,j]) * stats::coef(m)[2])
-      raw$oobG$M[,j] = exp(stats::coef(m)[1] + log(raw$oobG$M[,j]) * stats::coef(m)[2])
+      # Also adjust the out-of-band green signals (from Type I Red probes)
+      raw$oobG$U[,j] = rescale(raw$oobG$U[,j])
+      raw$oobG$M[,j] = rescale(raw$oobG$M[,j])
    }
 
    return(raw)

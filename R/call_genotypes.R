@@ -61,7 +61,8 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
          ,par$pi[3] * dbeta(snps, shape1 = par$shapes1[3], shape2 = par$shapes2[3])
       )
 
-      # Scale by non-outlier prior probability
+      # Scale by non-outlier prior probability.
+      # Normalizing by `non_outlier_lik` yields P(genotype = k | not outlier), which sums to 1 across k.
       gamma = (1 - par$alpha) * gamma
       non_outlier_lik = rowSums(gamma)
       gamma = gamma / non_outlier_lik
@@ -78,6 +79,7 @@ call_genotypes = function(snpmatrix, learn=FALSE, maxiter = 50)
    # Maximization Step (M-step)
    # Updates model parameters (class priors, Beta shapes, outlier prior) from current posteriors
    m_step = function(snps, post) {
+      # Joint posterior P(genotype = k, not outlier | data) downweights outliers during parameter updates
       weights = post$gamma * (1 - post$outliers)
 
       # Method of moments estimation of Beta distribution parameters for each class

@@ -43,147 +43,52 @@
 control_metrics = function(raw, FFPE = FALSE){
 
    checkmate::assert_list(raw)
-   checkmate::assert_names(names(raw), must.include = c("controls", "ctrlG", "ctrlR"))
+   checkmate::assert_names(names(raw), must.include = c("platform", "controls", "ctrlG", "ctrlR"))
+   checkmate::assert_choice(raw$platform, unique(CONTROL_METRICS$platform))
    checkmate::assert_flag(FFPE)
 
-   with(raw,{
+   controls = raw$controls
 
-      ### Calculate the control probe metrics
-      metrics = list()
+   # Build channel lookup helpers returning the submatrix of matching control probes
+   select_probes = function(mat) {
+      function(group, pattern) {
+         keep = controls$group == group & grepl(pattern, controls$name)
+         if (!any(keep)) {
+            stop(sprintf("No control probes matched group '%s' and pattern '%s' for platform '%s'.",
+                         group, pattern, raw$platform), call. = FALSE)
+         }
+         mat[controls$index[keep], , drop = FALSE]
+      }
+   }
 
-      cg = controls[group == "EXTENSION" & name %like% "^Extension \\([CG]\\)$", index]
-      at = controls[group == "EXTENSION" & name %like% "^Extension \\([AT]\\)$", index]
+   G = select_probes(raw$ctrlG)
+   R = select_probes(raw$ctrlR)
 
-      # Restoration
-      # If using the FFPE DNA Restore Kit, identifies success of the FFPE restoration chemistry.
-      # Change the threshold from 0 to 1; 
-      ii  = controls[group == 'RESTORATION', index]
-      metrics$Restoration = as.numeric(ctrlG[ii,,drop=FALSE] / (apply(ctrlG[at,,drop=FALSE],2,max)+3000))
-      attr(metrics$Restoration, "threshold") <- if(FFPE) 1 else 0;
+   # Extension probes incorporate C/G (green) or A/T (red); their opposite-channel intensities
+   # (A/T in green, C/G in red) plus a +3000 offset serve as channel-specific background references
+   # per Illumina's BeadArray Controls Reporter (BACR) guide.
+   bkgG = cmax(G("EXTENSION", "^Extension \\([AT]\\)$")) + 3000
+   bkgR = cmax(R("EXTENSION", "^Extension \\([CG]\\)$")) + 3000
 
-      ## Bisulfite conversion
-      # The control probes query a [C/T] polymorphism created by bisulfite conversion of
-      # non-CpG cytosines in the genome.
-      
-      # Bisulfite conversion I
-      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-C[12]", index]
-      bkg = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[12]", index]
-      metrics$`Bisulfite Conversion I Green` = apply(ctrlG[ii,,drop=FALSE],2,min) / apply(ctrlG[bkg,,drop=FALSE],2,max)
-      attr(metrics$`Bisulfite Conversion I Green`,'threshold') <- 1
-      
-      # Background/(U1, U2, or U3) [manual doesn't specify highest/lowest. I chose `max` mirroring the calculation for red]
-      # Green channel-bkg = Extension Green highest AT
-      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[12]", index]
-      metrics$`Bisulfite Conversion I Green (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
-      attr(metrics$`Bisulfite Conversion I Green (Bkg)`,'threshold') <- 1
+   specs = CONTROL_METRICS[CONTROL_METRICS$platform == raw$platform, ]
+   # Threshold 0 disables failure flagging in `sample_failure()` for non-FFPE samples
+   if (FFPE) specs$threshold[specs$name == "Restoration"] = 1
 
-      # Lowest value of C4,5, or 6 / Highest value of U4, 5, or 6
-      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-C[456]", index]
-      bkg = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[456]", index] 
-      metrics$`Bisulfite Conversion I Red` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlR[bkg,,drop=FALSE],2,max)
-      attr(metrics$`Bisulfite Conversion I Red`,'threshold') <- 1
+   J = ncol(raw$ctrlG)
+   metrics = vector("list", nrow(specs))
+   names(metrics) = specs$name
 
-      # Background /(Highest value of U4, U5, or U6)
-      # Red Channel-bkg = Extension Red highest CG
-      ii  = controls[group == "BISULFITE CONVERSION I" & name %like% "BS Conversion I-U[456]", index]
-      metrics$`Bisulfite Conversion I Red (Bkg)` = (apply(ctrlR[cg,,drop=FALSE],2,max)+3000) / apply(ctrlR[ii,,drop=FALSE],2,max)
-      attr(metrics$`Bisulfite Conversion I Red (Bkg)`,'threshold') <- 1
+   for (k in seq_len(nrow(specs))) {
+      val = as.numeric(specs$fn[[k]](G, R, bkgG, bkgR))
+      if (length(val) != J) {
+         stop(sprintf("Control metric '%s' produced %d values for %d samples.",
+                      specs$name[k], length(val), J), call. = FALSE)
+      }
+      attr(val, "threshold") = specs$threshold[k]
+      metrics[[k]] = val
+   }
 
-      # Bisulfite conversion II
-      # (Lowest of red C1, 2, 3, or 4) / (Highest of green C1, 2, 3, or 4)
-      ii  = controls[group == "BISULFITE CONVERSION II", index]
-      metrics$`Bisulfite Conversion II` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlG[ii,,drop=FALSE],2,max)
-      attr(metrics$`Bisulfite Conversion II`, "threshold") <- 1
-
-      # Bisulfite conversion II (Bkg)
-      # Green channel-bkg = Extension Green highest AT
-      # Background/(Highest C1, C2, C3, or C4 green).
-      ii = controls[group == "BISULFITE CONVERSION II", index]
-      metrics$`Bisulfite Conversion II (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
-      attr(metrics$`Bisulfite Conversion II (Bkg)`, "threshold") <- 1
-
-      # Hybridization
-      # Perfectly complementary synthetic targets hybridize to these probes
-      #  and are used as template for the extension step.
-      # The synthetic targets are present in the Hybridization Buffer (IBX) at three levels (5/1/0.2 pM).
-      # Performance of hybridization controls can only be monitored in the green channel.
-      hyb_l = controls[name == "Hyb (Low)",    index]
-      hyb_m = controls[name == "Hyb (Medium)", index]
-      hyb_h = controls[name == "Hyb (High)",   index]
-      metrics$`Hybridization High/Medium` = ctrlG[hyb_h,] / ctrlG[hyb_m,]
-      metrics$`Hybridization Medium/Low`  = ctrlG[hyb_m,] / ctrlG[hyb_l,]
-      attr(metrics$`Hybridization High/Medium`, "threshold") <- 1
-      attr(metrics$`Hybridization Medium/Low`,  "threshold") <- 1
-
-      ## Extension (sample independent)
-      # Test the extension efficiency of A, T, C, and G nucleotides from hairpin probes.
-      # Both red (A, T) and green (C, G) channels are monitored.
-      metrics$`Extension Green` = apply(ctrlG[cg,,drop=FALSE],2,min) / apply(ctrlG[at,,drop=FALSE],2,max) 
-      metrics$`Extension Red`   = apply(ctrlR[at,,drop=FALSE],2,min) / apply(ctrlR[cg,,drop=FALSE],2,max) 
-      attr(metrics$`Extension Green`,"threshold") <- 5
-      attr(metrics$`Extension Red`,  "threshold") <- 5
-
-      ## Staining (sample independent)
-      # Used to examine the efficiency of the staining step in both channels.
-      # Staining controls have various levels of dinitrophenyl (DNP) or biotin attached to the beads.
-      # These controls are independent of the hybridization and extension step.
-      ii  = controls[name == "Biotin (High)", index]
-      bkg = controls[name == "Biotin (Bkg)" , index]
-      metrics$`Staining Green` = ctrlG[ii,] / ctrlG[bkg,]
-      attr(metrics$`Staining Green`, "threshold") <- 5
-
-      ii  = controls[name == "DNP (High)", index]
-      bkg = controls[name == "DNP (Bkg)",  index]
-      metrics$`Staining Red` = ctrlR[ii,] / ctrlR[bkg,]
-      attr(metrics$`Staining Red`, "threshold") <- 5
-
-      ## Target removal
-      # Test the efficiency of the stripping step after the extension reaction.
-      # In contrast to normal probes, the control oligos are extended using the probe sequence as template.
-      # Probe sequences are designed such that extension from the probe does not occur.
-      # Should have low signal compared to the hybridization controls,
-      #   indicating that the targets were removed efficiently after extension.
-      # The target removal controls are present in the Hybridization Buffer (IBX).
-      # Performance of target removal controls can only be monitored in the red channel.
-      ii = controls[name == "Target Removal 1", index]
-      metrics$`Target Removal 1` =  (apply(ctrlR[at,,drop=FALSE],2,max)+3000) / ctrlR[ii,]
-      ii = controls[name == "Target Removal 2", index]
-      metrics$`Target Removal 2` =  (apply(ctrlR[at,,drop=FALSE],2,max)+3000) / ctrlR[ii,]
-      attr(metrics$`Target Removal 1`, "threshold") <- 1
-      attr(metrics$`Target Removal 2`, "threshold") <- 1
-
-      # Specificity I
-      pm  = controls[group == "SPECIFICITY I" & name %like% "Mismatch [123] \\(PM\\)", index]
-      mm  = controls[group == "SPECIFICITY I" & name %like% "Mismatch [123] \\(MM\\)", index]
-      metrics$`Specificity I Green` = apply(ctrlG[pm,,drop=FALSE],2,min) / apply(ctrlG[mm,,drop=FALSE],2,max)
-      pm  = controls[group == "SPECIFICITY I" & name %like% "Mismatch [456] \\(PM\\)", index]
-      mm  = controls[group == "SPECIFICITY I" & name %like% "Mismatch [456] \\(MM\\)", index]
-      metrics$`Specificity I Red` = apply(ctrlR[pm,,drop=FALSE],2,min) / apply(ctrlR[mm,,drop=FALSE],2,max)
-      attr(metrics$`Specificity I Green`,'threshold') <- 1
-      attr(metrics$`Specificity I Red`,'threshold') <- 1
-
-      # Specificity II
-      # (Lowest intensity of S1, S2, or S3 red) / (Highest intensity of S1, S2, or S3 green)
-      ii  = controls[group == "SPECIFICITY II", index]
-      metrics$`Specificity II` = apply(ctrlR[ii,,drop=FALSE],2,min) / apply(ctrlG[ii,,drop=FALSE],2,max)
-      attr(metrics$`Specificity II`,'threshold') <- 1
-
-      # Specificity II (Bkg)
-      # Background/(Highest intensity S1, S2, S3, or S4 green)
-      # bkg = Extension Green highest A or T intensity
-      metrics$`Specificity II (Bkg)` = (apply(ctrlG[at,,drop=FALSE],2,max)+3000) / apply(ctrlG[ii,,drop=FALSE],2,max)
-      attr(metrics$`Specificity II (Bkg)`,'threshold') <- 1
-
-      # Non-polymorphic
-      cg  = controls[group == "NON-POLYMORPHIC" & name %like% "NP \\([CG]\\)", index]
-      at  = controls[group == "NON-POLYMORPHIC" & name %like% "NP \\([AT]\\)", index]
-      metrics$`Non-polymorphic Green` = apply(ctrlG[cg,,drop=FALSE],2,min) / apply(ctrlG[at,,drop=FALSE],2,max)
-      metrics$`Non-polymorphic Red`   = apply(ctrlR[at,,drop=FALSE],2,min) / apply(ctrlR[cg,,drop=FALSE],2,max)
-      attr(metrics$`Non-polymorphic Green`,'threshold') <- 5
-      attr(metrics$`Non-polymorphic Red`,  'threshold') <- 5
-
-      return(metrics)
-   })
+   return(metrics)
 }
 
 #' @rdname control_metrics
@@ -191,6 +96,157 @@ control_metrics = function(raw, FFPE = FALSE){
 #' 
 sample_failure = function(metrics){
    checkmate::assert_list(metrics, min.len = 1)
-   # Returns TRUE for any sample that falls below the quality control threshold for at least one metric
+   # Returns TRUE if any metric falls below its threshold (ignoring NA metrics so missing probes
+   # neither mask failures in other metrics nor trigger false positives)
    Reduce(`|`, lapply(metrics, \(m) !is.na(m) & m < attr(m, "threshold")))
 }
+
+cmin = function(x) if (nrow(x) == 1L) x[1, ] else apply(x, 2, min)
+cmax = function(x) if (nrow(x) == 1L) x[1, ] else apply(x, 2, max)
+
+# Specification of Illumina's BeadArray Controls Reporter (BACR) QC metrics per platform.
+# Every multi-probe metric aggregates across probes with cmin()/cmax() (order-invariant), and
+# every single-probe metric matches exactly one probe (enforced via length check in control_metrics()).
+#
+# Assay biology notes:
+# - Restoration: FFPE DNA Restore Kit efficiency (threshold raised to 1 when FFPE = TRUE).
+# - Bisulfite conversion: queries [C/T] polymorphisms created by bisulfite conversion of non-CpG C.
+#   (For BS Conversion I Green Bkg, the manual omits highest/lowest; `cmax` mirrors the red channel.)
+# - Hybridization: synthetic targets at High/Medium/Low (5/1/0.2 pM) in IBX buffer (green channel).
+# - Extension / Staining: sample-independent controls (hairpin extension; DNP/biotin beads).
+# - Target removal: stripping efficiency after extension (low signal indicates efficient removal).
+CONTROL_METRICS = tibble::tribble(
+   ~platform, ~name,                                ~threshold, ~fn,
+   # 27K (15 metrics; no Restoration, BS Conversion II, Target Removal 2, or Specificity II)
+   "27K",     "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[123]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
+   "27K",     "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
+   "27K",     "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[456]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
+   "27K",     "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
+   "27K",     "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
+   "27K",     "Hybridization Medium/Low",           1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(Medium\\)$") / G("HYBRIDIZATION", "^Hyb \\(Low\\)$"),
+   "27K",     "Extension Green",                    5,          \(G, R, bkgG, bkgR) cmin(G("EXTENSION", "^Extension \\([CG]\\)$")) / cmax(G("EXTENSION", "^Extension \\([AT]\\)$")),
+   "27K",     "Extension Red",                      5,          \(G, R, bkgG, bkgR) cmin(R("EXTENSION", "^Extension \\([AT]\\)$")) / cmax(R("EXTENSION", "^Extension \\([CG]\\)$")),
+   "27K",     "Staining Green",                     5,          \(G, R, bkgG, bkgR) G("STAINING", "^Biotin \\(High\\)$") / G("STAINING", "^Biotin \\(Bkg\\)$"),
+   "27K",     "Staining Red",                       5,          \(G, R, bkgG, bkgR) R("STAINING", "^DNP \\(High\\)$") / R("STAINING", "^DNP \\(Bkg\\)$"),
+   "27K",     "Target Removal 1",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 1$"),
+   "27K",     "Specificity I Green",                1,          \(G, R, bkgG, bkgR) cmin(G("SPECIFICITY I", "^GT Mismatch [123] \\(PM\\)$")) / cmax(G("SPECIFICITY I", "^GT Mismatch [123] \\(MM\\)$")),
+   "27K",     "Specificity I Red",                  1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY I", "^GT Mismatch 4 \\(PM\\)$")) / cmax(R("SPECIFICITY I", "^GT Mismatch 4 \\(MM\\)$")),
+   "27K",     "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
+   "27K",     "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)$")),
+
+   # 450K (21 metrics; BS Conversion I Green = C1-C3/U1-U3, Red = C4-C6/U4-U6)
+   "450K",    "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
+   "450K",    "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[123]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
+   "450K",    "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[123]$")),
+   "450K",    "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[456]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
+   "450K",    "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[456]$")),
+   "450K",    "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "450K",    "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "450K",    "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
+   "450K",    "Hybridization Medium/Low",           1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(Medium\\)$") / G("HYBRIDIZATION", "^Hyb \\(Low\\)$"),
+   "450K",    "Extension Green",                    5,          \(G, R, bkgG, bkgR) cmin(G("EXTENSION", "^Extension \\([CG]\\)$")) / cmax(G("EXTENSION", "^Extension \\([AT]\\)$")),
+   "450K",    "Extension Red",                      5,          \(G, R, bkgG, bkgR) cmin(R("EXTENSION", "^Extension \\([AT]\\)$")) / cmax(R("EXTENSION", "^Extension \\([CG]\\)$")),
+   "450K",    "Staining Green",                     5,          \(G, R, bkgG, bkgR) G("STAINING", "^Biotin \\(High\\)$") / G("STAINING", "^Biotin \\(Bkg\\)$"),
+   "450K",    "Staining Red",                       5,          \(G, R, bkgG, bkgR) R("STAINING", "^DNP \\(High\\)$") / R("STAINING", "^DNP \\(Bkg\\)$"),
+   "450K",    "Target Removal 1",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 1$"),
+   "450K",    "Target Removal 2",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 2$"),
+   "450K",    "Specificity I Green",                1,          \(G, R, bkgG, bkgR) cmin(G("SPECIFICITY I", "^GT Mismatch [123] \\(PM\\)$")) / cmax(G("SPECIFICITY I", "^GT Mismatch [123] \\(MM\\)$")),
+   "450K",    "Specificity I Red",                  1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY I", "^GT Mismatch [456] \\(PM\\)$")) / cmax(R("SPECIFICITY I", "^GT Mismatch [456] \\(MM\\)$")),
+   "450K",    "Specificity II",                     1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY II", "^Specificity [123]$")) / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "450K",    "Specificity II (Bkg)",               1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "450K",    "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
+   "450K",    "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)$")),
+
+   # EPICv1 (21 metrics; BS Conversion I Green = C1-C2/U1-U2, Red = C3-C5/U3-U5 because Illumina
+   # dropped 450K's C1 (address 22711390) and U1 (address 46651360) and shifted subsequent probe numbers down by 1)
+   "EPICv1",  "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
+   "EPICv1",  "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "EPICv1",  "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "EPICv1",  "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[345]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
+   "EPICv1",  "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
+   "EPICv1",  "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "EPICv1",  "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "EPICv1",  "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
+   "EPICv1",  "Hybridization Medium/Low",           1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(Medium\\)$") / G("HYBRIDIZATION", "^Hyb \\(Low\\)$"),
+   "EPICv1",  "Extension Green",                    5,          \(G, R, bkgG, bkgR) cmin(G("EXTENSION", "^Extension \\([CG]\\)$")) / cmax(G("EXTENSION", "^Extension \\([AT]\\)$")),
+   "EPICv1",  "Extension Red",                      5,          \(G, R, bkgG, bkgR) cmin(R("EXTENSION", "^Extension \\([AT]\\)$")) / cmax(R("EXTENSION", "^Extension \\([CG]\\)$")),
+   "EPICv1",  "Staining Green",                     5,          \(G, R, bkgG, bkgR) G("STAINING", "^Biotin \\(High\\)$") / G("STAINING", "^Biotin \\(Bkg\\)$"),
+   "EPICv1",  "Staining Red",                       5,          \(G, R, bkgG, bkgR) R("STAINING", "^DNP \\(High\\)$") / R("STAINING", "^DNP \\(Bkg\\)$"),
+   "EPICv1",  "Target Removal 1",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 1$"),
+   "EPICv1",  "Target Removal 2",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 2$"),
+   "EPICv1",  "Specificity I Green",                1,          \(G, R, bkgG, bkgR) cmin(G("SPECIFICITY I", "^GT Mismatch [123] \\(PM\\)$")) / cmax(G("SPECIFICITY I", "^GT Mismatch [123] \\(MM\\)$")),
+   "EPICv1",  "Specificity I Red",                  1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY I", "^GT Mismatch [456] \\(PM\\)$")) / cmax(R("SPECIFICITY I", "^GT Mismatch [456] \\(MM\\)$")),
+   "EPICv1",  "Specificity II",                     1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY II", "^Specificity [123]$")) / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "EPICv1",  "Specificity II (Bkg)",               1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "EPICv1",  "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)( [1-5])?$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
+   "EPICv1",  "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)( [1-5])?$")),
+
+   # EPICv2 (21 metrics; same control probe structure as EPICv1)
+   "EPICv2",  "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
+   "EPICv2",  "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "EPICv2",  "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "EPICv2",  "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[345]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
+   "EPICv2",  "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[345]$")),
+   "EPICv2",  "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "EPICv2",  "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "EPICv2",  "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
+   "EPICv2",  "Hybridization Medium/Low",           1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(Medium\\)$") / G("HYBRIDIZATION", "^Hyb \\(Low\\)$"),
+   "EPICv2",  "Extension Green",                    5,          \(G, R, bkgG, bkgR) cmin(G("EXTENSION", "^Extension \\([CG]\\)$")) / cmax(G("EXTENSION", "^Extension \\([AT]\\)$")),
+   "EPICv2",  "Extension Red",                      5,          \(G, R, bkgG, bkgR) cmin(R("EXTENSION", "^Extension \\([AT]\\)$")) / cmax(R("EXTENSION", "^Extension \\([CG]\\)$")),
+   "EPICv2",  "Staining Green",                     5,          \(G, R, bkgG, bkgR) G("STAINING", "^Biotin \\(High\\)$") / G("STAINING", "^Biotin \\(Bkg\\)$"),
+   "EPICv2",  "Staining Red",                       5,          \(G, R, bkgG, bkgR) R("STAINING", "^DNP \\(High\\)$") / R("STAINING", "^DNP \\(Bkg\\)$"),
+   "EPICv2",  "Target Removal 1",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 1$"),
+   "EPICv2",  "Target Removal 2",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 2$"),
+   "EPICv2",  "Specificity I Green",                1,          \(G, R, bkgG, bkgR) cmin(G("SPECIFICITY I", "^GT Mismatch [123] \\(PM\\)$")) / cmax(G("SPECIFICITY I", "^GT Mismatch [123] \\(MM\\)$")),
+   "EPICv2",  "Specificity I Red",                  1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY I", "^GT Mismatch [456] \\(PM\\)$")) / cmax(R("SPECIFICITY I", "^GT Mismatch [456] \\(MM\\)$")),
+   "EPICv2",  "Specificity II",                     1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY II", "^Specificity [123]$")) / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "EPICv2",  "Specificity II (Bkg)",               1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "EPICv2",  "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)( [1-5])?$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
+   "EPICv2",  "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)( [1-5])?$")),
+
+   # MSA (21 metrics; Non-polymorphic has only NP (A/T/C/G))
+   "MSA",     "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
+   "MSA",     "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "MSA",     "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "MSA",     "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[45]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
+   "MSA",     "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
+   "MSA",     "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "MSA",     "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-[1-4]$")),
+   "MSA",     "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
+   "MSA",     "Hybridization Medium/Low",           1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(Medium\\)$") / G("HYBRIDIZATION", "^Hyb \\(Low\\)$"),
+   "MSA",     "Extension Green",                    5,          \(G, R, bkgG, bkgR) cmin(G("EXTENSION", "^Extension \\([CG]\\)$")) / cmax(G("EXTENSION", "^Extension \\([AT]\\)$")),
+   "MSA",     "Extension Red",                      5,          \(G, R, bkgG, bkgR) cmin(R("EXTENSION", "^Extension \\([AT]\\)$")) / cmax(R("EXTENSION", "^Extension \\([CG]\\)$")),
+   "MSA",     "Staining Green",                     5,          \(G, R, bkgG, bkgR) G("STAINING", "^Biotin \\(High\\)$") / G("STAINING", "^Biotin \\(Bkg\\)$"),
+   "MSA",     "Staining Red",                       5,          \(G, R, bkgG, bkgR) R("STAINING", "^DNP \\(High\\)$") / R("STAINING", "^DNP \\(Bkg\\)$"),
+   "MSA",     "Target Removal 1",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 1$"),
+   "MSA",     "Target Removal 2",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 2$"),
+   "MSA",     "Specificity I Green",                1,          \(G, R, bkgG, bkgR) cmin(G("SPECIFICITY I", "^GT Mismatch [123] \\(PM\\)$")) / cmax(G("SPECIFICITY I", "^GT Mismatch [123] \\(MM\\)$")),
+   "MSA",     "Specificity I Red",                  1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY I", "^GT Mismatch [456] \\(PM\\)$")) / cmax(R("SPECIFICITY I", "^GT Mismatch [456] \\(MM\\)$")),
+   "MSA",     "Specificity II",                     1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY II", "^Specificity [123]$")) / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "MSA",     "Specificity II (Bkg)",               1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "MSA",     "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
+   "MSA",     "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)$")),
+
+   # MOUSE (21 metrics; BS Conversion II includes mouse-specific probes 330/505/649)
+   "MOUSE",   "Restoration",                        0,          \(G, R, bkgG, bkgR) G("RESTORATION", "^Restore$") / bkgG,
+   "MOUSE",   "Bisulfite Conversion I Green",       1,          \(G, R, bkgG, bkgR) cmin(G("BISULFITE CONVERSION I", "^BS Conversion I-C[12]$")) / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "MOUSE",   "Bisulfite Conversion I Green (Bkg)", 1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION I", "^BS Conversion I-U[12]$")),
+   "MOUSE",   "Bisulfite Conversion I Red",         1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION I", "^BS Conversion I-C[45]$")) / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
+   "MOUSE",   "Bisulfite Conversion I Red (Bkg)",   1,          \(G, R, bkgG, bkgR) bkgR / cmax(R("BISULFITE CONVERSION I", "^BS Conversion I-U[45]$")),
+   "MOUSE",   "Bisulfite Conversion II",            1,          \(G, R, bkgG, bkgR) cmin(R("BISULFITE CONVERSION II", "^BS Conversion II-\\d+$")) / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-\\d+$")),
+   "MOUSE",   "Bisulfite Conversion II (Bkg)",      1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("BISULFITE CONVERSION II", "^BS Conversion II-\\d+$")),
+   "MOUSE",   "Hybridization High/Medium",          1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(High\\)$") / G("HYBRIDIZATION", "^Hyb \\(Medium\\)$"),
+   "MOUSE",   "Hybridization Medium/Low",           1,          \(G, R, bkgG, bkgR) G("HYBRIDIZATION", "^Hyb \\(Medium\\)$") / G("HYBRIDIZATION", "^Hyb \\(Low\\)$"),
+   "MOUSE",   "Extension Green",                    5,          \(G, R, bkgG, bkgR) cmin(G("EXTENSION", "^Extension \\([CG]\\)$")) / cmax(G("EXTENSION", "^Extension \\([AT]\\)$")),
+   "MOUSE",   "Extension Red",                      5,          \(G, R, bkgG, bkgR) cmin(R("EXTENSION", "^Extension \\([AT]\\)$")) / cmax(R("EXTENSION", "^Extension \\([CG]\\)$")),
+   "MOUSE",   "Staining Green",                     5,          \(G, R, bkgG, bkgR) G("STAINING", "^Biotin \\(High\\)$") / G("STAINING", "^Biotin \\(Bkg\\)$"),
+   "MOUSE",   "Staining Red",                       5,          \(G, R, bkgG, bkgR) R("STAINING", "^DNP \\(High\\)$") / R("STAINING", "^DNP \\(Bkg\\)$"),
+   "MOUSE",   "Target Removal 1",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 1$"),
+   "MOUSE",   "Target Removal 2",                   1,          \(G, R, bkgG, bkgR) bkgG / G("TARGET REMOVAL", "^Target Removal 2$"),
+   "MOUSE",   "Specificity I Green",                1,          \(G, R, bkgG, bkgR) cmin(G("SPECIFICITY I", "^GT Mismatch [123] \\(PM\\)$")) / cmax(G("SPECIFICITY I", "^GT Mismatch [123] \\(MM\\)$")),
+   "MOUSE",   "Specificity I Red",                  1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY I", "^GT Mismatch [456] \\(PM\\)$")) / cmax(R("SPECIFICITY I", "^GT Mismatch [456] \\(MM\\)$")),
+   "MOUSE",   "Specificity II",                     1,          \(G, R, bkgG, bkgR) cmin(R("SPECIFICITY II", "^Specificity [123]$")) / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "MOUSE",   "Specificity II (Bkg)",               1,          \(G, R, bkgG, bkgR) bkgG / cmax(G("SPECIFICITY II", "^Specificity [123]$")),
+   "MOUSE",   "Non-polymorphic Green",              5,          \(G, R, bkgG, bkgR) cmin(G("NON-POLYMORPHIC", "^NP \\([CG]\\)( [1-5])?$")) / cmax(G("NON-POLYMORPHIC", "^NP \\([AT]\\)$")),
+   "MOUSE",   "Non-polymorphic Red",                5,          \(G, R, bkgG, bkgR) cmin(R("NON-POLYMORPHIC", "^NP \\([AT]\\)$")) / cmax(R("NON-POLYMORPHIC", "^NP \\([CG]\\)( [1-5])?$"))
+)

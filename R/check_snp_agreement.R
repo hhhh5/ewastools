@@ -53,7 +53,8 @@ check_snp_agreement = function(genotypes, donor_ids, sample_ids) {
 
    if (nrow(conflicts) == 0) return(NULL)
    
-   # Group related conflicts into weakly connected components of the conflict graph
+   # Group related conflicts into weakly connected components of the conflict graph.
+   # Cast IDs to character so numeric `sample_ids` are matched by vertex name, not position.
    edges = data.frame(
       from = as.character(conflicts$sample1),
       to   = as.character(conflicts$sample2)
@@ -107,7 +108,8 @@ enumerate_sample_donors = function(genotypes) {
    # If there are no highly agreeing pairs, every sample belongs to a unique donor
    if (nrow(matching_pairs) == 0) return(seq_len(J))
 
-   # Connected components of the matching-pairs graph define the inferred donors
+   # Connected components of the matching-pairs graph define the inferred donors.
+   # Passing `vertices` explicitly preserves samples with no matches in their original 1..J order.
    edges = data.frame(from = matching_pairs$sample1, to = matching_pairs$sample2)
    donor_graph = igraph::graph_from_data_frame(
       d        = edges,
@@ -140,6 +142,8 @@ pairwise_snp_agreement_ = function(genotypes, donor_ids = NULL, sample_ids = seq
 #' @noRd
 snp_agreement_matrix_ = function(genotypes) {
    weights = 1 - genotypes$outliers # we don't want outliers to be counted in the genetic fingerprint
+   # Zero out NAs so matrix multiplication (`crossprod`) excludes missing SNP observations
+   # instead of propagating NA across an entire sample pair
    weights[is.na(weights)] = 0
 
    w_gamma = lapply(genotypes$gamma, function(g) {

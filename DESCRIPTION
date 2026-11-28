@@ -2,7 +2,7 @@ Package: ewastools
 Type: Package
 Title: EWAS Tools
 Version: 1.8.2
-Date: 2026-10-11
+Date: 2026-11-26
 Author: Allan C. Just, Jonathan Heiss
 Maintainer: Jonathan Heiss <heiss.jonathan@gmail.com>
 Description: Collection of useful functions for working with DNA methylation micro-array data.
@@ -15,6 +15,7 @@ Imports:
     graphics,
     igraph,
     illuminaio,
+    lubridate,
     mblm,
     quadprog,
     stats,
@@ -23,17 +24,19 @@ Imports:
     utils
 Suggests: 
     dplyr,
+    ENmix,
     ff,
     knitr,
     minfi,
     purrr,
     rmarkdown,
     svd,
-    testthat (>= 2.1.0),
+    testthat (>= 3.0.0),
     tidyr
 Encoding: UTF-8
-License: Unlimited
+License: CC0
 VignetteBuilder: knitr
 NeedsCompilation: no
 RoxygenNote: 7.3.3
+Config/testthat/edition: 3
 URL: https://hhhh5.github.io/ewastools/

@@ -1,7 +1,7 @@
 ---
 title: "Recommended Work Flow"
 author: "Jonathan Heiss"
-date: "2026-11-22"
+date: "2026-11-26"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Recommended Work Flow}
@@ -168,7 +168,7 @@ stripchart(ctrls$`Bisulfite Conversion II`, method = "jitter", pch = 4, xlab = '
 abline(v = 1, col = 2, lty = 3)
 ```
 
-<img src="exemplary_ewas-control_metrics_plot-1.png" alt="" style="display: block; margin: auto;" />
+<img src="exemplary_ewas-control_metrics_plot-1.png" alt="" width="100%" style="display: block; margin: auto;" />
 
 A logical vector of passed/failed is returned by `sample_failure()` which compares all 21 metrics against the thresholds recommended by Illumina. In this case several samples fail..
 
@@ -209,7 +209,7 @@ points(Y ~ X, data = tmp, pch = ifelse(tmp$sex == "f", 1, 4), col = 2)
 legend("topright", pch = c(1, 4), legend = c("female", "male"))
 ```
 
-<img src="exemplary_ewas-sex_plot-1.png" alt="" style="display: block; margin: auto;" />
+<img src="exemplary_ewas-sex_plot-1.png" alt="" width="100%" style="display: block; margin: auto;" />
 
 Samples form two cluster of males (top left) and females (bottom left). The one mislabeled sample here (in red) can easily be identified and should be flagged.
 
@@ -360,7 +360,7 @@ plot(pc2 ~ pc1, pch=ifelse(sex=="f", 1, 4), pheno, asp = 1, xlab = "PC #1", ylab
 legend("topright", pch = c(1, 4), legend = c("female", "male"))
 ```
 
-<img src="exemplary_ewas-pca_plot-1.png" alt="" style="display: block; margin: auto;" />
+<img src="exemplary_ewas-pca_plot-1.png" alt="" width="100%" style="display: block; margin: auto;" />
 
 There is one clear outlier.
 
@@ -421,7 +421,7 @@ Plotting `NE` + `EO` + `BA` this sample can easily be spotted.
 plot(pheno[,NE+EO+BA]*100,ylab="Granulocyte fraction (%)")
 ```
 
-<img src="exemplary_ewas-lc_plot-1.png" alt="" style="display: block; margin: auto;" />
+<img src="exemplary_ewas-lc_plot-1.png" alt="" width="100%" style="display: block; margin: auto;" />
 
 It is the third to last sample, GSM1185585.
 

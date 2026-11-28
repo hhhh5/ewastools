@@ -97,6 +97,7 @@ detectionP = function(raw)
 
          # Calculate detection p-values using normal cumulative distribution function (pnorm)
          # for the combined M + U intensities, comparing them against the sum of the background distributions.
+         # Type II probes read U in red and M in green, so their background combines UR and MG.
          detP[iR,j] = pnorm(U[iR,j]+M[iR,j],mean=muUR+muMR,sd=sqrt(sdUR^2+sdMR^2),lower.tail=FALSE)
          detP[iG,j] = pnorm(U[iG,j]+M[iG,j],mean=muUG+muMG,sd=sqrt(sdUG^2+sdMG^2),lower.tail=FALSE)
          detP[i2,j] = pnorm(U[i2,j]+M[i2,j],mean=muUR+muMG,sd=sqrt(sdUR^2+sdMG^2),lower.tail=FALSE)
@@ -134,6 +135,10 @@ detectionP.neg = function(raw)
       } else {
          detP = matrix(NA_real_, nrow = nrow(U), ncol = ncol(U))
       }
+
+      # Total signal U + M sums two background distributions (2*mu, sqrt(2)*sd within one channel;
+      # muR + muG, sqrt(sdR^2 + sdG^2) across channels). Return log10 p-values via `log.p = TRUE`
+      # to avoid floating-point underflow to 0.
 
       # Red channel probes
       i = manifest[channel == "Red" ,index] 
@@ -188,6 +193,8 @@ eval_detP_cutoffs = function(raw,males=NULL,females=NULL){
    checkmate::assert_integerish(males, lower = 1, upper = ncol(raw$detP), min.len = 1, any.missing = FALSE)
    checkmate::assert_integerish(females, lower = 1, upper = ncol(raw$detP), min.len = 1, any.missing = FALSE)
 
+   # Females lack chrY (true negatives, should be undetected) while males carry chrY (true positives,
+   # should be detected), so comparing female 10% vs. male 90% quantiles measures cutoff separation.
    chrY = raw$manifest[forcats::fct_match(chr, "chrY"), index]
    chrY = raw$detP[chrY, , drop = FALSE]
 
@@ -243,7 +250,7 @@ detectionP.minfi = function(rgSet)
       sR = summits(betasIr[,j])
       sG = summits(betasIg[,j])
 
-      # Red channel
+      # Red channel (AddressA = unmethylated bead, AddressB = methylated bead)
       bkgU = head(order(abs(betasIr[,j]-sR[2])), n = 1000)
       bkgM = head(order(abs(betasIr[,j]-sR[1])), n = 1000)
 
@@ -276,7 +283,9 @@ detectionP.minfi = function(rgSet)
       sdMG[j] = mad(bkgM,na.rm=TRUE)
    }
 
-   # Compute normal cumulative probabilities for each probe type
+   # Vectorized over the full probe-by-sample matrix: `rep(..., each = nrow)` aligns per-sample
+   # background parameters with R's column-major matrix layout. Type II probes share `AddressA`
+   # across red (U) and green (M).
    detP[iR$Name,] = pnorm(reds  [iR$AddressA,]+reds  [iR$AddressB,], mean=rep(muUR+muMR,each=nrow(iR)), sd=rep(sqrt(sdUR^2+sdMR^2),each=nrow(iR)), lower.tail=FALSE)
    detP[iG$Name,] = pnorm(greens[iG$AddressA,]+greens[iG$AddressB,], mean=rep(muUG+muMG,each=nrow(iG)), sd=rep(sqrt(sdUG^2+sdMG^2),each=nrow(iG)), lower.tail=FALSE)
    detP[i2$Name,] = pnorm(reds  [i2$AddressA,]+greens[i2$AddressA,], mean=rep(muUR+muMG,each=nrow(i2)), sd=rep(sqrt(sdUR^2+sdMG^2),each=nrow(i2)), lower.tail=FALSE)

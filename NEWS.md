@@ -1,8 +1,27 @@
 # ewastools 1.8.2
-* Added support for Infinium Methylation Screening Array (MSA) BeadChip
-* Refactored calculation of control metrics
-* Added benchmark vignette using GSE250556 technical replicates for sample tracking and cell type deconvolution
-* Added additional unit tests
+
+## New
+* Add support for Infinium Methylation Screening Array (MSA) BeadChip
+* Add a benchmark vignette using a dataset with technical replicates (GSE250556). Vignette covers sample donor identification and cell type deconvolution.
+
+## Fixes
+* Replace `ff::is.ff()` calls with `inherits(..., "ff")` so in-memory workflows no longer fail if the optional package `ff` is not installed.
+* Fix `call_genotypes(..., learn = TRUE)`, which previously failed in `eBeta()` due to checking an undefined `weights` variable
+* Anonymized IDATs with missing/empty `RunInfo` previously errored on `nrow(red$RunInfo) > 1`
+* Zero-bead out-of-band intensities (`oobG`/`oobR`) are assigned `NA` instead being left as `0`
+* Extracting `sample_id` via `strsplit(..., "/")` failed on Windows backslash paths. It now uses `basename()`.
+* Fix order of calling pre-processing functions in `exemplary_ewas`: `check_sex()` should be called before `mask()`.
+* Use `log10(0.01)` threshold instead of `0.01` in `detectionP.neg()` 
+* Fix `methylation_score()` in case of missing probes: previously, `NA`s caused errors for on-disk (`ff`) matrices, and samples with no observed model probes silently returned the bare model intercept instead of `NA`.
+* Fix single-sample / single-sex dimension dropping (`drop = FALSE`) in `eval_detP_cutoffs()`, `detectionP.minfi()`, and `correct_dye_bias2()`
+* Fix `drop_samples()` when passing an empty index (`integer(0)`, e.g. when no samples fail QC). This previously dropped all samples instead of keeping them
+
+## Improvements
+* Reduce memory usage by loading platform manifests lazily
+* Pre-knit vignettes so that package/website builds do not re-download large GEO datasets
+* Improved `read_idats()` performance by caching bead address matching and manifest channel subsets across samples with identical `MidBlock` ordering
+* Standardize argument validation across exported functions using `checkmate`
+* Expand unit tests covering QC, preprocessing, genotyping, deconvolution, and methylation score pipeline.
 
 # ewastools 1.8.1
 * Added experimental support for Mouse Methylation BeadChip (feedback welcome)

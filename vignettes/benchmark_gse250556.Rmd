@@ -1,7 +1,7 @@
 ---
 title: "GSE250556 Benchmarks: Sample Tracking and Cell Type Deconvolution"
 author: "Jonathan Heiss"
-date: "2026-11-22"
+date: "2026-11-26"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{GSE250556 Benchmarks: Sample Tracking and Cell Type Deconvolution}
@@ -212,10 +212,7 @@ pheno_df |>
 #> range (`geom_point()`).
 ```
 
-<div class="figure" style="text-align: center">
-<img src="benchmark_gse250556-plot_replicates-1.png" alt="plot of chunk plot_replicates"  />
-<p class="caption">plot of chunk plot_replicates</p>
-</div>
+<img src="benchmark_gse250556-plot_replicates-1.png" alt="" width="100%" style="display: block; margin: auto;" />
 
 The plot illustrates high consistency across technical replicates within each subject, demonstrating robust reproducibility for `estimateLC()`.
 

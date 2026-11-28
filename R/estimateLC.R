@@ -35,7 +35,10 @@ estimateLC = function(meth,ref,constrained=FALSE) {
    J = ncol(meth)
 
    # Load the regression coefficients/reference panel matrix
-   coefs = read.table(system.file(paste0("data/",ref,".txt"),package="ewastools"))
+   ref_file = system.file("extdata", paste0(ref, ".txt"), package = "ewastools")
+   if (!nzchar(ref_file) || !file.exists(ref_file))
+      stop(sprintf("Reference dataset '%s' not found.", ref), call. = FALSE)
+   coefs = read.table(ref_file)
    coefs = as.matrix(coefs)
    n_celltypes = ncol(coefs)
 
@@ -60,6 +63,7 @@ estimateLC = function(meth,ref,constrained=FALSE) {
    }
 
    # Estimate cell proportions for each sample using quadratic programming
+   # Subsetting by `observed` excludes probes masked/missing in each individual sample.
    EST = sapply(seq_len(J), \(j) {
       sample_beta = meth[markers, j]
       observed = !is.na(sample_beta)
